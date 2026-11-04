@@ -9,14 +9,16 @@ Voice commands for World of Warcraft: WoW Forever.
 
 VCF and VCFI are made, intended, and tested for World of Warcraft: Forever, played through Blizzard's Battle.net app.
 
-VCF and VCFI will be available when they are found to be stable enough for initial release. Until then, the download links in their READ ME files will not work.
+## DOWNLOAD (STILL IN TESTING)
 
-## TO BE PUBLISHED WHEN READY
+VCF and VCFI are available now and are still in testing. Please report anything that goes wrong to vcfireports@gmail.com.
 
-- VCF NET SETUP
-- READ ME FIRST - HOW TO INSTALL VCF NET
-- VCFI SETUP
-- READ ME FIRST - HOW TO INSTALL VCFI
+Read the READ ME FIRST for your program before you install it.
+
+- [VCF NET SETUP](https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/VCF.NET.SETUP.exe)
+- [READ ME FIRST - HOW TO INSTALL VCF NET](https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt)
+- [VCFI SETUP](https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/VCFI.SETUP.exe)
+- [READ ME FIRST - HOW TO INSTALL VCFI](https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt)
 
 ## WHY YOUR LANGUAGE MATTERS
 
