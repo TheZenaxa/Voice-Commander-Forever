@@ -26,7 +26,7 @@ Windows speech recognition hears you best in the language it is set to, spoken a
 
 ## AVAILABLE NOW: VOICE LANGUAGE TEST
 
-A free tool that shows how well Windows understands you and how good the translations are, to help you decide whether VCF or VCFI is for you. The phrases in the test are the default starting phrases in the current builds of VCF and VCFI. Download VOICE LANGUAGE TEST.exe and its READ ME here:
+A free tool that shows how well Windows understands you and how good the translations are, to help you decide whether VCF or VCFI is for you. The phrases in the test are the default starting phrases in the current builds of VCF and VCFI, or your own words. Download VOICE LANGUAGE TEST.exe and its READ ME here:
 
 - [VOICE LANGUAGE TEST.exe](https://github.com/TheZenaxa/Voice-Commander-Forever/releases/download/voice-test-1.0.0/VOICE.LANGUAGE.TEST.exe)
 - [READ ME - VOICE LANGUAGE TEST](https://github.com/TheZenaxa/Voice-Commander-Forever/releases/download/voice-test-1.0.0/READ.ME.-.VOICE.LANGUAGE.TEST.txt)
