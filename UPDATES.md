@@ -5,6 +5,25 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.88 (VCFI 0.1.32 unchanged)
+
+Published 2026-11-07 16:35 US Mountain Standard Time
+
+### New in VCF 0.10.88
+
+**Comparison with what you have on**
+- When the outlined item at a vendor or in your bags is something you can wear or wield, what you have on in that slot now shows in its own box, next to the outlined item's tooltip in the lower middle of the screen.
+- Rings, trinkets and one-hand weapons show both items you have on.
+- Nothing worn in that slot, or an item you cannot wear: no comparison box.
+- The boxes follow "box small", "box average" and "box big", stay on the screen, and keep clear of the vendor window and your bags. When a row does not fit, the comparison boxes stack above.
+- The game's own "if you replace this item" summary is not shown in these boxes.
+
+After installing, reload the game once.
+
+The game's add-on that comes with VCF is now version 73. VCFI still uses version 71. This change is not in VCFI yet.
+
+---
+
 ## VCF 0.10.86 and VCFI 0.1.32
 
 Published 2026-11-07 15:47 US Mountain Standard Time
@@ -40,7 +59,7 @@ Published 2026-11-07 15:32 US Mountain Standard Time
 - Switch Side is now called Move My Box, with the default words "move my box".
 
 **A tooltip for the outlined item**
-- The outlined item's tooltip shows in the lower middle of the screen, clear of the game's own controller tooltip, with the equipped item beside it for comparison.
+- The outlined item's tooltip shows in the lower middle of the screen, clear of the game's own controller tooltip. (The comparison with what you have on came in 0.10.88.)
 - "box small", "box average" and "box big" make it half size, normal or twice the size. The size is remembered.
 
 **Use or destroy the outlined bag item**

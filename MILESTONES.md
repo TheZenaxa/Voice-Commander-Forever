@@ -40,6 +40,7 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Start move and stop move: an outline on the vendor, your bags or a talk window, moved by voice
 - [x] Vendor pages turned by voice
 - [x] A tooltip for the outlined item, in three sizes
+- [x] A comparison with what you have on, beside the tooltip (VCF; VCFI to follow)
 - [x] Use or destroy the outlined bag item, asked first
 - [x] Answer VCF's question boxes by voice
 - [x] The outline switches off when its window closes
