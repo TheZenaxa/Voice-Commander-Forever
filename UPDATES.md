@@ -5,6 +5,26 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.88 and VCFI 0.1.33
+
+Published 2026-11-07 16:38 US Mountain Standard Time
+
+### New in VCFI 0.1.33
+
+VCFI now has the comparison that came to VCF in 0.10.88:
+
+- When the outlined item at a vendor or in your bags is something you can wear or wield, what you have on in that slot shows in its own box, next to the outlined item's tooltip in the lower middle of the screen.
+- Rings, trinkets and one-hand weapons show both items you have on.
+- Nothing worn in that slot, or an item you cannot wear: no comparison box.
+- The boxes follow the tooltip's three sizes, stay on the screen, and keep clear of the vendor window and your bags. When a row does not fit, the comparison boxes stack above.
+- It works with the game in any language VCFI supports: it uses the game's own names for the slots.
+
+After installing, reload the game once.
+
+VCF is the same as 0.10.88. The game's add-on that comes with VCF and VCFI is now version 73 in both.
+
+---
+
 ## VCF 0.10.88 (VCFI 0.1.32 unchanged)
 
 Published 2026-11-07 16:35 US Mountain Standard Time
