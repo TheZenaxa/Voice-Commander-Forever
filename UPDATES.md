@@ -5,6 +5,21 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.89 and VCFI 0.1.34
+
+Published 2026-11-07 16:45 US Mountain Standard Time
+
+### New in VCF 0.10.89 and VCFI 0.1.34
+
+- **The Glossary has a new group, WINDOWS BY VOICE,** so you know what to say: start move and stop move, move up, down, left and right, move my box, move page right and move page left, box small, box average and box big, use that and destroy that, and yes do that and no do not.
+
+Only in VCFI:
+- The new group is shown in French, German, Spanish and Chinese (Simplified and Traditional), with the words you say in each language. These have not been checked by native speakers yet.
+
+The game's add-on that comes with VCF and VCFI is still version 73.
+
+---
+
 ## VCF 0.10.88 and VCFI 0.1.33
 
 Published 2026-11-07 16:38 US Mountain Standard Time
