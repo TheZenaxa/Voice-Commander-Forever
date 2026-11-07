@@ -17,7 +17,7 @@ Read the READ ME FIRST for your program before you install it.
 
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/VCF.NET.SETUP.exe"><img src="buttons/vcf-net-setup-0.10.86.png" width="332" height="50" alt="Download VCF NET SETUP.exe, version 0.10.86"></a></p>
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt"><img src="buttons/readme-vcf-net.png" width="504" height="50" alt="Download READ ME FIRST - HOW TO INSTALL VCF NET"></a></p>
-<p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/VCFI.SETUP.exe"><img src="buttons/vcfi-setup-0.1.31.png" width="278" height="50" alt="Download VCFI SETUP.exe, version 0.1.31"></a></p>
+<p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/VCFI.SETUP.exe"><img src="buttons/vcfi-setup-0.1.32.png" width="278" height="50" alt="Download VCFI SETUP.exe, version 0.1.32"></a></p>
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt"><img src="buttons/readme-vcfi.png" width="463" height="50" alt="Download READ ME FIRST - HOW TO INSTALL VCFI"></a></p>
 <p><a href="UPDATES.md"><img src="buttons/updates.png" width="315" height="50" alt="UPDATES, newest first: what changed in each release, with dates"></a></p>
 <p><a href="MILESTONES.md"><img src="buttons/milestones.png" width="178" height="50" alt="MILESTONES: what is done and what is still to come"></a></p>

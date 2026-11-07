@@ -5,6 +5,28 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.86 and VCFI 0.1.32
+
+Published 2026-11-07 15:47 US Mountain Standard Time
+
+### New in VCFI 0.1.32
+
+VCFI now has everything that came to VCF in 0.10.86:
+
+- "start move" puts an outline on the open vendor, your bags or a talk window. Move up, down, left and right move it. "stop move" takes it off, and it switches itself off when its window closes.
+- "move page right" and "move page left" turn the vendor's pages.
+- The outlined item's tooltip shows in the lower middle of the screen. "box small", "box average" and "box big" set its size.
+- "use that" and "destroy that" on the outlined bag item ask first. Answer with X or B, or say "yes do that" or "no do not". Those two answers work for any VCFI question box.
+- Switch Side is now called Move My Box.
+
+The words above are the English ones. In French, German, Spanish, Japanese and Chinese, VCFI listens for that language's own words, which show in the control panel. The screens are translated too. Native speakers have not checked these translations yet.
+
+New default words only apply where you have not chosen your own; your own words are kept. After installing, reload the game twice: the new commands get their hidden keys on the second reload.
+
+VCF is the same as 0.10.86. The game's add-on that comes with VCF and VCFI is now version 71 in both.
+
+---
+
 ## VCF 0.10.86 (VCFI 0.1.31 unchanged)
 
 Published 2026-11-07 15:32 US Mountain Standard Time
