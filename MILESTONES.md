@@ -1,0 +1,48 @@
+# MILESTONES
+
+What has been done, and what is still to come, for VCF and VCFI. Ticked items are done. For every change in detail, newest first, see UPDATES.
+
+## Milestone 1: Launch (4 November 2026)
+
+- [x] VCF and VCFI available to download, still in testing
+- [x] The voice language test available to download
+- [x] READ ME FIRST for VCF and for VCFI
+- [x] This download page
+
+## Milestone 2: Your spells, items and words (5 November 2026)
+
+- [x] Spells grouped the way the game shows them (spellbook sections, talents, items)
+- [x] All races and classes checked in the game
+- [x] Talents and the Legacy screen
+- [x] Preset keys for the game's own windows
+- [x] Several ways to say one command, separated by commas
+- [x] RENAME AN ITEM: give your own items your own words, and equip or use them by voice
+- [x] Fishing by voice
+- [x] Words already in use: a newer command never takes your words, and its box says so
+- [x] Commands that do the same thing can share words
+- [x] "Superfood" words for food and drink in one
+
+## Milestone 3: Reliability (6 November 2026)
+
+- [x] Autorun no longer turns Num Lock off
+- [x] Loot, Catch and the other Interact commands follow your Auto Loot setting
+- [x] Fishing: the game's interact range widens while your line is out
+- [x] Accept takes everything in an open loot window
+- [x] RENAME AN ITEM finds grey weapons and armour, with a "Hide junk items" option
+- [x] Items that are ignored, destroyed or sold give up their key
+- [x] VCFI: autorun and the never-type-into-chat protection work
+- [x] Voice language test 1.1.0: test your own words, with a license to agree to
+- [x] FAQ: Num Lock, and the fishing known issue
+- [x] UPDATES page and version numbers on the download buttons
+
+## Still to come
+
+- [ ] Profession abilities (Cooking, First Aid, Find Minerals and others) tested by voice, so they leave "ALPHA TESTING"
+- [ ] Camp items
+- [ ] Mount Up and Dismount, once a character can ride (level 40)
+- [ ] VCFI: RENAME AN ITEM and the preset keys tested in the game
+- [ ] VCFI's translations checked by native speakers
+- [ ] Why the game sometimes needs a restart before Interact works again
+- [ ] Why the game sometimes turns Auto Loot off by itself
+- [ ] Item sets: several items under one word (later)
+- [ ] A first-time install tested on a fresh computer
