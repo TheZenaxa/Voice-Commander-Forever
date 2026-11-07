@@ -35,6 +35,15 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] FAQ: Num Lock, and the fishing known issue
 - [x] UPDATES page and version numbers on the download buttons
 
+## Milestone 4: Windows by voice (7 November 2026, VCF)
+
+- [x] Start move and stop move: an outline on the vendor, your bags or a talk window, moved by voice
+- [x] Vendor pages turned by voice
+- [x] A tooltip for the outlined item, in three sizes
+- [x] Use or destroy the outlined bag item, asked first
+- [x] Answer VCF's question boxes by voice
+- [x] The outline switches off when its window closes
+
 ## Still to come
 
 - [ ] Profession abilities (Cooking, First Aid, Find Minerals and others) tested by voice, so they leave "ALPHA TESTING"
@@ -46,3 +55,6 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] Why the game sometimes turns Auto Loot off by itself
 - [ ] Item sets: several items under one word (later)
 - [ ] A first-time install tested on a fresh computer
+- [ ] VCFI: the Milestone 4 window commands
+- [ ] The trade window and the Auction House by voice
+- [ ] The spellbook by voice, in a way the game allows

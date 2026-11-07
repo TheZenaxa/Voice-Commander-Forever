@@ -5,6 +5,37 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.86 (VCFI 0.1.31 unchanged)
+
+Published 2026-11-07 15:32 US Mountain Standard Time
+
+### New in VCF 0.10.86
+
+**Moving through bags, vendors and talk windows by voice**
+- "start move" puts an outline on the open vendor, your bags or a talk window. Move up, down, left and right move it. "stop move" takes it off.
+- The outline switches itself off when its window closes.
+- "move page right" and "move page left" turn the vendor's pages. The outline goes back to the first item on the new page.
+- Switch Side is now called Move My Box, with the default words "move my box".
+
+**A tooltip for the outlined item**
+- The outlined item's tooltip shows in the lower middle of the screen, clear of the game's own controller tooltip, with the equipped item beside it for comparison.
+- "box small", "box average" and "box big" make it half size, normal or twice the size. The size is remembered.
+
+**Use or destroy the outlined bag item**
+- Say "use that" or "destroy that". The outline turns teal for use or red for destroy, and VCF asks first.
+- Answer with X (yes) or B (no) on the controller, or say "yes do that" or "no do not".
+- It cancels by itself after 30 seconds or when the outline moves. Use does nothing while a vendor is open, so nothing is sold by mistake.
+- "yes do that" and "no do not" answer any VCF question box, not only this one.
+
+**Fixed**
+- The game's "blocked from an action only available to the Blizzard UI" box, which could not be closed, no longer appears when moving through windows or turning vendor pages. The spellbook is no longer part of start move.
+
+New default words only apply where you have not chosen your own; your own words are kept. After installing, reload the game twice: the new commands get their hidden keys on the second reload.
+
+The game's add-on that comes with VCF is now version 71. VCFI still uses version 60. These changes are not in VCFI yet.
+
+---
+
 ## VCF 0.10.71 and VCFI 0.1.31
 
 Published 2026-11-06 19:46 US Mountain Standard Time
