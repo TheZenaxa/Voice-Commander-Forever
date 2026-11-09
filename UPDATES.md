@@ -5,6 +5,37 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.116 and VCFI 0.1.40
+
+Published 2026-11-09 14:54 US Mountain Standard Time
+
+### New: the Auction House by voice
+
+- **start move** with the Auction House open puts the outline on the first category. **move up / down** go through a list, **move left / right** go between the category list and the results.
+- **move up** from the top of a list reaches the search row: Favourites, Search box, Filter and Search.
+- **select** (or **accept**) on a category opens it; on an item it opens that item's list of single auctions. **go back** (your Back command) returns to the results.
+- **search now** presses the Search button directly, wherever the outline is.
+- **Scrolling:** on the last row you can see, **move down** scrolls the list; on the top row, **move up** scrolls back.
+- **The box shows each item's tooltip** with the comparison to what you are wearing, the **lowest auction price** and how many are available. On a single auction it also shows **that auction's own price**, bid and quantity.
+- All of this only works while the Auction House is open. Everywhere else, accept, select, back and the move commands work exactly as before.
+- Typing in the search box and buying by voice come later.
+
+### Invites
+
+- **accept invite** and **decline invite** now also answer a **guild** invite (its own window, with Join Guild and Decline Invitation).
+- **accept invite** asks yes or no first, for party and guild invites alike. Say "yes do that" or press X to accept. **decline invite** goes straight through.
+
+### Also
+
+- The add-on's description in the game's AddOns list now says everything it does.
+- The add-on keeps a few small read-only notes (how far turns go, what the Auction House window holds, and how long its own work takes at login: about 40 milliseconds). They only read and change nothing.
+
+After installing, use Update and reload the game twice: "search now" gets its key on the second reload.
+
+The game's add-on that comes with VCF is now version 86. VCFI's add-on is version 76 (description only).
+
+---
+
 ## VCF 0.10.104 and VCFI 0.1.39
 
 Published 2026-11-09 11:27 US Mountain Standard Time

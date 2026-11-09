@@ -60,6 +60,13 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Zoom by up to ten steps at once ("click out five")
 - [x] Turn left and right by voice, by the face of a clock ("go left three")
 
+## Milestone 7: The Auction House by voice (9 November 2026, VCF)
+
+- [x] Move through the categories, results and search row by voice
+- [x] Item tooltips with the lowest auction price, and each auction's own price
+- [x] Select, go back, search now, and scrolling past the rows on screen
+- [x] Accept or decline guild invites by voice, with a yes/no check before accepting
+
 ## Still to come
 
 - [ ] Profession abilities (Cooking, First Aid, Find Minerals and others) tested by voice, so they leave "ALPHA TESTING"
@@ -71,5 +78,6 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] Why the game sometimes turns Auto Loot off by itself
 - [ ] Item sets: several items under one word (later)
 - [ ] A first-time install tested on a fresh computer
-- [ ] The trade window and the Auction House by voice
+- [ ] The trade window by voice
+- [ ] Typing in the Auction House search box, and buying, by voice
 - [ ] The spellbook by voice, in a way the game allows
