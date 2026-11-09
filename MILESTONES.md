@@ -52,6 +52,7 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] A blocked action no longer switches your voice keys off, and switched-off keys come back on
 - [x] "Use that" uses items the way the game allows
 - [x] Importing a shared profile never switches off the Interaction and Movement commands
+- [x] 45 more hidden keys, tested in the game first, so new commands and items get a key
 
 ## Still to come
 

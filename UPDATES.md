@@ -5,6 +5,23 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.92 and VCFI 0.1.37
+
+Published 2026-11-09 10:04 US Mountain Standard Time
+
+### More hidden keys
+
+- **VCF and VCFI had run out of hidden keys for some characters.** New commands, such as an item given words in RENAME AN ITEM, then got no key, and saying their words did nothing (the log said "no key for it in the game yet").
+- **45 new key combinations are added:** Alt+Shift with a letter, a number, or one of [ ] ; ' , . / \ `. All 45 were tested in the game first, and all arrived.
+- They are handed out only after the keys already in use, so every key you already have stays the same.
+- Nothing in the game or on your keyboard uses these combinations by default. If you bound one of them yourself, VCF will not take it.
+
+After installing, use Update and reload the game twice: new keys reach the game on the second reload.
+
+The game's add-on that comes with VCF and VCFI is still version 74.
+
+---
+
 ## VCF 0.10.91 and VCFI 0.1.36
 
 Published 2026-11-09 09:37 US Mountain Standard Time
