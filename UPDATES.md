@@ -5,6 +5,27 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.97 and VCFI 0.1.38
+
+Published 2026-11-09 10:35 US Mountain Standard Time
+
+### New: zoom the camera by voice
+
+- **"click in"** zooms the camera in one step and **"click out"** zooms it out one step, like one notch of the mouse wheel.
+- **Add a number for more steps,** up to ten: "click in five" zooms in five steps, "click out ten" zooms out ten.
+- It uses the game's own camera zoom, so it works wherever your mouse pointer is. At the game's closest or farthest zoom, extra steps simply do nothing.
+- In the Control Panel the commands are Zoom In and Zoom Out (and Zoom In 2 to 10, Zoom Out 2 to 10), in the Movement group. Like every command, their words can be changed, and each one keeps its own number of steps.
+- The Glossary explains it under "Click in / click out (1 to 10)".
+
+Only in VCFI:
+- The zoom words are in each spoken language (for example "clic avant" and "clic arrière" in French), and the new names and Glossary entry are shown in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+After installing, use Update and reload the game twice: the zoom keys reach the game on the second reload.
+
+The game's add-on that comes with VCF and VCFI is still version 74.
+
+---
+
 ## VCF 0.10.92 and VCFI 0.1.37
 
 Published 2026-11-09 10:04 US Mountain Standard Time
