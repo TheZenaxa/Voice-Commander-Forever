@@ -60,7 +60,7 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Zoom by up to ten steps at once ("click out five")
 - [x] Turn left and right by voice, by the face of a clock ("go left three")
 
-## Milestone 7: The Auction House by voice (9 November 2026, VCF)
+## Milestone 7: The Auction House by voice (9 November 2026)
 
 - [x] Move through the categories, results and search row by voice
 - [x] Item tooltips with the lowest auction price, and each auction's own price

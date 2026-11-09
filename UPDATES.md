@@ -5,6 +5,27 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.116 and VCFI 0.1.41
+
+Published 2026-11-09 14:58 US Mountain Standard Time
+
+### New in VCFI 0.1.41
+
+VCFI now has what came to VCF in 0.10.116:
+
+- **The Auction House by voice:** start move, move up / down / left / right through the categories, results and search row, select (or accept) to open a category or an item, go back to return, search now to press Search, and scrolling past the rows on screen with move down and move up. The box shows each item's tooltip with the comparison, the lowest auction price and how many are available, and on a single auction its own price.
+- **Invites:** accept invite and decline invite also answer a guild invite. Accept invite asks yes or no first.
+- These only work while the Auction House is open; everywhere else the commands work as before.
+
+Only in VCFI:
+- "Search now" has its own words in each spoken language (for example "chercher maintenant" in French), and the new question box and name are shown in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+VCF is the same as 0.10.116. The game's add-on that comes with VCF and VCFI is now version 86 in both.
+
+After installing, use Update and reload the game twice: "search now" gets its key on the second reload.
+
+---
+
 ## VCF 0.10.116 and VCFI 0.1.40
 
 Published 2026-11-09 14:54 US Mountain Standard Time
