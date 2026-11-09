@@ -66,6 +66,8 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Item tooltips with the lowest auction price, and each auction's own price
 - [x] Select, go back, search now, and scrolling past the rows on screen
 - [x] Accept or decline guild invites by voice, with a yes/no check before accepting
+- [x] Fly from a flight master by voice, with a yes/no check before take-off
+- [x] A key that came before game crashes is never used again
 
 ## Still to come
 

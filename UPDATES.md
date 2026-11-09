@@ -5,6 +5,33 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.122 and VCFI 0.1.42
+
+Published 2026-11-09 16:08 US Mountain Standard Time
+
+### New: fly from a flight master by voice
+
+- At a flight master with the flight map open, **start move** puts the outline on the places you can fly to, A to Z. **move up / down** go through them.
+- The box (lower middle, like the other tooltips) shows the place's name and the cost.
+- **take off** flies there. VCF asks yes or no first: say "yes do that" or press X to fly, "no do not" or B to stay. Select and accept do not fly you, so nothing takes off without a yes.
+- If you do not have the coin, the game simply says so and nothing happens.
+
+### Important fix: a key that came before game crashes
+
+- Five game crashes each began in the exact second "move right" was pressed, which used Alt+Ctrl+Shift+PageDown. That key is never used again; "move right" gets another key. Since the change: no crash.
+- Use Update and reload the game twice so the new key reaches the game.
+
+### Also
+
+- The add-on keeps fewer notes: the ones that had answered their questions (turn timing, Auction House survey, login timing, comparison, loot) are removed.
+
+Only in VCFI:
+- "take off" has its own words in each spoken language (for example "décoller" in French), and the new question box is shown in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+The game's add-on that comes with VCF and VCFI is now version 90 in both.
+
+---
+
 ## VCF 0.10.116 and VCFI 0.1.41
 
 Published 2026-11-09 14:58 US Mountain Standard Time
