@@ -54,10 +54,11 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Importing a shared profile never switches off the Interaction and Movement commands
 - [x] 45 more hidden keys, tested in the game first, so new commands and items get a key
 
-## Milestone 6: The camera by voice (9 November 2026)
+## Milestone 6: The camera and turning by voice (9 November 2026)
 
 - [x] Zoom the camera in and out by voice ("click in", "click out")
 - [x] Zoom by up to ten steps at once ("click out five")
+- [x] Turn left and right by voice, by the face of a clock ("go left three")
 
 ## Still to come
 
@@ -72,4 +73,3 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] A first-time install tested on a fresh computer
 - [ ] The trade window and the Auction House by voice
 - [ ] The spellbook by voice, in a way the game allows
-- [ ] Turn left and right by voice, by the face of a clock ("click left three")

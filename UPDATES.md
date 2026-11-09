@@ -5,6 +5,30 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.104 and VCFI 0.1.39
+
+Published 2026-11-09 11:27 US Mountain Standard Time
+
+### New: turn your character by voice
+
+- **"go left"** turns your character left one step and **"go right"** turns right one step. One step is 30 degrees, like one hour on a clock face.
+- **Add a number for more steps,** up to six: "go left three" is a quarter turn, and "go left six" turns you to face the other way.
+- It uses the game's own Turn Left and Turn Right, held for exactly the time the turn takes. The steps were measured in the game: six steps come out at 177 to 183 degrees.
+- Together with Autorun, this lets you move around without a controller or mouse.
+- In the Control Panel the commands are Turn Left 1 to 6 and Turn Right 1 to 6, in the Movement group. Like every command, their words can be changed, and each one keeps its own number of steps.
+- The Glossary explains it under "Go left / go right (1 to 6)".
+
+Also: the game's add-on keeps a small read-only note of how far each turn went, so the steps can be checked. It only reads which way you face and changes nothing.
+
+Only in VCFI:
+- The turn words are in each spoken language (for example "pivot gauche" and "pivot droite" in French), and the new names and Glossary entry are shown in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+After installing, use Update and reload the game twice: the turn keys reach the game on the second reload.
+
+The game's add-on that comes with VCF and VCFI is now version 75.
+
+---
+
 ## VCF 0.10.97 and VCFI 0.1.38
 
 Published 2026-11-09 10:35 US Mountain Standard Time
