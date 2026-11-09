@@ -47,6 +47,12 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] The outline switches off when its window closes
 - [x] All of the above in VCFI too, in every VCFI language
 
+## Milestone 5: Keys you can trust (9 November 2026)
+
+- [x] A blocked action no longer switches your voice keys off, and switched-off keys come back on
+- [x] "Use that" uses items the way the game allows
+- [x] Importing a shared profile never switches off the Interaction and Movement commands
+
 ## Still to come
 
 - [ ] Profession abilities (Cooking, First Aid, Find Minerals and others) tested by voice, so they leave "ALPHA TESTING"

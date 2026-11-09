@@ -5,6 +5,31 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.91 and VCFI 0.1.36
+
+Published 2026-11-09 09:37 US Mountain Standard Time
+
+### Important fix: voice commands pressing the wrong things
+
+If your voice commands suddenly opened the wrong windows or did nothing, while plain ones like sit still worked, this is the fix. Please update.
+
+- **What happened:** saying "use that" on a bag item made the game block the add-on. The add-on then switched all its hidden keys off, and they stayed off through restarts and logins. Commands on the game's own keys kept working; everything on a hidden key did not.
+- **Fixed:** "use that" now uses the item the way the game allows, like your own macro. A blocked action no longer switches your voice keys off. If your keys were switched off, they come back on the first time you log in with this version.
+- "Use that" cannot pick a new bag item during combat; the game does not allow that for any add-on. For something you need mid-fight, such as a healing potion, give it words in RENAME AN ITEM, which works in combat.
+
+### Importing a shared profile
+
+- An import can no longer switch off the Interaction and Movement commands (looting, talking, the window and bag commands, jump, sit, autorun). It can still switch them on and change their words.
+- Everything else, such as emotes and chat, still follows the shared profile, off included.
+- The import question says so.
+
+Only in VCFI:
+- The new import question is shown in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+The game's add-on that comes with VCF and VCFI is now version 74. After installing, restart the game once.
+
+---
+
 ## VCF 0.10.89 and VCFI 0.1.34
 
 Published 2026-11-07 16:45 US Mountain Standard Time
