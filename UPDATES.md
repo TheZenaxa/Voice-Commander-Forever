@@ -5,6 +5,26 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.143 (VCFI 0.1.45 unchanged)
+
+Published 2026-11-09 22:37 US Mountain Standard Time
+
+### An NPC does not answer talk or shop?
+
+Assuming your MIC is ON and hearing your voice: face the NPC and say **friend** first (Target Nearest Friendly), then say **talk** or **shop** again. Touching the controller stick works too.
+
+The game picks the NPC in front of you only after a real touch of the controller. Targeting the NPC by voice gets around that. This tip is now in the READ ME FIRST.
+
+### Also
+
+- Before **shop**, **talk** and **en pee see**, VCF briefly lets the game pick NPCs for keyboard keys too (the game's SoftTargetInteract setting goes from 1 to 3), then sets it back to 1 after 3 seconds, and again when you log out. Loot, mining, skinning, herbalism and fishing are not touched.
+
+After installing, reload the game twice.
+
+The game's add-on that comes with VCF is now version 109.
+
+---
+
 ## VCF 0.10.142 and VCFI 0.1.45
 
 Published 2026-11-09 21:54 US Mountain Standard Time
