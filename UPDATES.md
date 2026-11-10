@@ -5,6 +5,28 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.144 and VCFI 0.1.46
+
+Published 2026-11-09 22:42 US Mountain Standard Time
+
+### An NPC does not answer talk or shop?
+
+Assuming your MIC is ON and hearing your voice: face the NPC and say the words for **Target Nearest Friendly** first ("friend" in English), then say **talk** or **shop** again. Touching the controller stick works too. This tip is in the READ ME FIRST of both programs. VCFI's READ ME FIRST lists the words in each language.
+
+### Tidier add-on
+
+- The notes the game's add-on kept while things were being tested (mail, bank, Auction House, flight map, camera, move that, get that, and the controller button record) are gone, now that these work. The add-on also clears them from its saved file the next time you log in. The notes for the guild bank, trade and quest rewards stay until those are tested.
+
+### New in VCFI 0.1.46
+
+- Before **shop**, **talk** and **en pee see**, VCFI briefly lets the game pick NPCs for keyboard keys too, then sets it back after 3 seconds (as VCF 0.10.143).
+
+The game's add-on that comes with VCF and VCFI is now version 110 in both.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.143 (VCFI 0.1.45 unchanged)
 
 Published 2026-11-09 22:37 US Mountain Standard Time
