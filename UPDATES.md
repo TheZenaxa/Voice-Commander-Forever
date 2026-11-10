@@ -5,6 +5,32 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.149 and VCFI 0.1.47
+
+Published 2026-11-10 00:07 US Mountain Standard Time
+
+### New in both: follow, walk and snap cam
+
+- **start walk:** follows the friendly player you have targeted (say **friend** first to target the nearest one). **stop walk** stops following with one tiny step.
+- **walk one** (or just **walk**), **walk two** and **walk three:** walk forward a few steps, twice as far, and twice that again.
+- **snap cam:** puts the camera straight back behind your character, for example after a turn. Your zoom stays as it is.
+- All of these are under Movement in the Control Panel, and in the glossary.
+
+### FAQ
+
+- New: an NPC that does not answer talk or shop (say **friend** first), following another player and walking, and snap cam.
+- Fishing: once you have interacted with something else, you need to say **fish** and press X on the controller again before fishing, catching or looting works as normal (added in the user's own words).
+
+### Only in VCFI
+
+- The new commands have words in each spoken language (for example "commencer marche", "Gehen stoppen", "caminar tres", "镜头复位"), and the new screen text is in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+The game's add-on that comes with VCF and VCFI is now version 111 in both.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.144 and VCFI 0.1.46
 
 Published 2026-11-09 22:42 US Mountain Standard Time
