@@ -5,6 +5,31 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.126 (VCFI 0.1.42 unchanged)
+
+Published 2026-11-09 17:17 US Mountain Standard Time
+
+### New: an on-screen keypad for the Auction House
+
+- With the outline on the search box, or on a quantity box when buying, say **select** and a keypad appears.
+- **Numbers** (for quantities): 1 2 3 / 4 5 6 / 7 8 9 / Backspace 0 Done.
+- **Letters** (for the search box): in keyboard order (Q W E R T Y...) with Space, Backspace and Done. The last key switches to A B C order and back; your choice is remembered.
+- **move up / down / left / right** go over the keys; say **enter** to press the outlined key. The tooltip box shows the key and what you have typed so far.
+- **Done** closes the keypad and puts the outline back on the box. Then say **search now** to search.
+- Each key goes straight into that one box. Nothing is typed on your keyboard, so no letter can open a game window by accident.
+
+### Buying with "buy that"
+
+- **At a vendor:** the first "buy that" changes the outline's colour and says what would be bought; say **buy that** again within 30 seconds to buy it. Moving the outline or waiting cancels. This works like "use that" in your bags.
+- **In the Auction House:** "buy that" presses the game's own Buy Now or Buyout button for the auction or quantity on screen; the game's own check comes after.
+- **move right** from the Auction House lists now reaches the buying screen's buttons (Buy Now, Buyout, Bid, Cancel). The box shows each name, and "(not available now)" when it is greyed out.
+
+After installing, use Update and reload the game twice: "enter" gets its key on the second reload.
+
+The game's add-on that comes with VCF is now version 94.
+
+---
+
 ## VCF 0.10.122 and VCFI 0.1.42
 
 Published 2026-11-09 16:08 US Mountain Standard Time
