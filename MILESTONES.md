@@ -70,6 +70,9 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] A key that came before game crashes is never used again
 - [x] An on-screen keypad for the search and quantity boxes
 - [x] Buy at vendors and the Auction House with "buy that"
+- [x] Mail by voice: read the inbox, "get that", send to your characters or a typed name
+- [x] The trade window by voice (built; not yet tested with another player)
+- [x] "move start" works as well as "start move"
 
 ## Still to come
 
@@ -82,5 +85,6 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] Why the game sometimes turns Auto Loot off by itself
 - [ ] Item sets: several items under one word (later)
 - [ ] A first-time install tested on a fresh computer
-- [ ] The trade window by voice
+- [ ] Trade tested with another player
+- [ ] The bank by voice, and "move that" to move items between bank and bags
 - [ ] The spellbook by voice, in a way the game allows

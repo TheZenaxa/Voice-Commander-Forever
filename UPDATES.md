@@ -5,6 +5,36 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.131 (VCFI 0.1.43 unchanged)
+
+Published 2026-11-09 19:56 US Mountain Standard Time
+
+### New: mail by voice
+
+- At a mailbox, say **start move** (or **move start**) to begin. Nothing appears until you do.
+- **Your inbox:** move up and down through your mail. The tooltip box shows who it is from, the subject, money, items and the days left. Say **select** to open a mail; the box shows the letter.
+- **get that** takes the outlined item or money into your bags. Mail that is cash on delivery is not taken by voice.
+- **Sending:** select the Send Mail tab. On the To box, **select** gives a list: Type a name (the on-screen letter pad) first, then your characters. Move through it and say **enter** to choose. The Subject and letter use the letter pad, the money boxes the number pad. **move my box** goes to your bags, where **use that** attaches an item.
+- **send mail**, said once, shows the whole mail in the box; said again within 30 seconds it sends it.
+
+### New: trade by voice
+
+- After a trade opens, say **start move**. The box shows who the trade is with and both sides of it.
+- **use that** in your bags puts an item in the trade. **select** on your gold, silver or copper opens the number pad.
+- **finish trade**, said once, shows what you give and what you get; said again within 30 seconds it accepts. If either side changes the trade in between, nothing is accepted and the new terms are shown.
+- Trade has not been tested with another player yet.
+
+### Also
+
+- **move start** now works as well as **start move**, everywhere.
+- While the outline is in the mailbox or a trade, the game's typing cursor is kept out of their boxes, so your voice commands are not typed into them.
+
+After installing, reload the game twice.
+
+The game's add-on that comes with VCF is now version 99.
+
+---
+
 ## VCF 0.10.126 and VCFI 0.1.43
 
 Published 2026-11-09 17:19 US Mountain Standard Time
