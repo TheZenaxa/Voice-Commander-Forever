@@ -75,6 +75,9 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] "move start" works as well as "start move"
 - [x] The bank by voice, and "move that" to move items between the bank and your bags or sort your bags
 - [x] "tick yes" and "tick no" answer the game's question boxes
+- [x] Camera up and lower camera, 1 to 3
+- [x] Choosing a quest reward by voice
+- [x] VCFI has trade, mail, the bank, move that, tick yes and tick no, and the camera tilt
 
 ## Still to come
 

@@ -5,6 +5,33 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.142 and VCFI 0.1.45
+
+Published 2026-11-09 21:54 US Mountain Standard Time
+
+### New in both
+
+- **Camera up / lower camera (1 to 3):** tilts the camera a little up or down. "camera up one" is the smallest nudge, "two" twice that, "three" twice that again. "lower camera one" to "three" go the other way.
+- **Choosing a quest reward:** when a quest offers a choice, say **start move**, move to the reward, **select** it, then **complete**. With nothing to choose, select and complete work as before.
+- **The glossary** now lists the window commands (start move, select, enter, buy, take off, finish trade, send mail, get that, move that, tick yes and tick no, camera up and more), each with where to find it in the Control Panel.
+
+### New in VCFI 0.1.45
+
+VCFI now has everything that came to VCF from 0.10.127 to 0.10.142:
+- Trade, mail (inbox, "get that", sending), the bank, "move that", and the guild bank (PENDING TESTING).
+- Answering the game's question boxes ("tick yes" / "tick no" in English). Every VCFI question box shows the words that answer it.
+- "move start" as well as "start move" (English).
+- For testing, the game's add-on keeps a short note of your controller button presses next to its voice key presses. It stays on your computer and nothing is uploaded. It will be taken out when testing is done.
+
+Only in VCFI:
+- The new commands have words in each spoken language (for example "finir échange", "Post senden", "cámara arriba uno", "回答是"), and the new screen text is shown in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+The game's add-on that comes with VCF and VCFI is now version 108 in both.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.138 (VCFI 0.1.43 unchanged)
 
 Published 2026-11-09 21:11 US Mountain Standard Time
