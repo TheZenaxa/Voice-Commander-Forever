@@ -5,6 +5,44 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.138 (VCFI 0.1.43 unchanged)
+
+Published 2026-11-09 21:11 US Mountain Standard Time
+
+### New: the bank by voice
+
+- At the bank, say **start move** (or **move start**). The outline goes over the bank's slots, its tabs and its buttons, such as Purchase and the bag slots. The tooltip box shows each one.
+- **select** on a tab opens it, and on a button presses it. When you buy a bank slot, the game asks its own question first.
+- **move my box** goes between the bank and your bags.
+
+### New: "move that"
+
+- Say **move that** on an item to pick it up. Move to where it should go and say **move that** again to put it down. On another item, the two swap places.
+- It works in your bags for sorting, and between the bank and your bags.
+- **stop move** while you are holding an item puts it back where it was.
+
+### New: the guild bank (PENDING TESTING)
+
+- It works like the bank: **start move**, the tabs and buttons, and **move that** between the guild bank and your bags.
+- It has not been tested in the game yet.
+
+### Answering the game's questions
+
+- **tick yes** and **tick no** answer the question box the game shows: an invite, buying a bank slot, or anything else it asks. They replace "accept invite" and "decline invite".
+- **tick yes** asks yes or no in VCF first. **tick no** answers straight away.
+- Every VCF question box now says the words that answer it: **yes do that** or **no do not**.
+
+### Also
+
+- Mail: the item count and the money in the mail summary now read correctly.
+- For testing, the game's add-on keeps a short note of your controller button presses next to its voice key presses. It stays on your computer and nothing is uploaded. It will be taken out when testing is done.
+
+After installing, reload the game twice.
+
+The game's add-on that comes with VCF is now version 105.
+
+---
+
 ## VCF 0.10.131 (VCFI 0.1.43 unchanged)
 
 Published 2026-11-09 19:56 US Mountain Standard Time

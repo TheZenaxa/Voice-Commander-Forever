@@ -73,6 +73,8 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Mail by voice: read the inbox, "get that", send to your characters or a typed name
 - [x] The trade window by voice (built; not yet tested with another player)
 - [x] "move start" works as well as "start move"
+- [x] The bank by voice, and "move that" to move items between the bank and your bags or sort your bags
+- [x] "tick yes" and "tick no" answer the game's question boxes
 
 ## Still to come
 
@@ -86,5 +88,5 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] Item sets: several items under one word (later)
 - [ ] A first-time install tested on a fresh computer
 - [ ] Trade tested with another player
-- [ ] The bank by voice, and "move that" to move items between bank and bags
+- [ ] The guild bank by voice (built, pending testing)
 - [ ] The spellbook by voice, in a way the game allows
