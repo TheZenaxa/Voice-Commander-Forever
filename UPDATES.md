@@ -5,6 +5,26 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.126 and VCFI 0.1.43
+
+Published 2026-11-09 17:19 US Mountain Standard Time
+
+### New in VCFI 0.1.43
+
+VCFI now has what came to VCF in 0.10.126:
+
+- **An on-screen keypad** for the Auction House search box and quantity boxes: say select on the box, move over the keys, and say enter (in your language) to press one. Numbers for quantities; letters in keyboard order, with a key that switches to A B C order. Done closes it. Nothing is typed on your keyboard, so no letter can open a game window by accident.
+- **Buying with "buy that":** at a vendor, say it once to see what would be bought (the outline changes colour), and again to buy. In the Auction House it presses the game's own Buy Now or Buyout button. The buying screen's buttons can now be outlined.
+
+Only in VCFI:
+- The new "enter" has its own words in each spoken language (for example "valider" in French), and its name is shown in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet. The keypad's own keys are letters and numbers, the same in every language.
+
+VCF is the same as 0.10.126. The game's add-on that comes with VCF and VCFI is now version 94 in both.
+
+After installing, use Update and reload the game twice: "enter" gets its key on the second reload.
+
+---
+
 ## VCF 0.10.126 (VCFI 0.1.42 unchanged)
 
 Published 2026-11-09 17:17 US Mountain Standard Time

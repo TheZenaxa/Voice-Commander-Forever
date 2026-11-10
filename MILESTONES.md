@@ -68,8 +68,8 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Accept or decline guild invites by voice, with a yes/no check before accepting
 - [x] Fly from a flight master by voice, with a yes/no check before take-off
 - [x] A key that came before game crashes is never used again
-- [x] An on-screen keypad for the search and quantity boxes (VCF; VCFI to follow)
-- [x] Buy at vendors and the Auction House with "buy that" (VCF; VCFI to follow)
+- [x] An on-screen keypad for the search and quantity boxes
+- [x] Buy at vendors and the Auction House with "buy that"
 
 ## Still to come
 
