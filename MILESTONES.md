@@ -81,6 +81,18 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Follow a friendly (start walk / stop walk), walk 1 to 3, and snap cam
 - [x] NPCs by voice: say friend first, then talk or shop
 
+## Milestone 8: Keys and your voice (10 to 11 November 2026)
+
+- [x] KEY TEST: finds keys that never reach the game on your computer, and the program stops using them
+- [x] KEY CLEANUP and OOPS!, and a FREE KEY ON CLEANUP tick box for each command
+- [x] No "keys you cannot touch": your own game keys always win; Drink and Eat use the last two slots of your main bar
+- [x] Move up, down, left and right by 2 to 20 spaces at once, with no new keys
+- [x] Voice check: ignores voices clearly outside your own pitch range, learned from how you really talk, with "My lowest note"
+- [x] Blunt background noise: Windows hears your words better when the room is noisy
+- [x] Vowel check: built, learning how you say your vowels (switch it on when it says READY)
+- [x] READY PITCH and READY FORMANTS on the MIC IS box when a check has proved itself
+- [x] All of the above in VCFI too, in every VCFI language
+
 ## Still to come
 
 - [ ] Profession abilities (Cooking, First Aid, Find Minerals and others) tested by voice, so they leave "ALPHA TESTING"
@@ -95,3 +107,6 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] Trade tested with another player
 - [ ] The guild bank by voice (built, pending testing)
 - [ ] The spellbook by voice, in a way the game allows
+- [ ] The vowel check proven in play (READY FORMANTS)
+- [ ] Dictating chat by voice (planned)
+- [ ] Heal, potions, bandages and Healthstone by voice
