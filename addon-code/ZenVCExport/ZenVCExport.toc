@@ -1,0 +1,7 @@
+## Interface: 16001
+## Version: 120
+## Title: VCF Helper
+## Notes: The helper for the VCF app (Voice Commander Forever). Reads your spells, items and key bindings for the app, and gives voice commands their own keys without changing your key bindings. When you ask by voice, it outlines items in bags and windows, shows their tooltips, and uses or destroys an item after you confirm. When you ask by voice, it also moves and sizes pieces of the screen in the game's Edit Mode layouts (limited editing). It widens the interact range while you fish and puts it back afterward.
+## SavedVariables: ZenVCExportDB
+ZenVCCommands.lua
+ZenVCExport.lua
