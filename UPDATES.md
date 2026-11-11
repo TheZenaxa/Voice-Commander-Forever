@@ -5,6 +5,36 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.175 and VCFI 0.10.175 (limited editing by voice, experimental; add-on code public)
+
+Published 2026-11-11 16:52 US Mountain Standard Time
+
+### Limited editing: move and size pieces of the screen by voice (new, EXPERIMENTAL, VCF and VCFI)
+
+- Say **"edit layout"** (out of combat, with the game's own Edit Mode window closed). The first piece of the screen gets the outline, and chat names it.
+- **"next piece"** / **"previous piece"** move the outline between pieces. Only pieces really on screen are offered: keyboard and mouse mode shows more pieces than the gamepad UI.
+- **"move up 5"**, **"move left 10"** and the other moves shift the piece (one step is 5 pixels). **"bigger"**, **"smaller"** and **"normal size"** change its size.
+- **"done editing"** keeps the changes; **"cancel editing"** puts everything back as it was. Entering combat ends editing by itself.
+- **Why "limited":** only a piece's place and its size can be changed by voice. Text size, vertical or horizontal, the number of buttons and the other Edit Mode settings stay in the game's own Edit Mode.
+- **Safe by design:** the helper never moves the game's frames itself and never opens the game's Edit Mode window. It changes the layout and the game places its own frames. The game's own layouts cannot be changed, so the first change makes a copy named "Voice Commander" and says so; you can switch back in the game's Edit Mode at any time.
+- **One new key only:** "edit layout". The other words borrow keys that already exist and do no harm if said outside editing.
+- VCFI: the eight new commands have their words in all six languages, and the screens are translated.
+
+### The helper add-on's code is public
+
+- Both helper add-ons (VCF Helper and VCFI Helper) can now be read on this page in **addon-code**, before installing, as Blizzard's add-on policy asks. They are the same files as in these downloads (add-on version 120). Copyright TheZenaxa, all rights reserved: readable, not free to copy.
+- The add-on's first lines now say what it really does.
+
+### Credits
+
+- Limited editing changes the game's Edit Mode layout in the way shown by Improved Forever by markgravity (MIT), and parts of its add-on code follow Improved Forever's; its license is in the add-on and in THIRD-PARTY-NOTICES. The method is also that of LibEditModeOverride by plusmouse (MIT); none of its code is used. See Credits in the FAQ.
+
+The game's add-on that comes with VCF and VCFI is now version 120.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.172 and VCFI 0.10.172 (matching numbers; VCFI dictation, experimental)
 
 Published 2026-11-11 15:39 US Mountain Standard Time
