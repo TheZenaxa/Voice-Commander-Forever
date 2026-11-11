@@ -5,6 +5,35 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.160 and VCFI 0.1.55
+
+Published 2026-11-10 19:19 US Mountain Standard Time
+
+### Move by more than one space
+
+- **move up / down / left / right** with a number from two to twenty moves the outline that many spaces at once: "move down five", "move right twenty". They use the keys you already have, so no new keys are needed. Under Interaction in the Control Panel, and in the glossary.
+
+### Voice check (new)
+
+- VCF and VCFI can learn your voice, and then ignore voices that are not yours: a stream, a TV, or someone else in the room.
+- It learns your voice in **TEST MY WORDS**: the words it hears correctly teach it your voice, and 10 are enough. Each person teaches it their own voice. Nothing is recorded: only a few numbers about your voice are kept, on your PC.
+- Switch it on or off with the tick box under TEST MY WORDS in the Control Panel. Turn it off if it ever ignores your own words (for example when another voice in the room sounds very like yours).
+- The voice check is based on VIRTY-VOX by TheZenaxa (see Credits in the FAQ).
+
+### Key test
+
+- The result now just says how many keys work and that there is nothing to do, for example "KEY TEST DONE: 204 of 214 keys work. VCF skips the other 10. Nothing to do."
+
+### Only in VCFI
+
+- The move words have numbers in each spoken language (for example "vers le bas cinq", "nach rechts zwanzig", "向左十七"), and the new screen text is in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet.
+
+The game's add-on that comes with VCF and VCFI is now version 117 in both.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.156 and VCFI 0.1.54
 
 Published 2026-11-10 18:04 US Mountain Standard Time
