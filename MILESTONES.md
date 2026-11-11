@@ -108,5 +108,5 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] The guild bank by voice (built, pending testing)
 - [ ] The spellbook by voice, in a way the game allows
 - [ ] The vowel check proven in play (READY FORMANTS)
-- [ ] Dictating chat by voice (planned)
+- [ ] Dictating chat, mail and Auction House searches by voice (built in VCF 0.10.171, EXPERIMENTAL; VCFI to come)
 - [ ] Heal, potions, bandages and Healthstone by voice

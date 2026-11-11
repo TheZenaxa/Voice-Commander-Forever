@@ -5,6 +5,40 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.171 (VCFI 0.1.56 unchanged): dictation, experimental
+
+Published 2026-11-11 15:23 US Mountain Standard Time
+
+### Dictation into chat (new, EXPERIMENTAL)
+
+- Made and tested for English speech while playing World of Warcraft: Forever: typing your own chat messages, mail and Auction House searches by voice.
+- **Optional, off until you switch it on** in the Control Panel. **It requires downloading the Whisper speech model to your PC** (about 148 MB, once, from the whisper.cpp project). VCF asks before downloading.
+- **Nothing is sent off your PC by the program.** Whisper runs only on your PC; nothing you say is sent anywhere.
+- Say **"dictation"** (the game's current chat channel) or **"chat say", "chat yell", "chat party", "chat guild", "chat reply", "chat whisper"** and the other "chat" words, speak your message, then **"send chat"** to send it or **"close chat"** to throw it away.
+- **"chat whisper"** goes to your player target with their exact name; with no player targeted, the letter pad opens to spell the name.
+- **Mail and the Auction House:** select a box (the letter pad opens), say **"dictation"** and speak, then **"stop dictation"**, then "send mail" or "search now".
+- A slider sets how long a pause ends a dictated sentence, for slower speakers. It only applies while dictating.
+- The chat commands' words are now "chat ..." on every character (older sheets that still had the old words, like "say" or "party", are moved over; words you chose yourself are kept).
+
+### Second chance (new, EXPERIMENTAL)
+
+- When Windows is too unsure of a command, Whisper listens to the same words again, and if it clearly heard one of your commands, VCF does it, about a third of a second later. Commands Windows is sure of are never slowed down. Same download, same switch rules: off until you switch it on.
+
+### Your log, your choice
+
+- The log on your PC lists the commands heard and the messages you dictate, to help find problems. It never leaves your PC.
+- In the Control Panel, choose how long to keep it: never delete (the default), 1, 3, 7, 14 or 30 days. **DELETE THE LOG NOW** deletes it all at once, after asking.
+
+### Credits
+
+- Whisper speech model by OpenAI (MIT), run with whisper.cpp by the ggml authors (MIT) and Whisper.net by Sandro Hanea (MIT). See Credits in the FAQ.
+
+The game's add-on that comes with VCF is now version 118.
+
+After installing, reload the game twice.
+
+---
+
 ## VCFI 0.1.56 (VCF 0.10.167 unchanged)
 
 Published 2026-11-11 01:14 US Mountain Standard Time
