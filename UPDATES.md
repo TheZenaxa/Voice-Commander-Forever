@@ -5,6 +5,39 @@ Download the newest setup from the front page.
 
 ---
 
+## VCFI 0.1.56 (VCF 0.10.167 unchanged)
+
+Published 2026-11-11 01:14 US Mountain Standard Time
+
+VCFI now has everything from VCF 0.10.167:
+
+### Hearing you better
+
+- **Blunt background noise (new, on):** while nobody is talking, VCFI learns what your background sounds like (a fan, music, a hum) and takes some of it out of each phrase before Windows listens. It only works when the background is noisy; in a quiet room your voice is left exactly as it is. Tick box under the volume in the Control Panel.
+- **Vowel check (new, off until you switch it on):** checks that the vowels you said match the command Windows heard, and ignores the command when they clearly do not. It learns how YOU say your vowel sounds and each phrase, from TEST MY WORDS and from play.
+
+### Voice check, improved
+
+- The voice check now looks at the **pitch** of your voice only, learned from how you really talk in play.
+- **My lowest note:** pick your lowest note (C2 to C4) under the voice check. Nothing at or above it is ever ignored as too low.
+
+### Know when a check is ready
+
+- The voice check and the vowel check both learn while they are OFF and show their own record in the Control Panel. When a check has proved itself, the MIC IS box says **READY PITCH** or **READY FORMANTS**: then tick it on.
+- Nothing is recorded: only numbers about your voice are kept, on your PC.
+
+### Only in VCFI
+
+- The new screen text is in French, German, Spanish and Chinese (Simplified and Traditional). These have not been checked by native speakers yet. The voice and vowel checks work in every language VCFI listens in.
+
+### Credits
+
+- The voice check is based on VIRTY-VOX by TheZenaxa. Noise blunting and the vowel check are written for VCFI from published methods (see Credits in the FAQ).
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.167 (VCFI 0.1.55 unchanged)
 
 Published 2026-11-11 01:08 US Mountain Standard Time
