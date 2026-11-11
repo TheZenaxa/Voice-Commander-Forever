@@ -5,6 +5,46 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.172 and VCFI 0.10.172 (matching numbers; VCFI dictation, experimental)
+
+Published 2026-11-11 15:39 US Mountain Standard Time
+
+### The version numbers now match (skipped on purpose)
+
+- From now on VCF and VCFI share one version number. **VCFI jumps from 0.1.56 to 0.10.172: the numbers 0.1.57 to 0.10.171 were skipped on purpose**, so VCFI's number matches VCF's. Nothing is missing.
+- VCF 0.10.172 is VCF 0.10.171 with corrected license notices (below); nothing else in VCF changed.
+
+### VCFI: dictation into chat (new, EXPERIMENTAL)
+
+- Made for speech in the language VCFI listens in (English, French, German, Spanish, Japanese or Chinese) while playing World of Warcraft: Forever: typing your own chat messages, mail and Auction House searches by voice. **So far tested only in English.**
+- **Optional, off until you switch it on** in the Control Panel. **It requires downloading the Whisper speech model to your PC** (about 148 MB, once, from the whisper.cpp project; VCFI uses Whisper's many-language model). VCFI asks before downloading. No account or sign-in is needed.
+- **Nothing is sent off your PC by the program.** Whisper runs only on your PC; nothing you say is sent anywhere.
+- Say your words for **"dictation"** (the game's current chat channel) or the chat channel words (chat say, chat yell, chat party, chat guild, chat reply, chat whisper and the others), speak your message, then **"send chat"** to send it or **"close chat"** to throw it away. The FAQ and glossary show the words in your language.
+- **"chat whisper"** goes to your player target with their exact name; with no player targeted, the letter pad opens to spell the name.
+- **Mail and the Auction House:** select a box (the letter pad opens), say "dictation" and speak, then "stop dictation", then "send mail" or "search now".
+- A slider sets how long a pause ends a dictated sentence, for slower speakers. It only applies while dictating.
+- **If the download fails:** the model comes from huggingface.co, which is blocked in some countries and regions (mainland China is one) and on some school, work or public networks. VCFI works as before without dictation; the FAQ explains this.
+
+### VCFI: second chance (new, EXPERIMENTAL)
+
+- When Windows is too unsure of a command, Whisper listens to the same words again, and if it clearly heard one of your commands, VCFI does it, about a third of a second later. Commands Windows is sure of are never slowed down. Same download, same rule: off until you switch it on.
+
+### VCFI: your log, your choice
+
+- The log on your PC lists the commands heard and the messages you dictate, to help find problems. It never leaves your PC.
+- In the Control Panel, choose how long to keep it: never delete (the default), 1, 3, 7, 14 or 30 days. **DELETE THE LOG NOW** deletes it all at once, after asking.
+
+### Credits and license notices (VCF and VCFI)
+
+- Whisper speech model by OpenAI (MIT), run with whisper.cpp by the ggml authors (MIT) and Whisper.net by Sandro Hanea (MIT). See Credits in the FAQ.
+- The THIRD-PARTY-NOTICES file installed with each program now also lists whisper.cpp and the Whisper model with their full license texts, and Whisper.net is correctly shown as MIT.
+
+VCFI's add-on is now version 118, the same as VCF's.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.171 (VCFI 0.1.56 unchanged): dictation, experimental
 
 Published 2026-11-11 15:23 US Mountain Standard Time
