@@ -5,6 +5,42 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.156 and VCFI 0.1.54
+
+Published 2026-11-10 18:04 US Mountain Standard Time
+
+### More keys
+
+- 34 more key combinations for the hidden keys (Alt+Shift and Ctrl+Shift with Home, End, Page Up, Page Down, Insert, Delete, Backspace, minus, equals, the arrow keys, and Ctrl+Shift with punctuation). No key you already have moves.
+- A key you set in the game's own Key Bindings always wins: if it was one of the program's hidden keys, the program gives its command another key and says so.
+
+### No more "keys you cannot touch"
+
+- No game key is off limits. The program reads your keys at every double reload and follows them. If an action it needs (Jump, Autorun, Attack Target, Target Nearest Enemy, Interact) has no key at all, it gives it a hidden key of its own.
+- Drink and Eat use the last two slots of your main action bar (the - and = keys on a new character, where the game puts your water and food). Whatever you put in that slot is what the words use.
+- The setup guide's first page: switch on all of the game's action bars (you can keep them hidden), set each to the most slots it allows, and a tip for controller players.
+
+### KEY TEST (on the MIC IS box)
+
+- Finds key combinations that never reach the game on your computer, and the program stops using them. Click KEY TEST, reload twice, click KEY TEST again, then click the game: it starts 10 seconds later. The button shows where the test stands. If it stops, click it again and it carries on where it stopped. Only a finished test counts.
+
+### KEY CLEANUP, OOPS! and FREE KEY ON CLEANUP
+
+- KEY CLEANUP (MIC IS box) frees keys still held for commands that were removed, and keys of commands that are switched off AND ticked FREE KEY ON CLEANUP in the Control Panel. Switched off alone keeps its key. It shows the list and changes nothing until you say yes. OOPS! (next to import and export) puts the last cleanup back.
+- A command you delete gives its key back by itself at the next double reload.
+
+### Removed
+
+- The quiet NPC switch is taken out: it did not help and it used a key. Say **friend** first, then **talk** or **shop**.
+
+Guild bank: still pending testing.
+
+The game's add-on that comes with VCF and VCFI is now version 116 in both.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.149 and VCFI 0.1.47
 
 Published 2026-11-10 00:07 US Mountain Standard Time
