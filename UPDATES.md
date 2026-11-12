@@ -5,6 +5,34 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.186 and VCFI 0.10.186 (trainers by voice; professions, experimental)
+
+Published 2026-11-12 00:41 US Mountain Standard Time
+
+### Trainers by voice (new)
+
+- At a trainer, say **"start move"**: the outline goes into the trainer's list. **"move up"** and **"move down"** walk it; section lines show + or -, and **"select"** opens or closes them.
+- The box under the outline shows the skill's tooltip and cost, and whether you can train it, already know it, or cannot yet.
+- **"select"** shows the skill. **"buy"** asks first, and a second **"buy"** trains it.
+- Tested in the game.
+
+### Professions by voice (new, EXPERIMENTAL)
+
+- With your professions window open, say **"start move"**: the outline goes into the recipe list. **"move up"** and **"move down"** walk the recipes and section lines (+ or -); the list scrolls by itself.
+- The box under the outline shows what the recipe makes, what it needs and how many of each you have, and how many you can make.
+- **"select"** chooses the recipe, or opens and closes a section. **"move my box"** goes to the profession tabs down the side, and back.
+- Crafting (the Create button) is not done by voice yet. Not tested in the game yet.
+
+### The guide
+
+- New chapters: MOVE (windows by voice, the map and quest log) and READ QUEST. Open it from the FAQ (OPEN THE GUIDE), or with THE GUIDE button on this page.
+
+The game's add-on that comes with VCF and VCFI is now version 130, and its code is on this page in addon-code.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.184 and VCFI 0.10.184 (the illustrated guide)
 
 Published 2026-11-11 21:33 US Mountain Standard Time

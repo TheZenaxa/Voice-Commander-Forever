@@ -49,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "127"
+local VERSION = "130"
 
 -- ------------------------------------------------------------------------------------------------------------------
 -- Ranks. The game casts the rank that is on the button. Default: the HIGHEST rank you know. Per character and per spell
@@ -1682,6 +1682,104 @@ local function qgreetFirstByNumber()
 end
 QG.open = function() return isUp("QuestFrameGreetingPanel") end
 QG.chosen, QG.pick, QG.first = qgreetChosen, qgreetPick, qgreetFirstByNumber
+-- v130 the PROFESSIONS window: its recipe list (from the list's own data, so every line is there, not only those on screen) and its tabs
+do
+function QG.profOpen()
+    local pf = _G.ProfessionsFrame
+    return (pf and pf.IsVisible and pf:IsVisible() and pf.CraftingPage and pf.CraftingPage.IsVisible and pf.CraftingPage:IsVisible()) and true or false
+end
+function QG.profSB()
+    local pf = _G.ProfessionsFrame
+    return pf and pf.CraftingPage and pf.CraftingPage.RecipeList and pf.CraftingPage.RecipeList.ScrollBox
+end
+function QG.profLines()
+    local list = {}
+    pcall(function()
+        local sb = QG.profSB()
+        local dp = sb and sb.GetDataProvider and sb:GetDataProvider()
+        if not dp then return end
+        local function add(node)
+            local d = (node and node.GetData and node:GetData()) or node
+            if type(d) ~= "table" then return end
+            if d.recipeInfo then
+                local r = d.recipeInfo
+                list[#list + 1] = { prof = true, node = node, recipeID = r.recipeID, info = r, name = tostring(r.name) }
+            elseif d.categoryInfo then
+                local col = node.IsCollapsed and node:IsCollapsed() and true or false
+                list[#list + 1] = { prof = true, node = node, header = true, closed = col, name = tostring(d.categoryInfo.name) .. (col and " +" or " -") }
+            end
+        end
+        if dp.EnumerateEntireRange then for _, node in dp:EnumerateEntireRange() do add(node) end
+        elseif dp.Enumerate then for _, node in dp:Enumerate() do add(node) end
+        elseif dp.ForEach then dp:ForEach(add) end
+    end)
+    return list
+end
+-- the profession tabs down the side (the overview, then each profession)
+function QG.profTabs()
+    local list = {}
+    local pf = _G.ProfessionsFrame
+    if not pf then return list end
+    for _, key in ipairs({ "ProfessionsOverviewTab", "Professions1Tab", "Professions2Tab", "Professions3Tab", "Professions4Tab", "Professions5Tab" }) do
+        local tab = pf[key]
+        if tab and tab.IsVisible and tab:IsVisible() then
+            local nm = tab.tooltipText or tab.tooltip or (tab.Text and tab.Text.GetText and tab.Text:GetText()) or (tab.GetText and tab:GetText())
+            if type(nm) ~= "string" or nm == "" then nm = (key == "ProfessionsOverviewTab") and "Overview" or ("profession " .. key:match("%d")) end
+            list[#list + 1] = { prof = true, tab = true, fr = tab, name = nm }
+        end
+    end
+    return list
+end
+-- the outlined line on screen: scrolled into view first (the list is longer than its window)
+function QG.profFrame(e)
+    if not (e and e.node) then return e and e.fr end
+    local sb = QG.profSB()
+    if not sb then return nil end
+    pcall(function() sb:ScrollToElementData(e.node, ScrollBoxConstants and ScrollBoxConstants.AlignNearest) end)
+    local ok, fr = pcall(function() return sb:FindFrame(e.node) end)
+    return ok and fr or nil
+end
+end
+-- v129 a TRAINER's list, from the game's own trainer functions; the outline is the line on screen with the same text
+do
+function QG.trainerOpen()
+    return (GetNumTrainerServices and GetTrainerServiceInfo and (isUp("ClassTrainerFrame") or isUp("TrainerFrame"))) and true or false
+end
+function QG.trainerLines()
+    local list = {}
+    pcall(function()
+        local root = (isUp("ClassTrainerFrame") and _G.ClassTrainerFrame) or _G.TrainerFrame
+        local byText = {}
+        local function textOf(c)
+            local t = c.GetText and c:GetText()
+            for _, k in ipairs({ "name", "Name", "Text", "text" }) do
+                if (type(t) ~= "string" or t == "") and type(c[k]) == "table" and c[k].GetText then t = c[k]:GetText() end
+            end
+            return t
+        end
+        local function scan(fr, depth)
+            if depth > 7 then return end
+            for _, c in ipairs({ fr:GetChildren() }) do
+                if c.IsVisible and c:IsVisible() then
+                    local t = textOf(c)
+                    if type(t) == "string" and t ~= "" and not byText[t] and (c.GetHeight and c:GetHeight() or 0) < 60 then byText[t] = c end
+                    scan(c, depth + 1)
+                end
+            end
+        end
+        if root then scan(root, 0) end
+        for i = 1, (GetNumTrainerServices() or 0) do
+            local name, rank, cat, expanded = GetTrainerServiceInfo(i)
+            if name then
+                local header = cat == "header"
+                local label = header and (name .. (expanded and " -" or " +")) or (name .. ((type(rank) == "string" and rank ~= "") and (" (" .. rank .. ")") or ""))
+                list[#list + 1] = { fr = byText[name], trainer = i, header = header, closed = header and not expanded, cat = cat, name = label, plain = name }
+            end
+        end
+    end)
+    return list
+end
+end
 
 local function merchantOpen() return isUp("MerchantFrame") and (not MerchantFrame.selectedTab or MerchantFrame.selectedTab == 1) end
 local function merchantSlots()
@@ -2842,7 +2940,11 @@ local function lightUp(list)
     disarm()   -- moving to another item cancels a waiting use or destroy
     local e = list[mark.i]
     if e then
+        if e.prof and e.node then e.fr = QG.profFrame(e) end   -- v130 a recipe or section line: scrolled into view, then outlined
         if e.fr then markerOn(e.fr) elseif markFrame then markFrame:Hide() end   -- v88: a flight point may have no button
+        if (mark.kind == "prof" or mark.kind == "proftab") and e.fr then pcall(function()   -- v130 select = the game's own click on it
+            QG.profSel = e.fr; aimKey("/click zenvciselect", "ZenVCIProfSelect", e.fr)
+        end) end
         if (mark.kind == "qlog" or mark.kind == "qmap") and e.fr then pcall(function()   -- v124
             if mark.kind == "qlog" then QG.qlogShow(e) end
             QG.mapSel = e.fr; aimKey("/click zenvciselect", "ZenVCIMapSelect", e.fr)
@@ -2925,6 +3027,45 @@ local function lightUp(list)
                 local typed = pad.box and pad.box.GetText and pad.box:GetText() or ""
                 t:AddLine("Typed: " .. (typed ~= "" and typed or "(nothing yet)"), 1, 1, 1)
                 t:AddLine("Say {Keypad Enter:enter} to press it", 0.6, 0.6, 0.6)
+            elseif e.prof then   -- v130 the professions window
+                if e.tab then
+                    t:SetText(tostring(e.name), 1, 1, 1)
+                    t:AddLine("Say {Select:select} to open it, or {Move My Box:move my box} for the recipes", 0.6, 0.6, 0.6)
+                elseif e.header then
+                    t:SetText(tostring(e.name), 1, 1, 1)
+                    t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 0.6, 0.6, 0.6)
+                else
+                    local ok = e.recipeID and t.SetRecipeResultItem and pcall(t.SetRecipeResultItem, t, e.recipeID)
+                    if not ok and e.recipeID and C_TradeSkillUI and C_TradeSkillUI.GetRecipeItemLink then
+                        local link = C_TradeSkillUI.GetRecipeItemLink(e.recipeID)
+                        ok = link and pcall(t.SetHyperlink, t, link)
+                    end
+                    if not ok then t:SetText(tostring(e.name), 1, 1, 1) end
+                    local sch = e.recipeID and C_TradeSkillUI and C_TradeSkillUI.GetRecipeSchematic and C_TradeSkillUI.GetRecipeSchematic(e.recipeID, false)
+                    for _, slot in ipairs((sch and sch.reagentSlotSchematics) or {}) do
+                        local r = slot.reagents and slot.reagents[1]
+                        if r and r.itemID then
+                            local nm = (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(r.itemID)) or (GetItemInfo and GetItemInfo(r.itemID)) or ("item " .. r.itemID)
+                            local have = (C_Item and C_Item.GetItemCount and C_Item.GetItemCount(r.itemID)) or (GetItemCount and GetItemCount(r.itemID)) or 0
+                            t:AddLine("Needs: " .. tostring(slot.quantityRequired or 1) .. " x " .. tostring(nm) .. " (you have " .. tostring(have) .. ")", 1, 1, 1)
+                        end
+                    end
+                    if e.info and type(e.info.numAvailable) == "number" then t:AddLine("You can make: " .. e.info.numAvailable, 1, 1, 1) end
+                    t:AddLine("Say {Select:select} to choose it, or {Move My Box:move my box} for the tabs", 0.6, 0.6, 0.6)
+                end
+            elseif e.trainer then   -- v129 a trainer's line
+                if e.header then
+                    t:SetText(tostring(e.name), 1, 1, 1)
+                    t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 0.6, 0.6, 0.6)
+                else
+                    local shown = t.SetTrainerService and pcall(t.SetTrainerService, t, e.trainer)
+                    if not shown then t:SetText(tostring(e.name), 1, 1, 1) end
+                    local cost = GetTrainerServiceCost and GetTrainerServiceCost(e.trainer)
+                    if cost and cost > 0 and GetMoneyString then t:AddLine("Cost: " .. GetMoneyString(cost, true), 1, 1, 1) end
+                    if e.cat == "available" then t:AddLine("Say {Buy:buy} to train it", 0.6, 0.6, 0.6)
+                    elseif e.cat == "used" then t:AddLine("Already known", 0.6, 0.6, 0.6)
+                    else t:AddLine("Not available yet", 0.6, 0.6, 0.6) end
+                end
             elseif e.header and mark.kind == "qlog" then   -- v127 a zone line in the quest log
                 t:SetText(tostring(e.name), 1, 1, 1)
                 t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 0.6, 0.6, 0.6)
@@ -3447,6 +3588,52 @@ function QG.flip()
     lightUp(list)
 end
 local MAPLOOK = {}
+-- v128 LOOK ONLY for trainer and profession windows (see the note at v128 above startMoveStep's fallback)
+function MAPLOOK.window(quiet)
+    local roots = {}
+    for _, nm in ipairs({ "ClassTrainerFrame", "TradeSkillFrame", "ProfessionsFrame", "CraftFrame", "TrainerFrame" }) do
+        local fr = _G[nm]
+        if fr and fr.IsVisible and fr:IsVisible() then roots[#roots + 1] = nm end
+    end
+    if #roots == 0 then   -- a window by another name: any shown window whose name speaks of trainers, professions or crafting
+        for _, fr in ipairs({ UIParent:GetChildren() }) do
+            local nm = fr.GetName and fr:GetName()
+            if nm and fr.IsVisible and fr:IsVisible() and (nm:find("Trainer") or nm:find("Profession") or nm:find("TradeSkill") or nm:find("Craft")) then roots[#roots + 1] = nm end
+        end
+    end
+    if #roots == 0 then return false end
+    local rec = { at = date("%Y-%m-%d %H:%M:%S"), roots = roots, frames = {}, api = {} }
+    pcall(function()
+        local seen, n = {}, 0
+        local function nameOf(fr)
+            local nm = fr.GetName and fr:GetName()
+            if not nm and fr.GetDebugName then local ok, d = pcall(fr.GetDebugName, fr); if ok then nm = d end end
+            return nm or "?"
+        end
+        local function walk(fr, depth)
+            if n >= 260 or seen[fr] or depth > 6 then return end
+            seen[fr] = true
+            if not (fr.IsVisible and fr:IsVisible()) then return end
+            local w, h = fr.GetWidth and fr:GetWidth() or 0, fr.GetHeight and fr:GetHeight() or 0
+            local txt = fr.GetText and select(2, pcall(fr.GetText, fr)) or nil
+            n = n + 1
+            rec.frames[n] = string.rep(" ", depth) .. nameOf(fr) .. " | " .. tostring(fr.GetObjectType and fr:GetObjectType()) .. string.format(" | %dx%d", w, h)
+                .. ((type(txt) == "string" and txt ~= "") and (" | " .. txt:sub(1, 40)) or "") .. (fr.GetElementData and " | data" or "")
+            for _, c in ipairs({ fr:GetChildren() }) do walk(c, depth + 1) end
+        end
+        for _, nm in ipairs(roots) do walk(_G[nm], 0) end
+        for _, fn in ipairs({ "GetNumTrainerServices", "GetTrainerServiceInfo", "SelectTrainerService", "BuyTrainerService", "GetNumTradeSkills",
+                              "GetTradeSkillInfo", "SelectTradeSkill", "DoTradeSkill", "GetNumCrafts", "GetCraftInfo" }) do
+            rec.api[#rec.api + 1] = fn .. "=" .. type(_G[fn])
+        end
+        rec.api[#rec.api + 1] = "C_TradeSkillUI=" .. type(C_TradeSkillUI)
+        if C_TradeSkillUI then for _, fn in ipairs({ "GetAllRecipeIDs", "GetRecipeInfo", "GetFilteredRecipeIDs", "OpenTradeSkill", "GetCategories" }) do rec.api[#rec.api + 1] = "C_TradeSkillUI." .. fn .. "=" .. type(C_TradeSkillUI[fn]) end end
+        if GetNumTrainerServices then rec.api[#rec.api + 1] = "trainer services=" .. tostring(GetNumTrainerServices()) end
+    end)
+    ZenVCIExportDB._windowLook = rec
+    if not quiet and DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCFI:|r this window was noted for the voice commander (nothing was pressed). Close the game as usual to save the note.") end
+    return true
+end
 function MAPLOOK.run(quiet)
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), frames = {}, pins = {}, api = {} }
     pcall(function()
@@ -3493,6 +3680,7 @@ function MAPLOOK.run(quiet)
 end
 
 local function startMoveStep()
+    if QG.trainerOpen() then pcall(MAPLOOK.window, true) end   -- v129 the trainer window's names, noted quietly
     if isUp("WorldMapFrame") then   -- v124 the map: its quest log side first, then ("move my box") the quest markers
         MAPLOOK.run(true)   -- the quiet record stays, in case some lines are built differently
         local list, kind = QG.qlogOpen() and QG.qlogLines() or {}, "qlog"
@@ -3507,6 +3695,8 @@ local function startMoveStep()
     local tries = {
         { "qreward", function() return TM.qrewardOpen() and TM.qrewardSlots() or {} end },   -- v106
         { "qgreet", qgreetLines },   -- v122 an NPC's list of quests
+        { "prof", function() return QG.profOpen() and QG.profLines() or {} end },   -- v130 the professions window's recipes
+        { "trainer", function() return QG.trainerOpen() and QG.trainerLines() or {} end },   -- v129 a trainer's list
         { "trade", function() return TM.tradeOpen() and TM.tradeSlots() or {} end },   -- v95
         { "mail", function() return TM.mailOpen() and TM.mailSlots() or {} end },   -- v95
         { "bank", function() return TM.bankOpen() and TM.bankSlots() or {} end },   -- v100
@@ -3526,7 +3716,8 @@ local function startMoveStep()
             lightUp(list); return
         end
     end
-    say1("open your bags, a vendor, the auction house, a flight map, a talk window or a quest list first, then say {Start Move:start move}")
+    if MAPLOOK.window() then return end   -- v128 a trainer or professions window: noted, look only, for now
+    say1("open your bags, a vendor, a trainer, your professions, the auction house, a flight map, a talk window or a quest list first, then say {Start Move:start move}")
 end
 
 -- v68: a quiet check twice a second. Reads only: which window is open and which vendor page shows. Nothing is pressed or set in the game's windows.
@@ -3601,6 +3792,7 @@ C_Timer.NewTicker(0.5, function()
         end)
         -- v95 mail: the outline left the mailbox (select back to normal); a waiting "send mail" is cancelled when the mail changes; the outline
         -- follows a change of tab
+        if QG.profSel and not ((mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen()) then aimKey("/click zenvciselect"); QG.profSel = nil end   -- v130
         if QG.mapSel and not ((mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen())) then aimKey("/click zenvciselect"); QG.mapSel = nil end   -- v124
         if mailSelTarget and not ((mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen())) then aimKey("/click zenvciselect"); mailSelTarget = nil end
         -- v98 (user: "it should only do that once MOVE START or START MOVE is initiated")
@@ -3628,7 +3820,7 @@ C_Timer.NewTicker(0.5, function()
             mailLastSend = sv
         else mailLastSend = nil end
         if not mark.kind then lastPage = nil return end
-        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
+        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
         if not open then mark.kind, mark.i = nil, 0; markerOff(); lastPage = nil return end
         if mark.kind == "merchant" then
             local page = MerchantFrame and MerchantFrame.page
@@ -3648,6 +3840,29 @@ local function moveStep(dir)
             mark.i = (mark.i == 0) and 1 or bagNeighbour(list, math.min(mark.i, #list), dir)
             lightUp(list)
             rec.acted = "pad key " .. tostring(list[mark.i] and list[mark.i].padKey)
+            return
+        end
+        if (mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen() then   -- v130 recipes, or the tabs
+            local list = mark.kind == "prof" and QG.profLines() or QG.profTabs()
+            if #list == 0 then say1("nothing here to move to") return end
+            local step = (dir == "up" or dir == "left") and -1 or 1
+            local want = (mark.i == 0) and 1 or mark.i + step
+            if want > #list then say1("end of the list") elseif want < 1 then say1("top of the list") end
+            mark.i = math.max(1, math.min(#list, want))
+            lightUp(list)
+            rec.acted = mark.kind .. " " .. mark.i
+            return
+        end
+        if mark.kind == "trainer" and QG.trainerOpen() then   -- v129 a trainer's list
+            local list = QG.trainerLines()
+            if #list == 0 then say1("nothing here to move to") return end
+            local step = (dir == "up" or dir == "left") and -1 or 1
+            local want = (mark.i == 0) and 1 or mark.i + step
+            if want > #list then say1("end of the list") elseif want < 1 then say1("top of the list") end
+            mark.i = math.max(1, math.min(#list, want))
+            QG.trArm = nil
+            lightUp(list)
+            rec.acted = "trainer " .. mark.i
             return
         end
         if (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) then   -- v124
@@ -3761,6 +3976,21 @@ local function moveStep(dir)
 end
 
 local function buyStep()
+    if mark.kind == "trainer" and QG.trainerOpen() then   -- v129 train the outlined skill: the first "buy" asks, the second trains
+        local e = QG.trainerLines()[mark.i]
+        if not e or e.header then say1("move to a skill first") return end
+        if e.cat ~= "available" then say1(e.cat == "used" and "you already know this" or "this cannot be trained yet") return end
+        if QG.trArm ~= e.trainer then
+            QG.trArm = e.trainer
+            local cost = GetTrainerServiceCost and GetTrainerServiceCost(e.trainer) or 0
+            say1("train " .. tostring(e.name) .. " for " .. ((GetMoneyString and cost and cost > 0) and GetMoneyString(cost, true) or "nothing") .. "? say {Buy:buy} again to train it")
+            return
+        end
+        QG.trArm = nil
+        local ok, err = pcall(BuyTrainerService, e.trainer)
+        say1(ok and ("trained " .. tostring(e.name)) or ("could not train: " .. tostring(err)))
+        return
+    end
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing" }
     pcall(function()
         if not merchantOpen() then rec.acted = "no vendor open" return end
@@ -3835,6 +4065,14 @@ end)
 local function switchSideStep()
     if EM.on then EM.pick(1) return end   -- v120 edit layout: next piece
     if (mark.kind == "qlog" or mark.kind == "qmap") and QG.mapOpen() then QG.flip() return end   -- v124 the map: quest log side <-> map side
+    if (mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen() then   -- v130 recipes <-> the profession tabs
+        local toTabs = mark.kind == "prof"
+        local list = toTabs and QG.profTabs() or QG.profLines()
+        if #list == 0 then say1(toTabs and "no profession tabs here" or "no recipes here") return end
+        mark.kind, mark.i = toTabs and "proftab" or "prof", 1
+        lightUp(list)
+        return
+    end
     pcall(function()
         if mark.kind ~= "bags" then
             -- never opened from here: the game forbids an add-on opening bags in controller mode (v51)
@@ -4141,6 +4379,17 @@ local function tipSizeStep(scale, word)
 end
 
 local function selectStep()
+    if (mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen() then say1("select works here out of combat") return end   -- v130 (out of combat it is aimed at the line itself)
+    if mark.kind == "trainer" and QG.trainerOpen() then   -- v129
+        local e = QG.trainerLines()[mark.i]
+        if not e then return end
+        if e.header then
+            if e.closed then if ExpandTrainerSkillLine then ExpandTrainerSkillLine(e.trainer) end
+            else if CollapseTrainerSkillLine then CollapseTrainerSkillLine(e.trainer) end end
+        elseif SelectTrainerService then SelectTrainerService(e.trainer) end
+        local list = QG.trainerLines(); mark.i = math.min(mark.i, math.max(1, #list)); lightUp(list)
+        return
+    end
     if (mark.kind == "qlog" or mark.kind == "qmap") and QG.mapOpen() then say1("select works on the map out of combat") return end   -- v124 (out of combat it is aimed at the quest itself)
     if mark.kind == "taxi" and taxiOpen() then say1("say {Take Off:take off} to fly to the outlined flight point") return end   -- v90
     if mark.kind == "pad" then padPress() return end   -- v91
