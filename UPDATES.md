@@ -5,6 +5,33 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.180 and VCFI 0.10.180 (the map and quest log by voice)
+
+Published 2026-11-11 20:21 US Mountain Standard Time
+
+### The map and its quest log by voice (new)
+
+- Open the map with the quest log beside it and say **"start move"**: the outline goes on the first quest in the quest log. **"move up"** and **"move down"** walk the quests; the list scrolls to keep the outlined quest in view. **"select"** opens it.
+- **"move my box"** switches to the map's quest markers, a list like the flight master's, and back again, staying on the same quest. On the map, **"select"** shows that quest.
+- The box in the lower middle of the screen shows the quest's name, its objectives (with what is done) and what to say next.
+- Tested in the game with VCF.
+
+### An NPC's list of quests (fixed)
+
+- When an NPC offers several quests, **"select"** and **"accept"** now open the quest the controller has highlighted (or the first one), and **"start move"** walks the list.
+
+### Smaller changes
+
+- **Hints in your own words:** the map and flight master hints say the words you chose in your Control Panel (more hints will follow).
+- **Free keys:** under KEY CLEANUP on the MIC IS box: "Free keys: about N (estimated; KEY CLEANUP can change this)".
+- **A switched-off command:** when the second chance clearly hears a command you have switched off, the MIC IS box says so. Windows often hears a switched-on command instead, so if a chat refuses to open, check in your Control Panel that it is switched on.
+
+The game's add-on that comes with VCF and VCFI is now version 124, and its code is on this page in addon-code.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.176 and VCFI 0.10.176 (read quest aloud by voice)
 
 Published 2026-11-11 17:32 US Mountain Standard Time

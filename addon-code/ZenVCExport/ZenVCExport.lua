@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "121"
+local VERSION = "124"
 
 -- ------------------------------------------------------------------------------------------------------------------
 -- Ranks. The game casts the rank that is on the button. Default: the HIGHEST rank you know. Per character and per spell
@@ -1470,6 +1470,17 @@ end
 -- on screen (Accept, Continue, Complete Quest); with the controller those buttons are hidden, so it asks the game itself: hand in the quest (Continue, then the
 -- reward when there is nothing to choose) or accept the one on offer. It also writes down which quest and
 -- dialog windows were visible and what it did (_quest in the saved data), so that a failure is explained rather than silent.
+-- v122 the quest greeting list (its functions are filled in further down, where the outline code is)
+local QG = {}
+-- 2026-11-11 (user: "the hint of what to say from the users own control panel is a huge help"): this character's own words for a command
+-- (written by the voice commander into ZENVC_CHAR_WORDS), else the usual word
+function QG.word(text, fallback)
+    local gid = UnitGUID and UnitGUID("player")
+    local name = UnitName and UnitName("player")
+    local w = ZENVC_CHAR_WORDS and ((gid and ZENVC_CHAR_WORDS[gid]) or (name and ZENVC_CHAR_WORDS[name]))
+    local v = w and w[text:lower()]
+    return (type(v) == "string" and v ~= "") and v or fallback
+end
 local QUEST_BUTTONS = { "QuestFrameAcceptButton", "QuestFrameCompleteButton", "QuestFrameCompleteQuestButton" }
 local function questStep()
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing", shown = {}, seen = {} }
@@ -1496,6 +1507,12 @@ local function questStep()
             if ok then took = took + 1 end
         end
         rec.acted = "loot window: took " .. took .. " of " .. nLoot
+        ZenVCExportDB._quest = rec
+        return
+    end
+    if QG.open and QG.open() then   -- v122 the quest greeting list: accept opens the chosen quest, as select does (QG is filled in further down)
+        local e = QG.chosen()
+        rec.acted = "quest list: " .. (e and QG.pick(e) or (QG.first() or "no quest lines found"))
         ZenVCExportDB._quest = rec
         return
     end
@@ -1572,6 +1589,54 @@ local function gossipLines()
     end
     return list
 end
+
+-- v122 the QUEST GREETING list (an NPC with several quests): its title buttons, top to bottom. Older windows name them QuestTitleButton1..;
+-- newer ones keep them in a pool. Each knows its number in the list and whether it is a quest in progress (isActive).
+local function qgreetLines()
+    local list = {}
+    local panel = _G.QuestFrameGreetingPanel
+    if not (panel and panel.IsVisible and panel:IsVisible()) then return list end
+    local seen = {}
+    local function add(b)
+        if b and not seen[b] and b.IsVisible and b:IsVisible() and b.GetText then
+            local txt = b:GetText()
+            if txt and txt ~= "" then seen[b] = true; list[#list + 1] = { fr = b, name = txt } end
+        end
+    end
+    for i = 1, 40 do add(_G["QuestTitleButton" .. i]) end
+    local pool = panel.titleButtonPool
+    if pool and pool.EnumerateActive then pcall(function() for b in pool:EnumerateActive() do add(b) end end) end
+    table.sort(list, function(a, b) return (a.fr:GetTop() or 0) > (b.fr:GetTop() or 0) end)
+    return list
+end
+-- opens that quest the way its own button does: its number in the list, as a quest to pick up or one in progress
+local function qgreetPick(e)
+    local b = e.fr
+    local id = b.GetID and b:GetID() or 0
+    if id and id > 0 and (b.isActive ~= nil) then
+        local active = b.isActive == 1 or b.isActive == true
+        local fn = active and SelectActiveQuest or SelectAvailableQuest
+        if fn then local ok, err = pcall(fn, id); return (active and "quest in progress " or "quest to pick up ") .. tostring(e.name) .. (ok and "" or (" failed: " .. tostring(err))) end
+    end
+    local ok, err = pcall(b.Click, b)
+    return "pressed " .. tostring(e.name) .. (ok and "" or (" failed: " .. tostring(err)))
+end
+-- the line to open: the one start move points at, else the one the controller (or mouse) has highlighted, else the first
+local function qgreetChosen()
+    local list = qgreetLines()
+    if mark.kind == "qgreet" and list[mark.i] then return list[mark.i] end
+    for _, e in ipairs(list) do
+        local f = e.fr
+        if (f.IsHighlightLocked and f:IsHighlightLocked()) or (f.IsMouseMotionFocus and f:IsMouseMotionFocus()) or (f.IsMouseOver and f:IsMouseOver()) or (f.GetButtonState and f:GetButtonState() == "PUSHED") then return e end
+    end
+    return list[1]
+end
+local function qgreetFirstByNumber()
+    if GetNumAvailableQuests and SelectAvailableQuest and (GetNumAvailableQuests() or 0) > 0 then SelectAvailableQuest(1) return "first quest to pick up" end
+    if GetNumActiveQuests and SelectActiveQuest and (GetNumActiveQuests() or 0) > 0 then SelectActiveQuest(1) return "first quest in progress" end
+end
+QG.open = function() return isUp("QuestFrameGreetingPanel") end
+QG.chosen, QG.pick, QG.first = qgreetChosen, qgreetPick, qgreetFirstByNumber
 
 local function merchantOpen() return isUp("MerchantFrame") and (not MerchantFrame.selectedTab or MerchantFrame.selectedTab == 1) end
 local function merchantSlots()
@@ -2653,11 +2718,81 @@ function TM.mailTip(t, e)
 end
 end
 
+-- v124 the map and its quest log, as outline lists
+do
+function QG.mapOpen() return isUp("WorldMapFrame") end
+function QG.qlogOpen() return isUp("WorldMapFrame") and isUp("QuestScrollFrame") end
+local function qTitle(qid, fallback)
+    local t = qid and C_QuestLog and C_QuestLog.GetTitleForQuestID and C_QuestLog.GetTitleForQuestID(qid)
+    return t or fallback or ("quest " .. tostring(qid))
+end
+-- the quest lines in the quest log side, top to bottom (zone headers are left out: they have no quest)
+function QG.qlogLines()
+    local list = {}
+    pcall(function()
+        local c = QuestScrollFrame and QuestScrollFrame.Contents
+        if not c then return end
+        local function scan(fr, depth)
+            if depth > 3 then return end
+            for _, ch in ipairs({ fr:GetChildren() }) do
+                if ch.IsVisible and ch:IsVisible() then
+                    local qid = ch.questID
+                    if type(qid) == "number" and qid > 0 then
+                        local txt = ch.GetText and ch:GetText()
+                        if (not txt or txt == "") and ch.Text and ch.Text.GetText then txt = ch.Text:GetText() end
+                        list[#list + 1] = { fr = ch, questID = qid, name = qTitle(qid, txt) }
+                    else scan(ch, depth + 1) end
+                end
+            end
+        end
+        scan(c, 0)
+        table.sort(list, function(a, b) return (a.fr:GetTop() or 0) > (b.fr:GetTop() or 0) end)
+    end)
+    return list
+end
+-- the quest markers on the map side, as a list by name (like the flight master)
+function QG.mapPins()
+    local list = {}
+    pcall(function()
+        local m = _G.WorldMapFrame
+        if not (m and m.EnumeratePinsByTemplate) then return end
+        for pin in m:EnumeratePinsByTemplate("QuestPinTemplate") do
+            if pin.IsVisible and pin:IsVisible() then
+                list[#list + 1] = { fr = pin, questID = pin.questID, name = qTitle(pin.questID, "quest marker"), x = pin:GetLeft() or 0, y = pin:GetTop() or 0 }
+            end
+        end
+        table.sort(list, function(a, b) return tostring(a.name) < tostring(b.name) end)   -- user: "the map should work like the flight master": a list, by name
+    end)
+    return list
+end
+-- keeps the outlined quest inside the quest log's window (the list is taller than its window)
+function QG.qlogShow(e)
+    pcall(function()
+        local sf = QuestScrollFrame
+        local c = sf and sf.Contents
+        if not (c and e and e.fr and sf.GetVerticalScroll and sf.SetVerticalScroll) then return end
+        local top = (c:GetTop() or 0) - (e.fr:GetTop() or 0)
+        local h = e.fr:GetHeight() or 16
+        local view = sf:GetHeight() or 0
+        local cur = sf:GetVerticalScroll() or 0
+        local range = sf.GetVerticalScrollRange and sf:GetVerticalScrollRange() or 0
+        local want = cur
+        if top < cur then want = top elseif top + h > cur + view then want = top + h - view end
+        want = math.max(0, math.min(range, want))
+        if math.abs(want - cur) > 0.5 then sf:SetVerticalScroll(want) end
+    end)
+end
+end
+
 local function lightUp(list)
     disarm()   -- moving to another item cancels a waiting use or destroy
     local e = list[mark.i]
     if e then
         if e.fr then markerOn(e.fr) elseif markFrame then markFrame:Hide() end   -- v88: a flight point may have no button
+        if (mark.kind == "qlog" or mark.kind == "qmap") and e.fr then pcall(function()   -- v124
+            if mark.kind == "qlog" then QG.qlogShow(e) end
+            QG.mapSel = e.fr; aimKey("/click zenvcselect", "ZenVCMapSelect", e.fr)
+        end) end
         say1(mark.i .. " of " .. #list .. ": " .. tostring(e.name))
         if mark.kind == "taxi" then pcall(function()   -- v88, v90
             -- v90 (2026-11-09, user: "Flight master works, but I would like a CONFIRM on yes"): only "take off" flies, and VCF asks yes or no
@@ -2736,12 +2871,20 @@ local function lightUp(list)
                 local typed = pad.box and pad.box.GetText and pad.box:GetText() or ""
                 t:AddLine("Typed: " .. (typed ~= "" and typed or "(nothing yet)"), 1, 1, 1)
                 t:AddLine("Say enter to press it", 0.6, 0.6, 0.6)
+            elseif e.questID and (mark.kind == "qlog" or mark.kind == "qmap") then   -- v124 a quest in the quest log or on the map
+                t:SetText(tostring(e.name), 1, 1, 1)
+                local obj = C_QuestLog and C_QuestLog.GetQuestObjectives and C_QuestLog.GetQuestObjectives(e.questID)
+                for _, o in ipairs(type(obj) == "table" and obj or {}) do
+                    if o.text and o.text ~= "" then t:AddLine((o.finished and "Done: " or "") .. o.text, o.finished and 0.6 or 1, o.finished and 0.6 or 1, o.finished and 0.6 or 1, true) end
+                end
+                if C_QuestLog and C_QuestLog.IsComplete and C_QuestLog.IsComplete(e.questID) then t:AddLine("Ready to hand in", 1, 1, 1) end
+                t:AddLine("Say " .. QG.word("/click zenvcselect", "select") .. (mark.kind == "qlog" and " to open it, or " or " to show this quest, or ") .. QG.word("/click zenvcswitchside", "move my box") .. (mark.kind == "qlog" and " for the map" or " for the quest log"), 0.6, 0.6, 0.6)
             elseif e.taxi then   -- v88 a flight point
                 t:SetText(tostring(e.name), 1, 1, 1)
                 if e.cost and e.cost > 0 then
                     t:AddLine("Cost: " .. ((GetMoneyString and GetMoneyString(e.cost, true)) or tostring(e.cost)), 1, 1, 1)
                 end
-                t:AddLine("Say take off to fly here", 0.6, 0.6, 0.6)   -- v90
+                t:AddLine("Say " .. QG.word("/click zenvctakeoff", "take off") .. " to fly here", 0.6, 0.6, 0.6)   -- v90; 2026-11-11 the player's own words
             elseif e.itemID then
                 t:SetItemByID(e.itemID)   -- v77 an Auction House row
                 local function money(c) return (GetMoneyString and GetMoneyString(c, true)) or (GetCoinTextureString and GetCoinTextureString(c)) or tostring(c) end
@@ -3235,10 +3378,78 @@ end
 
 -- v63 (2026-11-07, user: "I want a START MOVE command that puts the box IN PLACE. this way STOP MOVE makes sense and SWITCH MOVE can replace the switch command")
 -- The outline goes onto what is open: the spellbook (or another panel), else a vendor, else the bags, else a talk window.
+-- v123 LOOK ONLY: what the map shows, by name, for building start move on the map and its quest log. Reads only; nothing is pressed or set.
+-- v124 "move my box" on the map: the other side, on the same quest when it is there too
+function QG.flip()
+    local fromLog = mark.kind == "qlog"
+    local before = (fromLog and QG.qlogLines() or QG.mapPins())[mark.i]
+    local list = fromLog and QG.mapPins() or (QG.qlogOpen() and QG.qlogLines() or {})
+    if #list == 0 then say1(fromLog and "there are no quest markers on this map" or "the quest log is not open beside the map") return end
+    mark.kind, mark.i = fromLog and "qmap" or "qlog", 1
+    if before and before.questID then for k, e in ipairs(list) do if e.questID == before.questID then mark.i = k break end end end
+    lightUp(list)
+end
+local MAPLOOK = {}
+function MAPLOOK.run(quiet)
+    local rec = { at = date("%Y-%m-%d %H:%M:%S"), frames = {}, pins = {}, api = {} }
+    pcall(function()
+        local seen, n = {}, 0
+        local function nameOf(fr)
+            local nm = fr.GetName and fr:GetName()
+            if not nm and fr.GetDebugName then local ok, d = pcall(fr.GetDebugName, fr); if ok then nm = d end end
+            return nm or "?"
+        end
+        local function walk(fr, depth)
+            if n >= 160 or seen[fr] or depth > 4 then return end
+            seen[fr] = true
+            if not (fr.IsVisible and fr:IsVisible()) then return end
+            local w, h = fr.GetWidth and fr:GetWidth() or 0, fr.GetHeight and fr:GetHeight() or 0
+            local txt = fr.GetText and select(2, pcall(fr.GetText, fr)) or nil
+            n = n + 1
+            rec.frames[n] = string.rep(" ", depth) .. nameOf(fr) .. " | " .. tostring(fr.GetObjectType and fr:GetObjectType()) .. string.format(" | %dx%d", w, h) .. ((type(txt) == "string" and txt ~= "") and (" | " .. txt:sub(1, 40)) or "")
+            for _, c in ipairs({ fr:GetChildren() }) do walk(c, depth + 1) end
+        end
+        for _, nm in ipairs({ "WorldMapFrame", "QuestMapFrame", "QuestLogFrame", "QuestScrollFrame", "QuestLogDetailFrame" }) do
+            local fr = _G[nm]
+            rec.api[#rec.api + 1] = nm .. "=" .. (fr and ((fr.IsVisible and fr:IsVisible()) and "shown" or "hidden") or "missing")
+            if fr and fr.IsVisible and fr:IsVisible() and n < 160 then walk(fr, 0) end
+        end
+        local qc = _G.QuestScrollFrame and QuestScrollFrame.Contents   -- v124 the quest list's own lines (deeper than the walk above reaches)
+        if qc then n = math.min(n, 140); seen[qc] = nil; walk(qc, 0) end
+        for _, fn in ipairs({ "GetQuestLogSelection", "SelectQuestLogEntry", "GetNumQuestLogEntries", "QuestLog_SetSelection", "QuestMapFrame_ShowQuestDetails" }) do
+            rec.api[#rec.api + 1] = fn .. "=" .. type(_G[fn])
+        end
+        rec.api[#rec.api + 1] = "C_QuestLog.GetNumQuestLogEntries=" .. type(C_QuestLog and C_QuestLog.GetNumQuestLogEntries)
+        rec.api[#rec.api + 1] = "C_QuestLog.SetSelectedQuest=" .. type(C_QuestLog and C_QuestLog.SetSelectedQuest)
+        local m = _G.WorldMapFrame
+        if m and m.pinPools then
+            for template, pool in pairs(m.pinPools) do
+                local count = 0
+                if pool.EnumerateActive then for _ in pool:EnumerateActive() do count = count + 1 end end
+                if count > 0 then rec.pins[#rec.pins + 1] = tostring(template) .. " x" .. count end
+            end
+        end
+        if m and m.GetMapID then rec.api[#rec.api + 1] = "mapID=" .. tostring(m:GetMapID()) end
+    end)
+    ZenVCExportDB._mapLook = rec
+    if not quiet and DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r the map's windows were noted for the voice commander (nothing was pressed). Close the game as usual to save the note.") end
+end
+
 local function startMoveStep()
+    if isUp("WorldMapFrame") then   -- v124 the map: its quest log side first, then ("move my box") the quest markers
+        MAPLOOK.run(true)   -- the quiet record stays, in case some lines are built differently
+        local list, kind = QG.qlogOpen() and QG.qlogLines() or {}, "qlog"
+        if #list == 0 then list, kind = QG.mapPins(), "qmap" end
+        if #list == 0 then say1("nothing on the map to move to: no quests in the quest log or on this map") return end
+        mark.kind, mark.i = kind, 1
+        lightUp(list)
+        say1((kind == "qlog" and "quest log: " or "map: ") .. QG.word("/click zenvcmoveup", "move up") .. " or " .. QG.word("/click zenvcmovedown", "move down") .. ", " .. QG.word("/click zenvcselect", "select") .. (kind == "qlog" and " opens the quest, " or " shows that quest, ") .. QG.word("/click zenvcswitchside", "move my box") .. (kind == "qlog" and " goes to the map" or " goes back to the quest log"))
+        return
+    end
     ZenVCExportDB._lastAct = date("%H:%M:%S") .. " start move"
     local tries = {
         { "qreward", function() return TM.qrewardOpen() and TM.qrewardSlots() or {} end },   -- v106
+        { "qgreet", qgreetLines },   -- v122 an NPC's list of quests
         { "trade", function() return TM.tradeOpen() and TM.tradeSlots() or {} end },   -- v95
         { "mail", function() return TM.mailOpen() and TM.mailSlots() or {} end },   -- v95
         { "bank", function() return TM.bankOpen() and TM.bankSlots() or {} end },   -- v100
@@ -3258,7 +3469,7 @@ local function startMoveStep()
             lightUp(list); return
         end
     end
-    say1("open your bags, a vendor, the auction house, a flight map or a talk window first, then say start move")
+    say1("open your bags, a vendor, the auction house, a flight map, a talk window or a quest list first, then say start move")
 end
 
 -- v68: a quiet check twice a second. Reads only: which window is open and which vendor page shows. Nothing is pressed or set in the game's windows.
@@ -3333,6 +3544,7 @@ C_Timer.NewTicker(0.5, function()
         end)
         -- v95 mail: the outline left the mailbox (select back to normal); a waiting "send mail" is cancelled when the mail changes; the outline
         -- follows a change of tab
+        if QG.mapSel and not ((mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen())) then aimKey("/click zenvcselect"); QG.mapSel = nil end   -- v124
         if mailSelTarget and not ((mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen())) then aimKey("/click zenvcselect"); mailSelTarget = nil end
         -- v98 (user: "it should only do that once MOVE START or START MOVE is initiated")
         if (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "pad" and (pad.from == "mail" or pad.from == "trade")) then
@@ -3359,7 +3571,7 @@ C_Timer.NewTicker(0.5, function()
             mailLastSend = sv
         else mailLastSend = nil end
         if not mark.kind then lastPage = nil return end
-        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
+        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
         if not open then mark.kind, mark.i = nil, 0; markerOff(); lastPage = nil return end
         if mark.kind == "merchant" then
             local page = MerchantFrame and MerchantFrame.page
@@ -3379,6 +3591,18 @@ local function moveStep(dir)
             mark.i = (mark.i == 0) and 1 or bagNeighbour(list, math.min(mark.i, #list), dir)
             lightUp(list)
             rec.acted = "pad key " .. tostring(list[mark.i] and list[mark.i].padKey)
+            return
+        end
+        if (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) then   -- v124
+            local list = mark.kind == "qlog" and QG.qlogLines() or QG.mapPins()
+            if #list == 0 then say1("nothing here to move to") return end
+            -- both sides are lists, like the flight master's (user: "the map should work like the flight master... it will expand as time goes on")
+            local step = (dir == "up" or dir == "left") and -1 or 1
+            local want = (mark.i == 0) and 1 or mark.i + step
+            if want > #list then say1("end of the list") elseif want < 1 then say1("top of the list") end
+            mark.i = math.max(1, math.min(#list, want))
+            lightUp(list)
+            rec.acted = mark.kind .. " " .. mark.i
             return
         end
         if mark.kind == "qreward" and TM.qrewardOpen() then   -- v106
@@ -3458,6 +3682,14 @@ local function moveStep(dir)
             mark.i = math.max(1, math.min(#list, want))
             lightUp(list)
             rec.acted = "vendor item " .. mark.i
+        elseif isUp("QuestFrameGreetingPanel") then   -- v122
+            local list = qgreetLines()
+            if #list == 0 then return end
+            if mark.kind ~= "qgreet" then mark.kind, mark.i = "qgreet", 0 end
+            local step = (dir == "up" or dir == "left") and -1 or 1
+            mark.i = math.max(1, math.min(#list, mark.i == 0 and 1 or mark.i + step))
+            lightUp(list)
+            rec.acted = "quest line " .. mark.i
         elseif isUp("GossipFrame") then
             local list = gossipLines()
             if #list == 0 then return end
@@ -3545,6 +3777,7 @@ end)
 -- v48 "switch side": vendor items <-> your bags (bags are opened when they are closed)
 local function switchSideStep()
     if EM.on then EM.pick(1) return end   -- v120 edit layout: next piece
+    if (mark.kind == "qlog" or mark.kind == "qmap") and QG.mapOpen() then QG.flip() return end   -- v124 the map: quest log side <-> map side
     pcall(function()
         if mark.kind ~= "bags" then
             -- never opened from here: the game forbids an add-on opening bags in controller mode (v51)
@@ -3851,6 +4084,7 @@ local function tipSizeStep(scale, word)
 end
 
 local function selectStep()
+    if (mark.kind == "qlog" or mark.kind == "qmap") and QG.mapOpen() then say1("select works on the map out of combat") return end   -- v124 (out of combat it is aimed at the quest itself)
     if mark.kind == "taxi" and taxiOpen() then say1("say take off to fly to the outlined flight point") return end   -- v90
     if mark.kind == "pad" then padPress() return end   -- v91
     if mark.kind == "gbank" and TM.gbankOpen() then   -- v104
@@ -3891,6 +4125,11 @@ local function selectStep()
         end
         if merchantOpen() and mark.kind == "merchant" then
             buyStep(); rec.acted = "vendor: bought the item VCF points at"
+            return
+        end
+        if up("QuestFrameGreetingPanel") then   -- v122 the quest greeting list
+            local e = qgreetChosen()
+            rec.acted = "quest list: " .. (e and qgreetPick(e) or (qgreetFirstByNumber() or "no quest lines found"))
             return
         end
         if up("GossipFrame") and mark.kind == "gossip" then

@@ -110,6 +110,8 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] The vowel check proven in play (READY FORMANTS)
 - [ ] Dictating chat, mail and Auction House searches by voice (built in VCF 0.10.171 and VCFI 0.10.172, EXPERIMENTAL; tested in English only so far)
 - [ ] Limited editing: moving and sizing pieces of the screen by voice (built in VCF and VCFI 0.10.175, EXPERIMENTAL; moving and sizing tested in the game, the on-screen-only list not yet)
+- [x] The map and its quest log by voice: start move, move, select, move my box between the quest log and the map (VCF and VCFI 0.10.180; tested in the game with VCF)
+- [x] Select and accept in an NPC's list of quests (0.10.177; tested in the game)
 - [x] The helper add-ons' code readable on this page (addon-code)
 - [x] Read quest: the open quest or what someone says read aloud with WoW's own voice (VCF and VCFI 0.10.176; tested in the game with VCF)
 - [ ] Heal, potions, bandages and Healthstone by voice
