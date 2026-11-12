@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "124"
+local VERSION = "127"
 
 -- ------------------------------------------------------------------------------------------------------------------
 -- Ranks. The game casts the rank that is on the button. Default: the HIGHEST rank you know. Per character and per spell
@@ -1474,12 +1474,56 @@ end
 local QG = {}
 -- 2026-11-11 (user: "the hint of what to say from the users own control panel is a huge help"): this character's own words for a command
 -- (written by the voice commander into ZENVC_CHAR_WORDS), else the usual word
-function QG.word(text, fallback)
+function QG.word(name, fallback)
     local gid = UnitGUID and UnitGUID("player")
-    local name = UnitName and UnitName("player")
-    local w = ZENVC_CHAR_WORDS and ((gid and ZENVC_CHAR_WORDS[gid]) or (name and ZENVC_CHAR_WORDS[name]))
-    local v = w and w[text:lower()]
+    local who = UnitName and UnitName("player")
+    local w = ZENVC_CHAR_WORDS and ((gid and ZENVC_CHAR_WORDS[gid]) or (who and ZENVC_CHAR_WORDS[who]))
+    local v = w and w[tostring(name):lower()]
     return (type(v) == "string" and v ~= "") and v or fallback
+end
+-- 2026-11-11 (user: "IT NEEDS TO BE AGILE, PLAYERS CHANGE WORDING ALL THE TIME"): every hint writes a command as {Command Name:usual words}
+-- 2026-11-11: the game's language for the helper's own lines ("fr", "de", "es", "zh-CN", "zh-TW"), or false for English
+function QG.lang()
+    if QG._lang == nil then
+        local l = GetLocale and GetLocale() or "enUS"
+        QG._lang = (l == "frFR" and "fr") or (l == "deDE" and "de") or ((l == "esES" or l == "esMX") and "es") or (l == "zhCN" and "zh-CN") or (l == "zhTW" and "zh-TW") or false
+    end
+    return QG._lang
+end
+-- a line in the game's language (ZENVCI_TEXT, VCFI only): the whole line, else a line with changing parts ({0}, {1} ...), else English as it is
+function QG.tr(text)
+    if type(text) ~= "string" or text == "" or not ZENVCI_TEXT then return text end
+    local lang = QG.lang()
+    local t = lang and ZENVCI_TEXT[lang]
+    if not t then return text end
+    local x = t[text]
+    if x then return x end
+    QG._pat = QG._pat or {}
+    if not QG._pat[lang] then
+        local list = {}
+        for en, tr in pairs(t) do
+            if en:find("{%d}") then
+                local order = {}
+                local pat = en:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"):gsub("{(%d)}", function(n) order[#order + 1] = tonumber(n); return "(.-)" end)
+                list[#list + 1] = { pat = "^" .. pat .. "$", order = order, tr = tr, len = #en }
+            end
+        end
+        table.sort(list, function(a, b) return a.len > b.len end)
+        QG._pat[lang] = list
+    end
+    for _, e in ipairs(QG._pat[lang]) do
+        local caps = { text:match(e.pat) }
+        if #caps > 0 and #caps == #e.order then
+            local byN = {}
+            for k, n in ipairs(e.order) do byN[n] = t[caps[k]] or caps[k] end   -- a changing part that is itself a line is translated too
+            return (e.tr:gsub("{(%d)}", function(n) return byN[tonumber(n)] or "" end))
+        end
+    end
+    return text
+end
+function QG.say(text)
+    if type(text) ~= "string" or not text:find("{", 1, true) then return text end
+    return (text:gsub("{([^:{}]+):([^{}]+)}", function(n, d) return QG.word(n, d) end))
 end
 local QUEST_BUTTONS = { "QuestFrameAcceptButton", "QuestFrameCompleteButton", "QuestFrameCompleteQuestButton" }
 local function questStep()
@@ -1534,7 +1578,7 @@ local function questStep()
             rec.acted = "GetQuestReward(" .. chosen .. ") " .. (ok and "called" or ("failed: " .. tostring(err)))
         elseif nch > 1 then
             rec.acted = "reward window with " .. nch .. " rewards to choose from: left for you to choose"
-            if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r choose a reward first: say start move, move to one, say select, then complete") end
+            if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(QG.say(QG.tr("|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"))) end
         else
             local ok, err = pcall(GetQuestReward, nch == 1 and 1 or nil)
             rec.acted = "GetQuestReward() " .. (ok and "called" or ("failed: " .. tostring(err)))
@@ -1573,7 +1617,7 @@ end
 -- v46 the marker: which talk line or vendor item VCF points at. Cleared when the window closes.
 local mark = { kind = nil, i = 0 }
 local function isUp(n) local fr = _G[n]; return fr and fr.IsVisible and fr:IsVisible() end
-local function say1(t) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. t) end end
+local function say1(t) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(t))) end end
 
 local function gossipLines()
     local list = {}
@@ -1724,7 +1768,7 @@ do   -- v120: its own block, so its names do not count toward the file's 200 (Wo
 -- again, and the game places its own frames from it. A preset layout cannot be changed: the first change copies it into a layout of the
 -- player's own, and says so. Out of combat only; combat ends editing. Nothing starts while the game's own Edit Mode window is open.
 local EM_STEP = 5   -- pixels moved by one "move" step
-local function emSay(msg) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. msg) end end
+local function emSay(msg) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(msg))) end end
 local function emReady()
     return C_EditMode and C_EditMode.GetLayouts and C_EditMode.SaveLayouts and Enum and Enum.EditModeSystem and Enum.EditModeLayoutType
         and EditModePresetLayoutManager and CopyTable and true or false
@@ -1835,7 +1879,7 @@ local function emLater(msg)
 end
 local function emEdit()
     local layout, made = emChangeable(EM.info)
-    if made then emSay("the game's own layouts cannot be changed, so your changes go into a copy named \"" .. layout.layoutName .. "\". Say cancel editing to undo them.") end
+    if made then emSay("the game's own layouts cannot be changed, so your changes go into a copy named \"" .. layout.layoutName .. "\". Say {Cancel Editing:cancel editing} to undo them.") end
     return layout
 end
 
@@ -1843,7 +1887,7 @@ function EM.toggle()
     if EM.on then EM.done() return end
     if InCombatLockdown() then emSay("edit layout works out of combat only.") return end
     if not emReady() then emSay("this game has no Edit Mode layouts that the voice commander can reach.") return end
-    if emGameEditing() then emSay("close the game's own Edit Mode first, then say edit layout.") return end
+    if emGameEditing() then emSay("close the game's own Edit Mode first, then say {Edit Layout:edit layout}.") return end
     local info = emLayouts()
     local active = info and info.layouts[info.activeLayout]
     if not active then emSay("the game's layouts could not be read.") return end
@@ -1856,7 +1900,7 @@ function EM.toggle()
     mark.kind, mark.i = nil, 0
     EM.on, EM.info, EM.original, EM.pieces, EM.i, EM.changed, EM.said = true, info, CopyTable(info), pieces, 1, false, nil
     emShow()
-    emSay("LIMITED EDITING on (place and size only). Editing: " .. emNameOf(pieces[1]) .. " (1 of " .. #pieces .. " on screen). Say next piece or previous piece, move up 5 and the other moves, bigger, smaller or normal size. Done editing keeps it; cancel editing puts it all back.")
+    emSay("LIMITED EDITING on (place and size only). Editing: " .. emNameOf(pieces[1]) .. " (1 of " .. #pieces .. " on screen). Say {Next Piece:next piece} or {Previous Piece:previous piece}, {Move Up:move up} and the other moves, {Bigger:bigger}, {Smaller:smaller} or {Normal Size:normal size}. {Done Editing:done editing} keeps it; {Cancel Editing:cancel editing} puts it all back.")
 end
 function EM.done()
     if not EM.on then return end
@@ -1953,7 +1997,7 @@ end
 local RQ = { reading = false }
 do   -- its own block: WoW's Lua allows 200 names at the top of a file
 local RQ_PIECE = 800   -- long text is read in pieces of up to this many letters, one after another
-local function rqSay(msg) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. msg) end end
+local function rqSay(msg) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(msg))) end end
 local function rqUp(n) local f = _G[n]; return f and f.IsVisible and f:IsVisible() end
 local function rqCall(fn, ...) if type(fn) == "function" then local ok, a, b = pcall(fn, ...); if ok then return a, b end end end
 -- the game's colour, picture and link codes are not words
@@ -2056,7 +2100,7 @@ function RQ.toggle()
     local text = (title ~= "" and (title .. ". ") or "") .. body
     if body == "" then rqSay("nothing to read: open a quest, talk to someone, or pick a quest in your quest log.") return end
     RQ.pieces, RQ.reading = rqPieces(text), true
-    rqSay((kind == "talk" and "reading what they say." or "reading the quest.") .. " Say read quest again to stop.")
+    rqSay((kind == "talk" and "reading what they say." or "reading the quest.") .. " Say {Read Quest:read quest} again to stop.")
     rqNext()
 end
 local rqEvents = CreateFrame("Frame")
@@ -2108,6 +2152,10 @@ local zvTip, zvCmp
 local function tip()
     if not zvTip then
         zvTip = CreateFrame("GameTooltip", "ZenVCTooltip", UIParent, "GameTooltipTemplate")
+        -- 2026-11-11: hints in this box say the player's own words (it is the add-on's OWN tooltip window, never the game's)
+        local addLine, setText = zvTip.AddLine, zvTip.SetText
+        zvTip.AddLine = function(self, text, ...) return addLine(self, QG.say(QG.tr(text)), ...) end
+        zvTip.SetText = function(self, text, ...) return setText(self, QG.say(QG.tr(text)), ...) end
         zvCmp = {}
         for k = 1, 2 do
             local ok, f = pcall(CreateFrame, "GameTooltip", "ZenVCCompare" .. k, UIParent, "ShoppingTooltipTemplate")
@@ -2359,10 +2407,10 @@ function TM.tradeTip(t, e)
         t:SetText("Trade with " .. TM.tradeName(), 1, 1, 1)
         t:AddLine("You give: " .. give, 1, 1, 1, true)
         t:AddLine("You get: " .. get, 1, 0.82, 0, true)
-        t:AddLine("Say finish trade twice to accept. Escape cancels.", 0.6, 0.6, 0.6, true)
+        t:AddLine("Say {Finish Trade:finish trade} twice to accept. {Escape:escape} cancels.", 0.6, 0.6, 0.6, true)
     elseif e.tradeBox then
         t:SetText(tostring(e.name), 1, 1, 1)
-        t:AddLine("Say select to open the number pad", 0.6, 0.6, 0.6)
+        t:AddLine("Say {Select:select} to open the number pad", 0.6, 0.6, 0.6)
     else
         t:SetText(tostring(e.name), 1, 1, 1)
     end
@@ -2541,7 +2589,7 @@ function TM.bankSlots()
                     elseif (td or dn:find("Tab")) and c.GetObjectType and (c:GetObjectType() == "Button" or c:GetObjectType() == "CheckButton") and c.GetLeft and c:GetLeft() then
                         local tn = (type(td) == "table" and td.name) or (c.GetText and c:GetText()) or ""
                         if tn == "" then tn = "tab" end
-                        list[#list + 1] = { fr = c, bankTab = true, name = tostring(tn) .. " (tab: say select to open it)", x = c:GetLeft(), y = c:GetTop() or 0 }
+                        list[#list + 1] = { fr = c, bankTab = true, name = tostring(tn) .. " (tab: say {Select:select} to open it)", x = c:GetLeft(), y = c:GetTop() or 0 }
                     elseif c.GetObjectType and (c:GetObjectType() == "Button" or c:GetObjectType() == "CheckButton") and c.GetLeft and c:GetLeft()
                         and not dn:find("CopperButton") and not dn:find("SilverButton") and not dn:find("GoldButton") then
                         -- v102 (2026-11-09, user: "there IS a purchase ... I need to be able to get to it"; "the TAB on the right ... I need to be able to"):
@@ -2555,7 +2603,7 @@ function TM.bankSlots()
                         local bf = BankFrame.GetRight and BankFrame:GetRight()
                         if bf and c:GetLeft() >= bf - 4 then nm = nm .. " (tab on the side)" end
                         if c.IsEnabled and not c:IsEnabled() then nm = nm .. " (not available now)" end
-                        list[#list + 1] = { fr = c, bankBtn = true, name = nm .. ": say select to press it", x = c:GetLeft(), y = c:GetTop() or 0 }
+                        list[#list + 1] = { fr = c, bankBtn = true, name = nm .. ": say {Select:select} to press it", x = c:GetLeft(), y = c:GetTop() or 0 }
                     else
                         scan(c, depth + 1)
                     end
@@ -2605,7 +2653,7 @@ function TM.gbankSlots()
                         if nm == "" then nm = "button" end
                         if dn:find("Tab") then nm = nm .. " (tab)" end
                         if c.IsEnabled and not c:IsEnabled() then nm = nm .. " (not available now)" end
-                        list[#list + 1] = { fr = c, bankBtn = true, name = nm .. ": say select to press it", x = c:GetLeft(), y = c:GetTop() or 0 }
+                        list[#list + 1] = { fr = c, bankBtn = true, name = nm .. ": say {Select:select} to press it", x = c:GetLeft(), y = c:GetTop() or 0 }
                     else
                         scan(c, depth + 1, col)
                     end
@@ -2656,7 +2704,7 @@ function TM.qrewardSlots()
                         local i = c:GetID()
                         local name, _, count = GetQuestItemInfo("choice", i)
                         local nm = tostring(name or "a reward") .. (((tonumber(count) or 1) > 1) and (" x" .. count) or "")
-                        if chosen == i then nm = nm .. " (chosen: say complete to hand in)" end
+                        if chosen == i then nm = nm .. " (chosen: say {Complete (short):complete} to hand in)" end
                         list[#list + 1] = { fr = c, qchoice = i, name = nm, x = c:GetLeft(), y = c:GetTop() or 0 }
                     else
                         scan(c, depth + 1)
@@ -2674,7 +2722,7 @@ end
 function TM.mailTip(t, e)
     if e.empty then t:Hide() return false end
     if e.mailItem then t:SetSendMailItem(e.mailItem) return true end
-    if e.inAtt then t:SetInboxItem(e.inIdx, e.inAtt); t:AddLine("Say get that to take it", 0.6, 0.6, 0.6) return true end
+    if e.inAtt then t:SetInboxItem(e.inIdx, e.inAtt); t:AddLine("Say {Get That:get that} to take it", 0.6, 0.6, 0.6) return true end
     if e.inRow or e.inHead then
         local idx = e.inRow or e.inHead
         local _, _, sender, subject, money, cod, days, items = GetInboxHeaderInfo(idx)
@@ -2687,15 +2735,15 @@ function TM.mailTip(t, e)
         if e.inHead then
             local body = GetInboxText and GetInboxText(idx)
             if body and body ~= "" then t:AddLine(" "); t:AddLine(body, 1, 1, 1, true) end
-        else t:AddLine("Say select to open it", 0.6, 0.6, 0.6) end
+        else t:AddLine("Say {Select:select} to open it", 0.6, 0.6, 0.6) end
         return true
     end
-    if e.inMoney then t:SetText(tostring(e.name), 1, 0.82, 0); t:AddLine("Say get that to take it", 0.6, 0.6, 0.6) return true end
-    if e.mailClose then t:SetText("Close this mail", 1, 1, 1); t:AddLine("Say select to close it", 0.6, 0.6, 0.6) return true end
+    if e.inMoney then t:SetText(tostring(e.name), 1, 0.82, 0); t:AddLine("Say {Get That:get that} to take it", 0.6, 0.6, 0.6) return true end
+    if e.mailClose then t:SetText("Close this mail", 1, 1, 1); t:AddLine("Say {Select:select} to close it", 0.6, 0.6, 0.6) return true end
     if e.mailHead then
         t:SetText("Send mail", 1, 1, 1)
         for _, l in ipairs(mailTermLines()) do t:AddLine(l, 1, 1, 1, true) end
-        t:AddLine("Say send mail twice to send it. Escape closes the mailbox.", 0.6, 0.6, 0.6, true)
+        t:AddLine("Say {Send Mail:send mail} twice to send it. {Escape:escape} closes the mailbox.", 0.6, 0.6, 0.6, true)
     elseif e.mailBox then
         t:SetText(tostring(e.name), 1, 1, 1, true)
         if e.mailBox == _G.SendMailNameEditBox then   -- v98
@@ -2704,13 +2752,13 @@ function TM.mailTip(t, e)
                 t:AddLine("Your characters:", 0.6, 0.6, 0.6)
                 for _, n in ipairs(names) do t:AddLine("    " .. n, 1, 1, 1) end
             end
-            t:AddLine("Say select to choose a name or type one", 0.6, 0.6, 0.6)
+            t:AddLine("Say {Select:select} to choose a name or type one", 0.6, 0.6, 0.6)
         else
-            t:AddLine("Say select to open the keypad", 0.6, 0.6, 0.6)
+            t:AddLine("Say {Select:select} to open the keypad", 0.6, 0.6, 0.6)
         end
     elseif e.mailTab then
         t:SetText(tostring(e.name), 1, 1, 1)
-        t:AddLine("Say select to open it", 0.6, 0.6, 0.6)
+        t:AddLine("Say {Select:select} to open it", 0.6, 0.6, 0.6)
     else
         t:SetText(tostring(e.name), 1, 1, 1)
     end
@@ -2737,10 +2785,13 @@ function QG.qlogLines()
             for _, ch in ipairs({ fr:GetChildren() }) do
                 if ch.IsVisible and ch:IsVisible() then
                     local qid = ch.questID
+                    local hinfo = (not qid) and ch.questLogIndex and C_QuestLog and C_QuestLog.GetInfo and C_QuestLog.GetInfo(ch.questLogIndex)
                     if type(qid) == "number" and qid > 0 then
                         local txt = ch.GetText and ch:GetText()
                         if (not txt or txt == "") and ch.Text and ch.Text.GetText then txt = ch.Text:GetText() end
                         list[#list + 1] = { fr = ch, questID = qid, name = qTitle(qid, txt) }
+                    elseif hinfo and hinfo.isHeader then   -- v127 a zone line: in the list too, with the game's own + (closed) or - (open)
+                        list[#list + 1] = { fr = ch, header = true, closed = hinfo.isCollapsed and true or false, name = tostring(hinfo.title) .. (hinfo.isCollapsed and " +" or " -") }
                     else scan(ch, depth + 1) end
                 end
             end
@@ -2801,7 +2852,7 @@ local function lightUp(list)
             else say1("this flight point has no button to press on this map") end
         end) end
         if mark.kind == "ah" then pcall(function()   -- v83
-            if e.noClick then aimKey("/click zenvcselect"); ahSelTarget = nil; say1(e.edit and "say select to open the keypad for this box" or "to buy, say buy that")   -- v84, v91, v94
+            if e.noClick then aimKey("/click zenvcselect"); ahSelTarget = nil; say1(e.edit and "say {Select:select} to open the keypad for this box" or "to buy, say {Buy:buy}")   -- v84, v91, v94
             else ahSelTarget = e.fr; aimKey("/click zenvcselect", "ZenVCAHSelect", e.fr) end
             -- v85 (2026-11-09, user): "accept" works as select while the outline is in the Auction House
             if e.noClick then aimKey("/click questframeacceptbutton") else aimKey("/click questframeacceptbutton", "ZenVCAHAccept", e.fr) end
@@ -2865,12 +2916,15 @@ local function lightUp(list)
                     local on = k.padKey == e.padKey
                     t:AddLine((on and "> " or "    ") .. k.padKey, on and 1 or 0.75, on and 0.82 or 0.75, on and 0 or 0.75)
                 end
-                t:AddLine("Say enter to choose it", 0.6, 0.6, 0.6)
+                t:AddLine("Say {Keypad Enter:enter} to choose it", 0.6, 0.6, 0.6)
             elseif e.padKey then   -- v91 a keypad key
                 t:SetText("Key: " .. tostring(e.padKey), 1, 1, 1)
                 local typed = pad.box and pad.box.GetText and pad.box:GetText() or ""
                 t:AddLine("Typed: " .. (typed ~= "" and typed or "(nothing yet)"), 1, 1, 1)
-                t:AddLine("Say enter to press it", 0.6, 0.6, 0.6)
+                t:AddLine("Say {Keypad Enter:enter} to press it", 0.6, 0.6, 0.6)
+            elseif e.header and mark.kind == "qlog" then   -- v127 a zone line in the quest log
+                t:SetText(tostring(e.name), 1, 1, 1)
+                t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 0.6, 0.6, 0.6)
             elseif e.questID and (mark.kind == "qlog" or mark.kind == "qmap") then   -- v124 a quest in the quest log or on the map
                 t:SetText(tostring(e.name), 1, 1, 1)
                 local obj = C_QuestLog and C_QuestLog.GetQuestObjectives and C_QuestLog.GetQuestObjectives(e.questID)
@@ -2878,13 +2932,13 @@ local function lightUp(list)
                     if o.text and o.text ~= "" then t:AddLine((o.finished and "Done: " or "") .. o.text, o.finished and 0.6 or 1, o.finished and 0.6 or 1, o.finished and 0.6 or 1, true) end
                 end
                 if C_QuestLog and C_QuestLog.IsComplete and C_QuestLog.IsComplete(e.questID) then t:AddLine("Ready to hand in", 1, 1, 1) end
-                t:AddLine("Say " .. QG.word("/click zenvcselect", "select") .. (mark.kind == "qlog" and " to open it, or " or " to show this quest, or ") .. QG.word("/click zenvcswitchside", "move my box") .. (mark.kind == "qlog" and " for the map" or " for the quest log"), 0.6, 0.6, 0.6)
+                t:AddLine(mark.kind == "qlog" and "Say {Select:select} to open it, or {Move My Box:move my box} for the map" or "Say {Select:select} to show this quest, or {Move My Box:move my box} for the quest log", 0.6, 0.6, 0.6)
             elseif e.taxi then   -- v88 a flight point
                 t:SetText(tostring(e.name), 1, 1, 1)
                 if e.cost and e.cost > 0 then
                     t:AddLine("Cost: " .. ((GetMoneyString and GetMoneyString(e.cost, true)) or tostring(e.cost)), 1, 1, 1)
                 end
-                t:AddLine("Say " .. QG.word("/click zenvctakeoff", "take off") .. " to fly here", 0.6, 0.6, 0.6)   -- v90; 2026-11-11 the player's own words
+                t:AddLine("Say {Take Off:take off} to fly here", 0.6, 0.6, 0.6)   -- v90; 2026-11-11 the player's own words
             elseif e.itemID then
                 t:SetItemByID(e.itemID)   -- v77 an Auction House row
                 local function money(c) return (GetMoneyString and GetMoneyString(c, true)) or (GetCoinTextureString and GetCoinTextureString(c)) or tostring(c) end
@@ -3301,7 +3355,7 @@ local function padOpen(box, backI, from, names)
         padBuild(pad.numeric and PAD_NUM or padLetters())
     end
     mark.kind, mark.i = "pad", 1
-    say1((pad.names and "names: Type a name opens the letter pad, or move down to one of your characters and say enter") or (pad.numeric and "number pad: move to a number, say enter. Done when finished") or "letter pad: move to a letter, say enter. Done when finished")
+    say1((pad.names and "names: Type a name opens the letter pad, or {Move Down:move down} to one of your characters and say {Keypad Enter:enter}") or (pad.numeric and "number pad: move to a number, say {Keypad Enter:enter}. Done when finished") or "letter pad: move to a letter, say {Keypad Enter:enter}. Done when finished")
 end
 local function padClose(toBox)
     if pad.frame then pad.frame:Hide() end
@@ -3335,7 +3389,7 @@ end
 local function padPress()
     if EM.on then EM.pick(-1) return end   -- v120 edit layout: previous piece
     if mark.kind ~= "pad" or not pad.box then
-        say1("open a keypad first: start move, move to the search box or a quantity box, then say select")
+        say1("open a keypad first: {Start Move:start move}, move to the search box or a quantity box, then say {Select:select}")
         return
     end
     local e = padSlots()[mark.i]
@@ -3348,7 +3402,7 @@ local function padPress()
                 pad.names = false
                 box:SetText("")
                 padBuild(padLetters()); mark.i = 1
-                say1("letter pad: move to a letter, say enter. Done when finished")
+                say1("letter pad: move to a letter, say {Keypad Enter:enter}. Done when finished")
                 lightUp(padSlots())
                 return
             end
@@ -3443,7 +3497,7 @@ local function startMoveStep()
         if #list == 0 then say1("nothing on the map to move to: no quests in the quest log or on this map") return end
         mark.kind, mark.i = kind, 1
         lightUp(list)
-        say1((kind == "qlog" and "quest log: " or "map: ") .. QG.word("/click zenvcmoveup", "move up") .. " or " .. QG.word("/click zenvcmovedown", "move down") .. ", " .. QG.word("/click zenvcselect", "select") .. (kind == "qlog" and " opens the quest, " or " shows that quest, ") .. QG.word("/click zenvcswitchside", "move my box") .. (kind == "qlog" and " goes to the map" or " goes back to the quest log"))
+        say1(kind == "qlog" and "quest log: {Move Up:move up} or {Move Down:move down}, {Select:select} opens the quest, {Move My Box:move my box} goes to the map" or "map: {Move Up:move up} or {Move Down:move down}, {Select:select} shows that quest, {Move My Box:move my box} goes back to the quest log")
         return
     end
     ZenVCExportDB._lastAct = date("%H:%M:%S") .. " start move"
@@ -3469,7 +3523,7 @@ local function startMoveStep()
             lightUp(list); return
         end
     end
-    say1("open your bags, a vendor, the auction house, a flight map, a talk window or a quest list first, then say start move")
+    say1("open your bags, a vendor, the auction house, a flight map, a talk window or a quest list first, then say {Start Move:start move}")
 end
 
 -- v68: a quiet check twice a second. Reads only: which window is open and which vendor page shows. Nothing is pressed or set in the game's windows.
@@ -3562,7 +3616,7 @@ C_Timer.NewTicker(0.5, function()
         if armed.kind == "mail" then
             if not TM.mailSendOpen() then disarm()
             elseif TM.mailTerms() ~= armed.terms then
-                disarm(); say1("the mail changed, so send mail was cancelled. " .. TM.mailTerms() .. ". Say send mail to see it again")
+                disarm(); say1("the mail changed, so send mail was cancelled. " .. TM.mailTerms() .. ". Say {Send Mail:send mail} to see it again")
             end
         end
         if mark.kind == "mail" and TM.mailOpen() then
@@ -3677,8 +3731,8 @@ local function moveStep(dir)
             local want = mark.i == 0 and 1 or mark.i + step
             -- v68 (2026-11-07): the add-on never presses the vendor's page arrow itself (that brought the blocked box at 14:48). The page is turned by the
             -- "move page right" / "move page left" commands, which run the game's own /click macro on the arrow (a game-approved press).
-            if want > #list then say1("end of this page: say move page right")
-            elseif want < 1 and mark.i ~= 0 then say1("start of this page: say move page left") end
+            if want > #list then say1("end of this page: say {Move Page Right:move page right}")
+            elseif want < 1 and mark.i ~= 0 then say1("start of this page: say {Move Page Left:move page left}") end
             mark.i = math.max(1, math.min(#list, want))
             lightUp(list)
             rec.acted = "vendor item " .. mark.i
@@ -3709,7 +3763,7 @@ local function buyStep()
         if not merchantOpen() then rec.acted = "no vendor open" return end
         local list = merchantSlots()
         local e = mark.kind == "merchant" and list[mark.i]
-        if not e then say1("say move down or move right first, to choose what to buy") rec.acted = "nothing chosen" return end
+        if not e then say1("say {Move Down:move down} or {Move Right:move right} first, to choose what to buy") rec.acted = "nothing chosen" return end
         BuyMerchantItem(e.index, 1)
         say1("bought " .. tostring(e.name))
         rec.acted = "bought " .. tostring(e.name)
@@ -3728,7 +3782,7 @@ local function buyThatStep()
     if armed.kind == "buy" and now - armed.at < 30 then armed.kind = nil; markColor(MARK_ORANGE); buyStep() return end
     armed.kind, armed.at = "buy", now
     markColor(MARK_TEAL)
-    say1("buy " .. tostring(e.name) .. "? say buy that again to buy it")
+    say1("buy " .. tostring(e.name) .. "? say {Buy:buy} again to buy it")
     if C_Timer and C_Timer.After then C_Timer.After(30, function() if armed.kind == "buy" and (GetTime() - armed.at) >= 29 then disarm() end end) end
 end
 
@@ -3782,7 +3836,7 @@ local function switchSideStep()
         if mark.kind ~= "bags" then
             -- never opened from here: the game forbids an add-on opening bags in controller mode (v51)
             local list = bagSlots()
-            if #list == 0 then say1("open your bags first, then say move my box") return end
+            if #list == 0 then say1("open your bags first, then say {Move My Box:move my box}") return end
             mark.kind, mark.i = "bags", 1
             lightUp(list)
         else
@@ -3817,7 +3871,7 @@ local function sellThatStep()
     pcall(function()
         if not isUp("MerchantFrame") then say1("open a vendor first: outside a vendor this would use or equip the item") rec.acted = "no vendor" return end
         local e = mark.kind == "bags" and bagSlots()[mark.i]
-        if not e then say1("say move my box, then move to the item to sell") rec.acted = "nothing outlined" return end
+        if not e then say1("say {Move My Box:move my box}, then move to the item to sell") rec.acted = "nothing outlined" return end
         if e.name == "empty" then say1("that slot is empty") rec.acted = "empty slot" return end
         local use = (C_Container and C_Container.UseContainerItem) or UseContainerItem
         use(e.bag, e.slot)
@@ -3831,7 +3885,7 @@ end
 -- VCF asks first (X yes, B no), so these run only after the player said yes. Items named in RENAME AN ITEM are not affected.
 local function outlinedBagItem(rec)
     local e = mark.kind == "bags" and bagSlots()[mark.i]
-    if not e then say1("open your bags, say move my box, then move to the item") rec.acted = "nothing outlined" return nil end
+    if not e then say1("open your bags, say {Move My Box:move my box}, then move to the item") rec.acted = "nothing outlined" return nil end
     if e.name == "empty" then say1("that slot is empty") rec.acted = "empty slot" return nil end
     return e
 end
@@ -3839,12 +3893,12 @@ end
 local function useThatStep()
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing" }
     pcall(function()
-        if isUp("MerchantFrame") then say1("a vendor is open, so using it would sell it: say sell that, or close the vendor first") rec.acted = "vendor open: not used" return end
+        if isUp("MerchantFrame") then say1("a vendor is open, so using it would sell it: say {Sell That:sell that}, or close the vendor first") rec.acted = "vendor open: not used" return end
         local e = outlinedBagItem(rec)
         if not e then return end
         -- v74: never UseContainerItem here (protected). Using happens only through the secure button (useArmSecure).
-        if InCombatLockdown() then say1("not while in combat: say use that again after the fight") rec.acted = "in combat: not used" return end
-        say1("say use that again")
+        if InCombatLockdown() then say1("not while in combat: say {Use That:use that} again after the fight") rec.acted = "in combat: not used" return end
+        say1("say {Use That:use that} again")
         rec.acted = "not used: the secure button was not ready"
     end)
     ZenVCExportDB._useThat = rec
@@ -3879,7 +3933,7 @@ local function armOrFire(kind, step, b)
     if kind == "use" and not useArmSecure(e, b and b.key, b and b.id) then step(); return end
     armed.kind, armed.at = kind, now
     markColor(kind == "destroy" and MARK_RED or MARK_TEAL)
-    say1((kind == "destroy" and "destroy " or (isUp("TradeFrame") and "put in the trade: " or isUp("SendMailFrame") and "attach to the mail: " or "use ")) .. tostring(e.name) .. "? Answer in VCF: say yes do that or no do not (X or B on a controller)")   -- v95
+    say1((kind == "destroy" and "destroy " or (isUp("TradeFrame") and "put in the trade: " or isUp("SendMailFrame") and "attach to the mail: " or "use ")) .. tostring(e.name) .. "? Answer in VCF: say {App confirm_yes:yes do that} or {App confirm_no:no do not} (X or B on a controller)")   -- v95
     if C_Timer and C_Timer.After then C_Timer.After(30, function() if armed.kind == kind and (GetTime() - armed.at) >= 29 then disarm() end end) end
 end
 
@@ -3889,12 +3943,12 @@ end
 local function finishTradeStep()
     ZenVCExportDB._lastAct = date("%H:%M:%S") .. " finish trade"
     pcall(function()
-        if not TM.tradeOpen() then say1("no trade window is open: target a player and say trade") return end
+        if not TM.tradeOpen() then say1("no trade window is open: target a player and say {Trade:trade}") return end
         if InCombatLockdown() then say1("not while in combat") return end
         local btn = _G.TradeFrameTradeButton
         if not btn then say1("could not find the trade window's Trade button") return end
         if armed.kind == "trade" and GetTime() - armed.at < 30 then
-            disarm(); say1("the Trade button could not be pressed by voice: nothing was accepted. Say finish trade to try again") return
+            disarm(); say1("the Trade button could not be pressed by voice: nothing was accepted. Say {Finish Trade:finish trade} to try again") return
         end
         local give, get = TM.tradeTerms()
         mark.kind, mark.i = "trade", 1
@@ -3912,7 +3966,7 @@ local function finishTradeStep()
                 if C_Timer and C_Timer.After then C_Timer.After(0.3, function() if armed.kind == "trade" then disarm() end end) end
             end)
         end
-        say1("you give: " .. give .. ". you get: " .. get .. ". Say finish trade again within 30 seconds to accept")
+        say1("you give: " .. give .. ". you get: " .. get .. ". Say {Finish Trade:finish trade} again within 30 seconds to accept")
         local at = armed.at
         if C_Timer and C_Timer.After then C_Timer.After(30, function()
             if armed.kind == "trade" and armed.at == at then disarm(); say1("finish trade timed out: nothing was accepted") end
@@ -3956,7 +4010,7 @@ do
                     local g, r = TM.tradeTerms()
                     if g .. "|" .. r ~= armed.terms then
                         disarm()
-                        say1("the trade changed, so finish trade was cancelled. you give: " .. g .. ". you get: " .. r .. ". Say finish trade to see it again")
+                        say1("the trade changed, so finish trade was cancelled. you give: " .. g .. ". you get: " .. r .. ". Say {Finish Trade:finish trade} to see it again")
                     end
                 end
                 if C_Timer and C_Timer.After then C_Timer.After(0.2, function() pcall(refresh) end) end
@@ -3971,13 +4025,13 @@ local function sendMailStep()
     ZenVCExportDB._lastAct = date("%H:%M:%S") .. " send mail"
     pcall(function()
         if not TM.mailSendOpen() then
-            say1(TM.mailOpen() and "open the Send Mail tab first: say start move, then select" or "open a mailbox first") return
+            say1(TM.mailOpen() and "open the Send Mail tab first: say {Start Move:start move}, then {Select:select}" or "open a mailbox first") return
         end
         if InCombatLockdown() then say1("not while in combat") return end
         local btn = _G.SendMailMailButton
         if not btn then say1("could not find the mailbox's Send button") return end
         if armed.kind == "mail" and GetTime() - armed.at < 30 then
-            disarm(); say1("the Send button could not be pressed by voice: nothing was sent. Say send mail to try again") return
+            disarm(); say1("the Send button could not be pressed by voice: nothing was sent. Say {Send Mail:send mail} to try again") return
         end
         local to = _G.SendMailNameEditBox and SendMailNameEditBox:GetText() or ""
         mark.kind, mark.i = "mail", 1
@@ -3997,7 +4051,7 @@ local function sendMailStep()
                 if C_Timer and C_Timer.After then C_Timer.After(0.3, function() if armed.kind == "mail" then disarm() end end) end
             end)
         end
-        say1(tm .. ". Say send mail again within 30 seconds to send it")
+        say1(tm .. ". Say {Send Mail:send mail} again within 30 seconds to send it")
         local at = armed.at
         if C_Timer and C_Timer.After then C_Timer.After(30, function()
             if armed.kind == "mail" and armed.at == at then disarm(); say1("send mail timed out: nothing was sent") end
@@ -4085,36 +4139,36 @@ end
 
 local function selectStep()
     if (mark.kind == "qlog" or mark.kind == "qmap") and QG.mapOpen() then say1("select works on the map out of combat") return end   -- v124 (out of combat it is aimed at the quest itself)
-    if mark.kind == "taxi" and taxiOpen() then say1("say take off to fly to the outlined flight point") return end   -- v90
+    if mark.kind == "taxi" and taxiOpen() then say1("say {Take Off:take off} to fly to the outlined flight point") return end   -- v90
     if mark.kind == "pad" then padPress() return end   -- v91
     if mark.kind == "gbank" and TM.gbankOpen() then   -- v104
         local e = TM.gbankSlots()[mark.i]
-        say1((e and e.bankBtn) and "that could not be pressed by voice" or "say move that to pick it up, then move to where it goes and say move that again")
+        say1((e and e.bankBtn) and "that could not be pressed by voice" or "say {Move That:move that} to pick it up, then move to where it goes and say {Move That:move that} again")
         return
     end
     if mark.kind == "bank" and TM.bankOpen() then   -- v100 (a tab is pressed by the aimed key, so this is an item or the aim failed)
         local e = TM.bankSlots()[mark.i]
-        say1((e and (e.bankTab or e.bankBtn)) and "that could not be pressed by voice" or "say move that to pick it up, then move to where it goes and say move that again")
+        say1((e and (e.bankTab or e.bankBtn)) and "that could not be pressed by voice" or "say {Move That:move that} to pick it up, then move to where it goes and say {Move That:move that} again")
         return
     end
     if mark.kind == "mail" and TM.mailOpen() then   -- v95
         local e = TM.mailSlots()[mark.i]
         if e and e.mailBox then padOpen(e.mailBox, mark.i, "mail", (e.mailBox == _G.SendMailNameEditBox) and TM.mailNames() or nil); lightUp(padSlots())
         elseif e and (e.mailTab or e.inRow or e.mailClose) then say1("that could not be pressed by voice")
-        elseif e and e.mailTake then say1("say get that to take it")
-        else say1("say select on the to, subject, letter or money boxes for the keypad. To attach an item, say move my box and use that. Send mail twice sends it") end
+        elseif e and e.mailTake then say1("say {Get That:get that} to take it")
+        else say1("say {Select:select} on the to, subject, letter or money boxes for the keypad. To attach an item, say {Move My Box:move my box} and {Use That:use that}. {Send Mail:send mail} twice sends it") end
         return
     end
     if mark.kind == "trade" and TM.tradeOpen() then   -- v95
         local e = TM.tradeSlots()[mark.i]
         if e and e.tradeBox then padOpen(e.tradeBox, mark.i, "trade"); lightUp(padSlots())
-        else say1("say select on your gold, silver or copper to open the number pad. To put in an item, say move my box and use that. Finish trade twice accepts") end
+        else say1("say {Select:select} on your gold, silver or copper to open the number pad. To put in an item, say {Move My Box:move my box} and {Use That:use that}. {Finish Trade:finish trade} twice accepts") end
         return
     end
     if mark.kind == "ah" and ahOpen() then   -- v91: select on a search or quantity box opens the keypad
         local e = ahSlots()[mark.i]
         if e and e.edit then padOpen(e.edit, mark.i); lightUp(padSlots()) return end
-        if e and e.noClick then say1("to buy, say buy that") return end   -- v94
+        if e and e.noClick then say1("to buy, say {Buy:buy}") return end   -- v94
     end
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing", lines = {} }
     local function up(n) local fr = _G[n]; return fr and fr.IsVisible and fr:IsVisible() end
@@ -4236,7 +4290,7 @@ local function ensureButton(b)
                     local box = pad.box
                     padClose(true)
                     box:SetFocus()
-                    say1("dictating into the box: speak, then say stop dictation")
+                    say1("dictating into the box: speak, then say {Stop Dictation:stop dictation}")
                 else
                     ChatFrame_OpenChat("")
                 end
@@ -4263,7 +4317,7 @@ local function ensureButton(b)
                     or (mark.kind == "bags" and bagSlots()) or nil
                 local e = list and list[mark.i]
                 if not (e and ((e.bag ~= nil and e.slot) or e.gslot)) then
-                    say1("say start move at your bags, the bank or the guild bank, move to an item, then say move that") rec.acted = "nothing outlined" return
+                    say1("say {Start Move:start move} at your bags, the bank or the guild bank, move to an item, then say {Move That:move that}") rec.acted = "nothing outlined" return
                 end
                 local where = e.gslot and ("guild tab " .. tostring(e.gtab) .. " slot " .. e.gslot) or (e.bag .. " " .. e.slot)   -- v104
                 local pick = (C_Container and C_Container.PickupContainerItem) or PickupContainerItem
@@ -4273,11 +4327,11 @@ local function ensureButton(b)
                 local now = CursorHasItem and CursorHasItem()
                 if holding then
                     ZenVCExportDB._holding = now and true or nil
-                    say1(now and "swapped: you now hold the other item. Move to where it goes and say move that" or "put down")
+                    say1(now and "swapped: you now hold the other item. Move to where it goes and say {Move That:move that}" or "put down")
                     rec.acted = (now and "swapped at " or "put down at ") .. where
                 elseif now then
                     ZenVCExportDB._holding = true
-                    say1("holding " .. tostring(e.name) .. ". Move to where it goes (move my box goes between the bank or guild bank and your bags), then say move that. Stop move puts it back")
+                    say1("holding " .. tostring(e.name) .. ". Move to where it goes ({Move My Box:move my box} goes between the bank or guild bank and your bags), then say {Move That:move that}. {Stop Move:stop move} puts it back")
                     rec.acted = "picked up " .. tostring(e.name) .. " from " .. where
                 else
                     say1("could not pick it up") rec.acted = "pick up failed"
@@ -4295,7 +4349,7 @@ local function ensureButton(b)
             pcall(function()
                 local e = mark.kind == "mail" and TM.mailOpen() and TM.mailSlots()[mark.i]
                 if not (e and e.mailTake) then
-                    say1("open a mail first: say start move at the mailbox, move to a mail and say select, move to an item or the money, then say get that")
+                    say1("open a mail first: say {Start Move:start move} at the mailbox, move to a mail and say {Select:select}, move to an item or the money, then say {Get That:get that}")
                     rec.acted = "nothing outlined" return
                 end
                 local cod = tonumber((select(6, GetInboxHeaderInfo(e.inIdx)))) or 0
@@ -4314,8 +4368,8 @@ local function ensureButton(b)
                 end
             end)
         end,
-        ["/click zenvctakeoff"] = function() say1("talk to a flight master, say start move, choose a flight point, then say take off") end,   -- v90
-        ["/click zenvcsearchnow"] = function() say1("open the auction house first, then say search now") end,   -- v85
+        ["/click zenvctakeoff"] = function() say1("talk to a flight master, say {Start Move:start move}, choose a flight point, then say {Take Off:take off}") end,   -- v90
+        ["/click zenvcsearchnow"] = function() say1("open the auction house first, then say {Search Now:search now}") end,   -- v85
         ["/click zenvctipsmall"] = function() tipSizeStep(0.5, "small") end, ["/click zenvctipnormal"] = function() tipSizeStep(1, "normal") end,
         ["/click zenvctiplarge"] = function() tipSizeStep(2, "large") end, ["/click zenvcstartmove"] = startMoveStep,
         ["/click zenvcusethat"] = function() armOrFire("use", useThatStep, b) end, ["/click zenvcdestroythat"] = function() armOrFire("destroy", destroyThatStep) end,

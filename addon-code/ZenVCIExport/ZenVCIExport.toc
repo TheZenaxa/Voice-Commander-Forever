@@ -1,7 +1,8 @@
 ## Interface: 16001
-## Version: 124
+## Version: 127
 ## Title: VCFI Helper
 ## Notes: The helper for the VCFI app (Voice Commander Forever International). Reads your spells, items and key bindings for the app, and gives voice commands their own keys without changing your key bindings. When you ask by voice, it outlines items in bags and windows, shows their tooltips, and uses or destroys an item after you confirm. When you ask by voice, it also moves and sizes pieces of the screen in the game's Edit Mode layouts (limited editing). When you say read quest, it reads the open quest or what an NPC says with WoW's own text-to-speech. It widens the interact range while you fish and puts it back afterward.
 ## SavedVariables: ZenVCIExportDB
 ZenVCICommands.lua
+ZenVCIText.lua
 ZenVCIExport.lua

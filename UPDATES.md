@@ -5,6 +5,29 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.183 and VCFI 0.10.183 (hints in your own words; VCFI helper in your game's language)
+
+Published 2026-11-11 21:07 US Mountain Standard Time
+
+### Hints in your own words (VCF and VCFI)
+
+- Every hint the helper shows in the game now says the words YOU use for each command, from your Control Panel. Change a word, reload the game, and the hints follow. Players change their wording all the time, so the hints keep up.
+
+### The quest log's zone lines
+
+- The zone lines in the quest log (like Thunder Bluff + or Warrior -) are now in the list when you move through it. **"select"** on one opens or closes it, like the + and - in the game.
+
+### VCFI: the helper speaks your game's language
+
+- The box under the outline and VCFI's lines in chat now follow your game's language: French, German, Spanish and Chinese games get them in that language; other games get English.
+- A new switch on the MIC IS box and in the Control Panel shows them in the language you speak instead (for example Japanese on an English game). It is off until you tick it. Japanese on an English game is not tested yet.
+
+The game's add-on that comes with VCF and VCFI is now version 127, and its code is on this page in addon-code.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.180 and VCFI 0.10.180 (the map and quest log by voice)
 
 Published 2026-11-11 20:21 US Mountain Standard Time
