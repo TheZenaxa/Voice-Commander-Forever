@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "130"
+local VERSION = "131"
 
 -- ------------------------------------------------------------------------------------------------------------------
 -- Ranks. The game casts the rank that is on the button. Default: the HIGHEST rank you know. Per character and per spell
@@ -1744,6 +1744,45 @@ do
 function QG.trainerOpen()
     return (GetNumTrainerServices and GetTrainerServiceInfo and (isUp("ClassTrainerFrame") or isUp("TrainerFrame"))) and true or false
 end
+-- v131 the visible line with this text (after the list was scrolled to it)
+function QG.trainerFrameFor(text)
+    local found
+    pcall(function()
+        local root = (isUp("ClassTrainerFrame") and _G.ClassTrainerFrame) or _G.TrainerFrame
+        local function textOf(c)
+            local t = c.GetText and c:GetText()
+            for _, k in ipairs({ "name", "Name", "Text", "text" }) do
+                if (type(t) ~= "string" or t == "") and type(c[k]) == "table" and c[k].GetText then t = c[k]:GetText() end
+            end
+            return t
+        end
+        local function scan(fr, depth)
+            if found or depth > 7 then return end
+            for _, c in ipairs({ fr:GetChildren() }) do
+                if c.IsVisible and c:IsVisible() then
+                    if textOf(c) == text and (c.GetHeight and c:GetHeight() or 0) < 60 then found = c return end
+                    scan(c, depth + 1)
+                end
+            end
+        end
+        if root then scan(root, 0) end
+    end)
+    return found
+end
+-- v131 scroll the trainer's list so service i shows (the list is longer than its window)
+function QG.trainerShow(i)
+    pcall(function()
+        local sb = _G.ClassTrainerFrame and ClassTrainerFrame.ScrollBox
+        if not sb then return end
+        local align = ScrollBoxConstants and ScrollBoxConstants.AlignNearest
+        if sb.ScrollToElementDataIndex then sb:ScrollToElementDataIndex(i, align)
+        else
+            local dp = sb.GetDataProvider and sb:GetDataProvider()
+            local elem = dp and dp.Find and dp:Find(i)
+            if elem then sb:ScrollToElementData(elem, align) end
+        end
+    end)
+end
 function QG.trainerLines()
     local list = {}
     pcall(function()
@@ -2938,6 +2977,7 @@ local function lightUp(list)
     local e = list[mark.i]
     if e then
         if e.prof and e.node then e.fr = QG.profFrame(e) end   -- v130 a recipe or section line: scrolled into view, then outlined
+        if e.trainer then QG.trainerShow(e.trainer); e.fr = QG.trainerFrameFor(e.plain) or e.fr end   -- v131 a trainer line further down: scrolled to, then found
         if e.fr then markerOn(e.fr) elseif markFrame then markFrame:Hide() end   -- v88: a flight point may have no button
         if (mark.kind == "prof" or mark.kind == "proftab") and e.fr then pcall(function()   -- v130 select = the game's own click on it
             QG.profSel = e.fr; aimKey("/click zenvcselect", "ZenVCProfSelect", e.fr)

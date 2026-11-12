@@ -5,6 +5,20 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.187 and VCFI 0.10.187 (trainers: the whole list)
+
+Published 2026-11-12 01:14 US Mountain Standard Time
+
+### Trainers: the whole list
+
+- At a trainer, **"move down"** now scrolls the trainer's list to skills further down, so the outline and the box under it reach every skill, not only the ones showing in the window.
+
+Everything else is as in 0.10.186 (trainers by voice; professions by voice, EXPERIMENTAL). The game's add-on that comes with VCF and VCFI is now version 131, and its code is on this page in addon-code.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.186 and VCFI 0.10.186 (trainers by voice; professions, experimental)
 
 Published 2026-11-12 00:41 US Mountain Standard Time
