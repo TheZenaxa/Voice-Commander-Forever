@@ -5,6 +5,23 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.184 and VCFI 0.10.184 (the illustrated guide)
+
+Published 2026-11-11 21:33 US Mountain Standard Time
+
+### The guide, with pictures (new)
+
+- A guide that reads like a book, one page at a time, with real pictures from VCF and from the game: the MIC IS box, changing your words, your own commands, reloading after new spells, /zenvc bars, EXPORT and IMPORT, voice expand, voice shrink and voice disable, getting back into the game, and where VCF's messages show.
+- In VCF and VCFI: the **OPEN THE GUIDE** button at the top of the FAQ opens it. It is installed with the program, so it works without internet.
+- On the web, before installing: the **THE GUIDE** button on this page.
+- The guide is in English for now.
+
+Everything else is as in 0.10.183. The game's add-on stays version 127.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.183 and VCFI 0.10.183 (hints in your own words; VCFI helper in your game's language)
 
 Published 2026-11-11 21:07 US Mountain Standard Time
