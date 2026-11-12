@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCF Guide</title>
+<style>
+:root { --bg:#111418; --page:#1b2027; --text:#f2f2f2; --dim:#b9c0c8; --line:#3a424d; --teal:#2ee6d6; --orange:#ff993d; --keep:#8c96a3; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:22px/1.5 "Segoe UI", Arial, sans-serif; }
+main { max-width:1000px; margin:0 auto; padding:16px 16px 120px; }
+.page { display:none; background:var(--page); border:2px solid var(--line); border-radius:14px; padding:28px 32px; min-height:60vh; }
+.page.on { display:block; }
+h1 { font-size:44px; margin:0 0 12px; color:var(--teal); }
+h2 { font-size:34px; margin:0 0 14px; color:var(--teal); }
+p, li { margin:0 0 12px; }
+ol, ul { padding-left:30px; }
+.say { color:var(--orange); font-weight:700; }
+.btnname { border:2px solid var(--dim); border-radius:6px; padding:0 8px; font-weight:700; white-space:nowrap; }
+.note { border-left:6px solid var(--orange); padding:10px 16px; background:#241f1a; margin:16px 0; border-radius:6px; }
+/* the picture of one command row */
+.row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0; }
+.cell { border-radius:10px; padding:14px 16px; }
+.yours { border:4px solid var(--orange); background:#2a2118; }
+.game { border:3px dashed var(--keep); background:#1f242b; color:var(--dim); }
+.cell b { display:block; font-size:18px; letter-spacing:1px; margin-bottom:6px; }
+.big { font-size:30px; font-weight:700; }
+/* the MIC IS box picture */
+.micis { border:3px solid var(--teal); border-radius:10px; padding:12px 16px; max-width:520px; margin:16px 0; }
+.micis .state { font-size:30px; font-weight:800; color:var(--teal); }
+.micis .heard, .micis .next { border:2px solid var(--orange); border-radius:6px; padding:6px 10px; margin-top:8px; }
+figure { margin:16px 0; } figure img { max-width:100%; height:auto; border:2px solid var(--line); border-radius:10px; display:block; }
+.chat { font-family:Consolas, monospace; background:#000; border-radius:8px; padding:12px 16px; margin:14px 0; }
+.chat span { color:var(--teal); }
+nav { position:fixed; left:0; right:0; bottom:0; background:#0b0d10; border-top:2px solid var(--line); display:flex; align-items:center; justify-content:center; gap:20px; padding:12px; }
+nav button { font:inherit; font-size:26px; font-weight:800; padding:12px 28px; border-radius:10px; border:3px solid var(--teal); background:#0f2a28; color:var(--text); cursor:pointer; min-width:200px; }
+nav button:disabled { opacity:.35; cursor:default; }
+#count { font-size:22px; color:var(--dim); min-width:140px; text-align:center; }
+@media (max-width:640px) { body { font-size:19px; } .row { grid-template-columns:1fr; } nav button { min-width:0; padding:10px 16px; font-size:20px; } }
+</style>
+</head>
+<body>
+<main id="book" aria-live="polite">
+
+<section class="page" aria-label="Page">
+  <h1>Voice Commander Forever</h1>
+  <p class="big">How to use it: a guide</p>
+  <p>By TheZenaxa. For VCF (English) and VCFI (other languages): they work the same way.</p>
+  <p>Turn the pages with the <span class="btnname">NEXT</span> and <span class="btnname">PREVIOUS</span> buttons at the bottom, or the arrow keys on your keyboard.</p>
+</section>
+
+<section class="page">
+  <h2>The MIC IS box</h2>
+  <p>This small box shows what VCF is doing. It sits over your game.</p>
+  <figure><img src="images/13-game-micis.png" alt="The small MIC IS box over the game, saying MIC IS ACTIVE, click here to expand"></figure>
+  <figure><img src="images/02-micis-top.png" alt="The top of the big MIC IS box: MIC IS OFF, the character you are playing, and the microphone"></figure>
+  <ul>
+    <li><b>MIC IS OFF:</b> nothing is listening.</li>
+    <li><b>MIC IS ASLEEP:</b> it listens only for your wake words, and for voice shrink, voice expand and voice disable.</li>
+    <li><b>MIC IS ACTIVE:</b> it listens for your commands.</li>
+  </ul>
+  <div class="note">Voice commands only work when <b>MIC IS ACTIVE</b> shows <b>and</b> the game window is in front.</div>
+</section>
+
+<section class="page">
+  <h2>Back into the game: one click</h2>
+  <p>When you click on the MIC IS box or the Control Panel, your keyboard belongs to VCF, not the game. Voice commands then do nothing.</p>
+  <ol>
+    <li>Do what you need in VCF.</li>
+    <li><b>Click once on the game window.</b></li>
+    <li>Now your voice commands reach the game again.</li>
+  </ol>
+  <figure><img src="images/04-micis-bottom.png" alt="The bottom of the MIC IS box: Shrink this window, and the red box CLICK ON GAME SCREEN to RETURN TO GAME PLAY"></figure>
+  <div class="note">When the red box says <span class="btnname">CLICK ON GAME SCREEN to RETURN TO GAME PLAY</span>, that is VCF reminding you: click the game.</div>
+</section>
+
+<section class="page">
+  <h2>Change the words of a command</h2>
+  <p>Every command has two parts. You change only one of them.</p>
+  <figure><img src="images/05-command-rows.png" alt="Two command rows in the Control Panel. Marked: the words box, find foe, which you change, and the key the game gets, Tab, which stays the same"></figure>
+  <ol>
+    <li>In the MIC IS box, click <span class="btnname">Open the control panel</span>.</li>
+  </ol>
+  <figure><img src="images/03-micis-buttons.png" alt="The MIC IS box buttons, with /RELOAD and Open the control panel marked"></figure>
+  <ol start="2">
+    <li>Find the command. Click in its words and type the words you want to say.</li>
+    <li>Click <span class="btnname">CLICK HERE TO SAVE CHANGES</span>.</li>
+    <li>Click the game window again.</li>
+  </ol>
+  <p>For example: change <span class="say">find foe</span> to <span class="say">enemy</span>, and the game still gets Tab, the same as before.</p>
+</section>
+
+<section class="page">
+  <h2>More than one way to say it</h2>
+  <p>Put commas between them: <span class="say">fireball, burn them</span>. Either one works.</p>
+  <div class="note">One set of words can belong to only ONE command on a character. If another command already has those words, VCF does not save them and tells you which command has them.</div>
+  <p>Similar words are fine: <span class="say">pee one heal</span> and <span class="say">pee two heal</span> can both exist.</p>
+</section>
+
+<section class="page">
+  <h2>Your own command</h2>
+  <p>In the Control Panel, click <span class="btnname">ADD YOUR OWN COMMAND</span>. You choose the words, and what it does in the game.</p>
+  <figure><img src="images/08-add-your-own.png" alt="ADD YOUR OWN COMMAND, at the bottom of the right side of the Control Panel, marked"></figure>
+  <div class="note"><b>Be careful with keys.</b> If your own command presses a key, choose a key that is not already bound in the game's own Key Bindings. Otherwise the game does whatever that key already does. VCF's hidden keys never use a key you already use, but a key you type yourself is pressed exactly as you typed it.</div>
+</section>
+
+<section class="page">
+  <h2>New spells: reload twice</h2>
+  <p>When you learn new spells, VCF needs two reloads of the game:</p>
+  <ol>
+    <li>Click <span class="btnname">/RELOAD</span> on the MIC IS box (or say <span class="say">voice update reload</span>, then <span class="say">yes do that</span>).</li>
+    <li>When VCF tells you to, do it <b>one more time</b>.</li>
+  </ol>
+  <figure><img src="images/03-micis-buttons.png" alt="The /RELOAD button on the MIC IS box, marked"></figure>
+  <p>The first reload reads your new spells. The second gives each one the key it needs, so the chat box never opens.</p>
+</section>
+
+<section class="page">
+  <h2>/zenvc bars: spells with no place yet</h2>
+  <p>Sometimes the game's chat says to type <span class="say">/zenvc bars</span>. It comes from VCF's helper in the game: some of your spells are on no action bar, so your voice may not reach them.</p>
+  <ul>
+    <li><span class="say">/zenvc bars</span> shows a plan in the chat. Nothing changes yet.</li>
+    <li><span class="say">/zenvc bars yes</span> carries out the plan: it puts those spells on the empty slots of a completely empty action bar, each with its own key. It never replaces anything you placed.</li>
+    <li><span class="say">/zenvc undo</span> takes them off again.</li>
+  </ul>
+  <p>Type them in the game's chat, out of combat. Then still reload twice.</p>
+</section>
+
+<section class="page">
+  <h2>EXPORT and IMPORT: your safety copy</h2>
+  <p>In the Control Panel: <span class="btnname">SHARED PROFILES</span>.</p>
+  <figure><img src="images/06-panel-top.png" alt="The top of the Control Panel with the SHARED PROFILES button marked"></figure>
+  <figure><img src="images/09-profiles.png" alt="The SHARED PROFILES window: choose EXPORT or IMPORT in its list"></figure>
+  <ul>
+    <li><b>EXPORT</b> saves this character's commands: your words, and which are on or off.</li>
+    <li><b>IMPORT</b> puts a saved copy onto a character: a new one, or the same one after a mistake.</li>
+  </ul>
+  <div class="note">Export once your words are the way you like them. If you change something by accident, IMPORT puts your words and switches back. After a KEY CLEANUP, <b>OOPS!</b> in SHARED PROFILES puts the keys back the way they were.</div>
+</section>
+
+<section class="page">
+  <h2>Voice expand and voice shrink</h2>
+  <p>Say <span class="say">voice expand</span> to make the MIC IS box bigger, and <span class="say">voice shrink</span> to make it small again. These work even while the mic is ASLEEP.</p>
+  <p>You can move the box anywhere on your screen.</p>
+  <figure><img src="images/01-micis-small.png" alt="The MIC IS box when small"></figure>
+  <div class="note">When it expands, it needs room. If it sits near the bottom of the screen, it moves up by itself to fit. For a box that stays put, keep it higher on the screen.</div>
+</section>
+
+<section class="page">
+  <h2>Voice disable</h2>
+  <p>Say <span class="say">voice disable</span> to turn the microphone fully off. VCF then hears nothing at all, not even your wake words.</p>
+  <p>To listen again, turn the mic on from the MIC IS box or with your mic key.</p>
+  <p>All of these words (voice expand, voice shrink, voice disable, voice update reload) can be changed in the Control Panel, under <span class="btnname">WORDS FOR THIS PROGRAM ITSELF</span>.</p>
+  <figure><img src="images/07-words-for-vcf.png" alt="WORDS FOR THIS PROGRAM ITSELF in the Control Panel: voice shrink, voice expand, voice update reload and voice disable marked"></figure>
+</section>
+
+<section class="page">
+  <h2>Where messages show up</h2>
+  <p><b>On the MIC IS box:</b> what was heard, and the next thing to do.</p>
+  <figure><img src="images/02-micis-top.png" alt="The top of the MIC IS box, where VCF shows what it heard and the next thing to do"></figure>
+  <p><b>In the game's chat window:</b> lines from VCF's helper in the game.</p>
+  <figure><img src="images/12-game-chat-lines.png" alt="The game chat window with lines from VCF: 32 of 39 Fungal Spores, 34 of 39 Harpy Raiders, 37 of 39 Path of Defense"></figure>
+  <p><b>Under the outline:</b> when VCF puts its outline on something, a box in the lower middle of the screen tells you about it, and what to say.</p>
+  <figure><img src="images/10-game-questlog.png" alt="The quest log in the game with the VCF outline on the quest Path of Defense"></figure>
+  <figure><img src="images/11-game-box-under-outline.png" alt="The box in the lower middle of the screen: Path of Defense, 0 of 5 Singed Scale, say select to open it, or move focus for the map"></figure>
+</section>
+
+<section class="page">
+  <h2>There is more</h2>
+  <p>This guide shows the basics. There is much more: moving through windows by voice, the map and quest log, reading quests aloud, dictation and more.</p>
+  <ul>
+    <li><b>The FAQ</b>, from the MIC IS box: answers to many questions.</li>
+    <li><b>The glossary:</b> every command and what it does.</li>
+  </ul>
+  <p>Please tell me about anything that goes wrong: vcfireports@gmail.com</p>
+  <p>Thank you for playing with VCF. -Z.</p>
+</section>
+
+</main>
+<nav>
+  <button id="prev" aria-label="Previous page">&#9664; PREVIOUS</button>
+  <span id="count" aria-live="polite"></span>
+  <button id="next" aria-label="Next page">NEXT &#9654;</button>
+</nav>
+<script>
+const pages = [...document.querySelectorAll('.page')];
+let i = 0;
+try { const s = parseInt(localStorage.getItem('vcfGuidePage') || '0', 10); if (s >= 0 && s < pages.length) i = s; } catch (e) {}
+function show(n) {
+  i = Math.max(0, Math.min(pages.length - 1, n));
+  pages.forEach((p, k) => p.classList.toggle('on', k === i));
+  document.getElementById('count').textContent = 'Page ' + (i + 1) + ' of ' + pages.length;
+  document.getElementById('prev').disabled = i === 0;
+  document.getElementById('next').disabled = i === pages.length - 1;
+  try { localStorage.setItem('vcfGuidePage', String(i)); } catch (e) {}
+  window.scrollTo(0, 0);
+}
+document.getElementById('prev').onclick = () => show(i - 1);
+document.getElementById('next').onclick = () => show(i + 1);
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') show(i + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(i - 1);
+});
+show(i);
+</script>
+</body>
+</html>
