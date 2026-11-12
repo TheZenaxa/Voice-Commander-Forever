@@ -15,7 +15,7 @@ VCF and VCFI are available now and are still in testing. Please report anything 
 
 Read the READ ME FIRST for your program before you install it.
 
-<p><a href="HELLO.md"><img src="buttons/hello.png" width="442" height="50" alt="HELLO! A welcome from TheZenaxa"></a></p>
+<p><a href="HELLO.md"><img src="buttons/hello-pink.png" width="442" height="50" alt="HELLO! A welcome from TheZenaxa"></a></p>
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/VCF.NET.SETUP.exe"><img src="buttons/vcf-net-setup-0.10.180.png" width="344" height="50" alt="Download VCF NET SETUP.exe, version 0.10.180"></a></p>
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt"><img src="buttons/readme-vcf-net.png" width="504" height="50" alt="Download READ ME FIRST - HOW TO INSTALL VCF NET"></a></p>
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/latest/download/VCFI.SETUP.exe"><img src="buttons/vcfi-setup-0.10.180.png" width="303" height="50" alt="Download VCFI SETUP.exe, version 0.10.180"></a></p>
