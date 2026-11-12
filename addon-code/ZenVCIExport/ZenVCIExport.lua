@@ -8,6 +8,8 @@
 -- * when you ask by voice: outlines items in bags and windows and shows their tooltips, uses or destroys an item after you
 --   confirm, gives a mail or Auction House box the keyboard for dictation, and moves and sizes pieces of the screen in the
 --   game's Edit Mode layouts (LIMITED EDITING: place and size only).
+-- * when you say read quest: reads the open quest, what someone says, or the quest picked in your quest log aloud,
+--   with WoW's own text-to-speech.
 -- * widens the interact range while you fish and puts it back afterward.
 -- It cannot send anything off your PC: a WoW add-on has no way to.
 
@@ -47,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "120"
+local VERSION = "121"
 
 -- ------------------------------------------------------------------------------------------------------------------
 -- Ranks. The game casts the rank that is on the button. Default: the HIGHEST rank you know. Per character and per spell
@@ -1877,6 +1879,128 @@ end
 local emEvents = CreateFrame("Frame")
 emEvents:RegisterEvent("PLAYER_REGEN_DISABLED")
 emEvents:SetScript("OnEvent", function() if EM.on then emEnd("LIMITED EDITING ended: combat started. Changes already saved are kept.") end end)
+end
+
+-- v121 (2026-11-11, user: "IS it possible for this to read quest text?? that would be AMAZING" ... "can we build our own?"): READ QUEST.
+-- One key, one word: "read quest" reads aloud what is open (the quest window's page, what an NPC says, or else the quest picked in the quest log)
+-- with WoW's own text-to-speech, in the voice, speed and volume the player chose in WoW's own options. Said again, it stops. It never reads by
+-- itself. Written for VCF from Blizzard's own functions; no other add-on's code is used, so no other add-on's update can break it.
+local RQ = { reading = false }
+do   -- its own block: WoW's Lua allows 200 names at the top of a file
+local RQ_PIECE = 800   -- long text is read in pieces of up to this many letters, one after another
+local function rqSay(msg) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCFI:|r " .. msg) end end
+local function rqUp(n) local f = _G[n]; return f and f.IsVisible and f:IsVisible() end
+local function rqCall(fn, ...) if type(fn) == "function" then local ok, a, b = pcall(fn, ...); if ok then return a, b end end end
+-- the game's colour, picture and link codes are not words
+local function rqClean(text)
+    local x = tostring(text or "")
+    x = x:gsub("|c%x%x%x%x%x%x%x%x", "")
+    x = x:gsub("|r", "")
+    x = x:gsub("|T.-|t", "")
+    x = x:gsub("|A.-|a", "")
+    x = x:gsub("|H.-|h(.-)|h", "%1")
+    x = x:gsub("|n", " ")
+    x = x:gsub("%s+", " ")
+    x = x:gsub("^ ", "")
+    x = x:gsub(" $", "")
+    return x
+end
+local function rqPieces(text)
+    local out = {}
+    while #text > RQ_PIECE do
+        local head = text:sub(1, RQ_PIECE)
+        local cut = head:match("^.*()[%.%!%?]%s") or head:match("^.*()%s") or RQ_PIECE
+        out[#out + 1] = text:sub(1, cut)
+        text = text:sub(cut + 1)
+        text = text:gsub("^%s+", "")
+    end
+    if #text > 0 then out[#out + 1] = text end
+    return out
+end
+-- what is open, as (title, text, kind)
+local function rqText()
+    if rqUp("QuestFrame") then
+        local title = rqCall(GetTitleText) or ""
+        if rqUp("QuestFrameProgressPanel") then return title, rqCall(GetProgressText), "quest" end
+        if rqUp("QuestFrameRewardPanel") then return title, rqCall(GetRewardText), "quest" end
+        if rqUp("QuestFrameGreetingPanel") then return "", rqCall(GetGreetingText), "talk" end
+        return title, (rqCall(GetQuestText) or "") .. " " .. (rqCall(GetObjectiveText) or ""), "quest"
+    end
+    if rqUp("GossipFrame") then
+        local said = (C_GossipInfo and rqCall(C_GossipInfo.GetText)) or rqCall(GetGossipText)
+        return "", said, "talk"
+    end
+    -- the quest picked in the quest log (Forever's quest log works the classic way: pick, then read)
+    local i = rqCall(GetQuestLogSelection)
+    if type(i) == "number" and i > 0 and GetQuestLogQuestText then
+        local title, _, _, header = rqCall(GetQuestLogTitle, i)
+        if not header then
+            local d, o = rqCall(GetQuestLogQuestText)
+            return title or "", (d or "") .. " " .. (o or ""), "log"
+        end
+    end
+    -- newer games keep the log in C_QuestLog
+    if C_QuestLog and C_QuestLog.GetSelectedQuest and C_QuestLog.GetLogIndexForQuestID and GetQuestLogQuestText then
+        local id = rqCall(C_QuestLog.GetSelectedQuest)
+        local idx = type(id) == "number" and id > 0 and rqCall(C_QuestLog.GetLogIndexForQuestID, id)
+        if idx then
+            local d, o = rqCall(GetQuestLogQuestText, idx)
+            return (C_QuestLog.GetTitleForQuestID and rqCall(C_QuestLog.GetTitleForQuestID, id)) or "", (d or "") .. " " .. (o or ""), "log"
+        end
+    end
+end
+-- the voice, speed and volume the player chose in WoW's own text-to-speech options
+local function rqVoice()
+    local id
+    if C_TTSSettings and C_TTSSettings.GetVoiceOptionID and Enum and Enum.TtsVoiceType then
+        local v = rqCall(C_TTSSettings.GetVoiceOptionID, Enum.TtsVoiceType.Standard)
+        if type(v) == "number" then id = v end
+    end
+    if id == nil then
+        local voices = rqCall(C_VoiceChat.GetTtsVoices)
+        if type(voices) == "table" and voices[1] then id = voices[1].voiceID end
+    end
+    local rate = C_TTSSettings and rqCall(C_TTSSettings.GetSpeechRate)
+    local vol = C_TTSSettings and rqCall(C_TTSSettings.GetSpeechVolume)
+    return id, type(rate) == "number" and rate or 0, type(vol) == "number" and vol or 100
+end
+local function rqStop() RQ.reading, RQ.pieces = false, nil end
+local function rqNext()
+    local piece = RQ.pieces and table.remove(RQ.pieces, 1)
+    if not piece then rqStop() return end
+    local id, rate, vol = rqVoice()
+    if id == nil then rqStop(); rqSay("WoW has no text-to-speech voice to read with. Look in the game's options: Accessibility, Text to Speech.") return end
+    local text = piece:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+    local ok, err = pcall(C_VoiceChat.SpeakText, id, text, rate, vol, false)   -- the way Forever's game takes it
+    if not ok then
+        local dest = (Enum and Enum.VoiceTtsDestination and (Enum.VoiceTtsDestination.LocalPlayback or Enum.VoiceTtsDestination.QueuedLocalPlayback)) or 1
+        ok, err = pcall(C_VoiceChat.SpeakText, id, text, dest, rate, vol)       -- the older way
+    end
+    if not ok then rqStop(); rqSay("WoW's text-to-speech did not start: " .. tostring(err)) end
+end
+function RQ.toggle()
+    if not (C_VoiceChat and C_VoiceChat.SpeakText) then rqSay("this game has no text-to-speech that add-ons can use.") return end
+    if RQ.reading then
+        rqStop()
+        if C_VoiceChat.StopSpeakingText then pcall(C_VoiceChat.StopSpeakingText) end
+        rqSay("reading stopped.")
+        return
+    end
+    local title, body, kind = rqText()
+    title = rqClean(title); body = rqClean(body)
+    local text = (title ~= "" and (title .. ". ") or "") .. body
+    if body == "" then rqSay("nothing to read: open a quest, talk to someone, or pick a quest in your quest log.") return end
+    RQ.pieces, RQ.reading = rqPieces(text), true
+    rqSay((kind == "talk" and "reading what they say." or "reading the quest.") .. " Say read quest again to stop.")
+    rqNext()
+end
+local rqEvents = CreateFrame("Frame")
+for _, ev in ipairs({ "VOICE_CHAT_TTS_PLAYBACK_FINISHED", "VOICE_CHAT_TTS_PLAYBACK_FAILED" }) do pcall(rqEvents.RegisterEvent, rqEvents, ev) end
+rqEvents:SetScript("OnEvent", function(_, ev)
+    if not RQ.reading then return end
+    if ev == "VOICE_CHAT_TTS_PLAYBACK_FAILED" then rqStop(); rqSay("WoW's text-to-speech could not read that.") return end
+    rqNext()   -- the next piece, or the end
+end)
 end
 local armed = { kind = nil, at = 0 }   -- "use" or "destroy" waiting for VCFI's yes
 -- v74 (2026-11-09): "use that" no longer calls UseContainerItem. That function is PROTECTED in this game: on 2026-11-07 19:57 the game blocked it
@@ -3843,7 +3967,8 @@ local function ensureButton(b)
         ["/click zenvciselect"] = selectStep, ["/click zenvcibuy"] = buyThatStep, ["/click zenvciselljunk"] = sellJunkStep, ["/click zenvcirepair"] = repairStep,
         ["/click zenvciswitchside"] = switchSideStep, ["/click zenvcisellthat"] = sellThatStep,
         ["/click zenvcistopmove"] = stopMoveStep,
-        ["/click zenvcieditlayout"] = function() EM.toggle() end,   -- v120 the one new key: edit layout on / off
+        ["/click zenvcieditlayout"] = function() EM.toggle() end,
+        ["/click zenvcireadquest"] = function() RQ.toggle() end,   -- v121 read quest (again: stop)   -- v120 the one new key: edit layout on / off
         ["/click zenvcipadenter"] = function() padPress() end,   -- v91
         ["/click zenvcifinishtrade"] = function() finishTradeStep() end,   -- v95
         ["/click zenvcisendmail"] = function() sendMailStep() end,   -- v95

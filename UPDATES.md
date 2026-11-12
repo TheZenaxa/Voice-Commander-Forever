@@ -5,6 +5,30 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.176 and VCFI 0.10.176 (read quest aloud by voice)
+
+Published 2026-11-11 17:32 US Mountain Standard Time
+
+### Read quest (new, VCF and VCFI)
+
+- Say **"read quest"** and the helper reads aloud what is open: the quest window's page (its title, then its text and objectives, or the progress or completion text), what someone says when you talk to them, or, with nothing open, the quest picked in your quest log.
+- Say **"read quest"** again to stop.
+- It uses **WoW's own text-to-speech**, with the voice, speed and volume you chose in the game's options (Accessibility, Text to Speech). Nothing to download, and nothing new on screen.
+- It **never starts reading by itself**: only when you say it.
+- Our own code, written from Blizzard's own functions, so another add-on's update cannot break it.
+- VCFI: the word is in all six languages, and the game's text is read in your game's language, in a voice for it if Windows has one.
+- Tested in the game with VCF. VCFI's reading is not tested in the game yet.
+
+### Also in this release
+
+- Limited editing by voice (from 0.10.175) and the public add-on code: **addon-code** on this page now holds add-on version 121, the same files as in these downloads.
+
+The game's add-on that comes with VCF and VCFI is now version 121.
+
+After installing, reload the game twice.
+
+---
+
 ## VCF 0.10.175 and VCFI 0.10.175 (limited editing by voice, experimental; add-on code public)
 
 Published 2026-11-11 16:52 US Mountain Standard Time
