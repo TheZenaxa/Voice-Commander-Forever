@@ -26,7 +26,7 @@ I am TheZenaxa, a legally blind player. I made Voice Commander Forever so that I
 
 - It sends keyboard keystrokes through Windows (SendInput), and only while the World of Warcraft window is in front. It sends no mouse input.
 - One spoken command sends the key for one action. A few commands press their key more than once when the player says a number (for example "move down three"). Chat and dictation type the words the player speaks and press Enter.
-- Nothing runs on its own: no loops, timers, rotations or automatic play. Every action starts from the player speaking.
+- Nothing runs on its own: no loops, timers, rotations or automatic play. Every action starts from the player speaking, or clicking a button in VCF.
 - One exception, started by the player by hand: a KEY TEST presses each of its keys once (about 200, a third of a second apart) to find which keys reach the game on that PC. During the test those keys are bound only to counters and do nothing in the game.
 
 ## What it does not do
@@ -46,8 +46,9 @@ It uses only the standard World of Warcraft add-on API. It:
 - Saves the character's spells, items, key bindings and a few settings, so the voice program knows what each character can do.
 - Gives voice commands hidden keys through override bindings to its own buttons (spells, items, emotes), set out of combat.
 - Uses secure action buttons for protected actions, so those happen only through the game's own approved click path, after a key press.
-- Places spells on an empty action bar, with keys, only when the player asks (/zenvc bars yes). It never replaces anything on the player's bars.
+- Places spells that are on no bar onto a spare action bar (an empty one, or the one it filled before), with keys, only when the player asks: by saying "new spells" or clicking NEW SPELLS in VCF and then answering VCF's yes or no question, or by typing /zenvc bars yes. It never uses or replaces anything on the player's own bars, and does nothing in combat.
 - Lets the player move an outline through bags, vendors, trainers, professions, the map and the quest log by voice, and select with the game's own clicks. Its own tooltip shows the outlined item in large text.
+- Buys, sells or trains only the outlined line, one per spoken command. At a trainer it asks first, and says the game's own reason when something cannot be trained yet.
 - Reads quest text aloud with World of Warcraft's own text-to-speech.
 - Asks the player to confirm before using, destroying or unlearning anything. The game's own confirmation boxes still appear and are answered by the player.
 - Writes down any action the game blocks, so problems can be fixed.
