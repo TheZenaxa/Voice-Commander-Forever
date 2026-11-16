@@ -49,7 +49,20 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "131"
+local VERSION = "138"
+
+-- v138 (2026-11-16, user: "can the player choose the color of the text showing into their chat box so it stands out?"): every line this helper writes into the
+-- chat goes through here. With a colour chosen in VCF's Control Panel (ZENVC_CHAT_COLOR in the command list, "rrggbb"), the WHOLE line is that colour (a link
+-- or a word coloured inside it keeps its own colour, then the line's colour carries on). With none chosen, the line is exactly as before.
+function ZenVCChat(msg)
+    msg = tostring(msg)
+    local c = type(ZENVC_CHAT_COLOR) == "string" and ZENVC_CHAT_COLOR:match("^%x%x%x%x%x%x$")
+    if c then
+        msg = msg:gsub("^|c%x%x%x%x%x%x%x%x(VCFI?:)|r", "%1")
+        msg = "|cff" .. c .. (msg:gsub("|r", "|r|cff" .. c)) .. "|r"
+    end
+    if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(msg) else print(msg) end
+end
 
 -- ------------------------------------------------------------------------------------------------------------------
 -- Ranks. The game casts the rank that is on the button. Default: the HIGHEST rank you know. Per character and per spell
@@ -921,7 +934,7 @@ local function makePlan()
     return plan, skipped, #bars
 end
 
-local function say(msg) print("VCF Helper: " .. msg) end
+local function say(msg) ZenVCChat("VCF Helper: " .. msg) end
 
 local function showPlan()
     if InCombatLockdown() then say("not in combat, please.") return end
@@ -935,7 +948,7 @@ local function showPlan()
     say("To do it, type:  /zenvc bars yes        To undo later:  /zenvc undo")
 end
 
-local function doPlace()
+local function doPlace(quiet)   -- v136 quiet: NEW SPELLS says the result itself
     if InCombatLockdown() then say("not in combat, please.") return end
     if not planned then say("type /zenvc bars first to see the plan.") return end
     local plan = makePlan()   -- recompute: only what is STILL empty and free is touched
@@ -963,6 +976,7 @@ local function doPlace()
     end
     ZenVCExportDB._placed[key] = done
     planned = nil
+    if quiet then return count end
     say("placed " .. count .. " spell(s) with keys. Now type /reload, and then /reload a second time, so the voice commander can read them.")
 end
 
@@ -994,7 +1008,7 @@ local function refreshRanks()
             end
         end
     end
-    if #names > 0 then print("VCF Helper: moved to the highest rank you know: " .. table.concat(names, ", ")) end
+    if #names > 0 then ZenVCChat("VCF Helper: moved to the highest rank you know: " .. table.concat(names, ", ")) end
 end
 
 local function showRanks()
@@ -1160,7 +1174,7 @@ StaticPopupDialogs["ZENVC_PLACE"] = {
     OnAlt = function()
         ZenVCExportDB._noask = ZenVCExportDB._noask or {}
         ZenVCExportDB._noask[charKey()] = true
-        print("VCF Helper: I will not ask again for this character. /zenvc bars still works whenever you want it.")
+        ZenVCChat("VCF Helper: I will not ask again for this character. /zenvc bars still works whenever you want it.")
     end,
     timeout = 0, whileDead = false, hideOnEscape = true, preferredIndex = 3,
 }
@@ -1181,7 +1195,7 @@ local function offerPlacement()
     end
     -- v34 NO question box. A StaticPopup is blocked by the game in controller mode (ADDON_ACTION_FORBIDDEN SetPreferredGamepadInteractTarget, found 2026-10-13 and again
     -- 2026-10-19 when the new free-key check made the offer appear for a second character) and the guard then switches the hidden keys off. A line in the chat instead.
-    say(#plan .. " of your spells have no key a voice command can use. Type  /zenvc bars  to see where they would go.")
+    say(#plan .. " of your spells have no key a voice command can use. Say NEW SPELLS (VCF asks first), or type  /zenvc bars  to see where they would go.")
 end
 
 
@@ -1235,18 +1249,19 @@ guard:SetScript("OnEvent", function(_, ev, addonName, funcName)
     if addonName == "ZenVCExport" then
         local since = lastBoxAt and GetTime and string.format("%.0f s after a box of mine was shown", GetTime() - lastBoxAt) or "no box of mine had been shown"
         ZenVCExportDB._blocked = ZenVCExportDB._blocked or {}
-        while #ZenVCExportDB._blocked >= 20 do table.remove(ZenVCExportDB._blocked, 1) end   -- keep the last 20 only
-        ZenVCExportDB._blocked[#ZenVCExportDB._blocked + 1] = tostring(ev) .. ": " .. tostring(funcName) .. " (step: " .. tostring(ZenVCExportDB._step) .. "; last window action: " .. tostring(ZenVCExportDB._lastAct) .. "; " .. since .. ") " .. tostring(date("%Y-%m-%d %H:%M"))
+        while #ZenVCExportDB._blocked >= 100 do table.remove(ZenVCExportDB._blocked, 1) end   -- v134 keep the last 100 (was 20)
+        ZenVCExportDB._blocked[#ZenVCExportDB._blocked + 1] = tostring(ev) .. ": " .. tostring(funcName) .. " (step: " .. tostring(ZenVCExportDB._step) .. "; last window action: " .. tostring(ZenVCExportDB._lastAct) .. "; " .. since .. ") " .. tostring(date("%Y-%m-%d %H:%M:%S"))
+            .. ((buttonOwner.zvDiag and (" || " .. tostring(buttonOwner.zvDiag()))) or "")   -- v134 what VCF was doing at that moment
         -- v51 the controller's own focus function is refused whenever an add-on touched a window the controller is moving in; that is not a hidden key
         -- going wrong, so the keys stay on (it switched every voice key off in the stress test). Anything else still switches them off.
         if tostring(funcName):find("SetPreferredGamepadInteractTarget") then
-            print("VCF Helper: the game refused a controller focus change after one of my window actions. I wrote it down. Your voice keys stay on.")
+            ZenVCChat("VCF Helper: the game refused a controller focus change after one of my window actions. I wrote it down. Your voice keys stay on.")
             return
         end
         -- v74 (2026-11-09): this used to switch EVERY hidden key off until the next add-on version (_buttonsOff). One blocked window action
         -- (use() on 2026-11-07) left the person with no working voice keys for two days. Now only my question boxes go off; the keys stay on.
         ZenVCExportDB._boxesOff = true   -- no question box of mine will be shown again
-        print("VCF Helper: the game blocked '" .. tostring(funcName) .. "'. I wrote it down for the voice commander. Your voice keys stay on.")
+        ZenVCChat("VCF Helper: the game blocked '" .. tostring(funcName) .. "'. I wrote it down for the voice commander. Your voice keys stay on.")
     end
 end)
 
@@ -1578,7 +1593,7 @@ local function questStep()
             rec.acted = "GetQuestReward(" .. chosen .. ") " .. (ok and "called" or ("failed: " .. tostring(err)))
         elseif nch > 1 then
             rec.acted = "reward window with " .. nch .. " rewards to choose from: left for you to choose"
-            if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(QG.say(QG.tr("|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"))) end
+            if DEFAULT_CHAT_FRAME then ZenVCChat(QG.say(QG.tr("|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"))) end
         else
             local ok, err = pcall(GetQuestReward, nch == 1 and 1 or nil)
             rec.acted = "GetQuestReward() " .. (ok and "called" or ("failed: " .. tostring(err)))
@@ -1617,7 +1632,7 @@ end
 -- v46 the marker: which talk line or vendor item VCF points at. Cleared when the window closes.
 local mark = { kind = nil, i = 0 }
 local function isUp(n) local fr = _G[n]; return fr and fr.IsVisible and fr:IsVisible() end
-local function say1(t) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(t))) end end
+local function say1(t) if DEFAULT_CHAT_FRAME then ZenVCChat("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(t))) end end
 
 local function gossipLines()
     local list = {}
@@ -1714,6 +1729,52 @@ function QG.profLines()
     end)
     return list
 end
+-- v132 Forever opens professions on an OVERVIEW page (ProfessionsFrame.BookPage): each profession with its button(s); a button opens its recipes
+function QG.profBookOpen()
+    local pf = _G.ProfessionsFrame
+    local bp = pf and pf.BookPage
+    return (pf and pf.IsVisible and pf:IsVisible() and bp and bp.IsVisible and bp:IsVisible() and not QG.profOpen()) and true or false
+end
+function QG.profAny() return QG.profOpen() or QG.profBookOpen() end
+function QG.fsText(fr)
+    local ok, t = pcall(function()
+        for _, r in ipairs({ fr:GetRegions() }) do
+            if r.GetObjectType and r:GetObjectType() == "FontString" and r:IsVisible() then
+                local x = r:GetText(); if type(x) == "string" and x ~= "" then return x end
+            end
+        end
+    end)
+    return ok and t or nil
+end
+function QG.profBookLines()
+    local list = {}
+    pcall(function()
+        local bp = ProfessionsFrame.BookPage
+        local cf = bp.ProfessionsContentFrame or bp
+        for _, key in ipairs({ "PrimaryProfession1", "PrimaryProfession2", "SecondaryProfession1", "SecondaryProfession2", "SecondaryProfession3", "SecondaryProfession4" }) do
+            local pfr = cf[key]
+            if pfr and pfr.IsVisible and pfr:IsVisible() then
+                local pname = (pfr.professionName and pfr.professionName.GetText and pfr.professionName:GetText()) or QG.fsText(pfr)
+                local rank = pfr.StatusBar and ((pfr.StatusBar.rank and pfr.StatusBar.rank.GetText and pfr.StatusBar.rank:GetText()) or QG.fsText(pfr.StatusBar) or (pfr.StatusBar.Rank and QG.fsText(pfr.StatusBar.Rank)))
+                for b = 1, 4 do
+                    local btn = pfr["SpellButton" .. b]
+                    if btn and btn.IsVisible and btn:IsVisible() then
+                        local sname = (btn.spellString and btn.spellString.GetText and btn.spellString:GetText()) or QG.fsText(btn) or pname or ("profession " .. #list + 1)
+                        local sub = btn.subSpellString and btn.subSpellString.GetText and btn.subSpellString:GetText()
+                        list[#list + 1] = { prof = true, book = true, fr = btn, pname = pname, rank = rank,
+                                            name = tostring(sname) .. ((type(sub) == "string" and sub ~= "") and (" (" .. sub .. ")") or "") }
+                    end
+                end
+                local ub = pfr.UnlearnButton   -- v133 (the game's own word for it, in the game's language)
+                if ub and ub.IsVisible and ub:IsVisible() then
+                    list[#list + 1] = { prof = true, book = true, unlearn = true, fr = ub, pname = pname, rank = rank,
+                                        name = tostring(_G.UNLEARN or "Unlearn") .. " " .. tostring(pname or "") }
+                end
+            end
+        end
+    end)
+    return list
+end
 -- the profession tabs down the side (the overview, then each profession)
 function QG.profTabs()
     local list = {}
@@ -1782,6 +1843,26 @@ function QG.trainerShow(i)
             if elem then sb:ScrollToElementData(elem, align) end
         end
     end)
+end
+-- v136 why the game will not train this line yet, from its own requirement functions (first reason only); nil = nothing found
+function QG.trainWhy(e)
+    local why
+    pcall(function()
+        local lv = GetTrainerServiceLevelReq and tonumber(GetTrainerServiceLevelReq(e.trainer))
+        local my = UnitLevel and UnitLevel("player") or 0
+        if lv and lv > my then why = "cannot train " .. tostring(e.name) .. ": it needs level " .. lv .. ", you are level " .. my return end
+        if GetTrainerServiceSkillReq then
+            local sk, rk, has = GetTrainerServiceSkillReq(e.trainer)
+            if sk and sk ~= "" and not has then why = "cannot train " .. tostring(e.name) .. ": it needs " .. tostring(sk) .. ((rk and rk ~= 0) and (" " .. tostring(rk)) or "") .. " first" return end
+        end
+        if GetTrainerServiceNumAbilityReq and GetTrainerServiceAbilityReq then
+            for j = 1, (GetTrainerServiceNumAbilityReq(e.trainer) or 0) do
+                local ab, ok = GetTrainerServiceAbilityReq(e.trainer, j)
+                if ab and not ok then why = "cannot train " .. tostring(e.name) .. ": it needs " .. tostring(ab) .. " first" return end
+            end
+        end
+    end)
+    return why
 end
 function QG.trainerLines()
     local list = {}
@@ -1905,7 +1986,7 @@ do   -- v120: its own block, so its names do not count toward the file's 200 (Wo
 -- again, and the game places its own frames from it. A preset layout cannot be changed: the first change copies it into a layout of the
 -- player's own, and says so. Out of combat only; combat ends editing. Nothing starts while the game's own Edit Mode window is open.
 local EM_STEP = 5   -- pixels moved by one "move" step
-local function emSay(msg) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(msg))) end end
+local function emSay(msg) if DEFAULT_CHAT_FRAME then ZenVCChat("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(msg))) end end
 local function emReady()
     return C_EditMode and C_EditMode.GetLayouts and C_EditMode.SaveLayouts and Enum and Enum.EditModeSystem and Enum.EditModeLayoutType
         and EditModePresetLayoutManager and CopyTable and true or false
@@ -2134,7 +2215,7 @@ end
 local RQ = { reading = false }
 do   -- its own block: WoW's Lua allows 200 names at the top of a file
 local RQ_PIECE = 800   -- long text is read in pieces of up to this many letters, one after another
-local function rqSay(msg) if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(msg))) end end
+local function rqSay(msg) if DEFAULT_CHAT_FRAME then ZenVCChat("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(msg))) end end
 local function rqUp(n) local f = _G[n]; return f and f.IsVisible and f:IsVisible() end
 local function rqCall(fn, ...) if type(fn) == "function" then local ok, a, b = pcall(fn, ...); if ok then return a, b end end end
 -- the game's colour, picture and link codes are not words
@@ -2825,7 +2906,8 @@ end
 -- v106 (2026-11-09, user: "choosing a quest reward" ... "when there is no selection ... SELECT works just fine"): ONLY when the reward window offers a
 -- choice (more than one reward to choose from). START MOVE outlines the rewards you can choose; the tooltip box shows each with your equipped item
 -- beside it; select is the game's own click on it (the game marks it as your choice); "complete" then hands the quest in with that reward.
-function TM.qrewardOpen() return isUp("QuestFrameRewardPanel") and (GetNumQuestChoices and GetNumQuestChoices() or 0) > 1 end
+function TM.qrewardOpen()   -- v132: Forever's reward panel was never found (no record in the saved data); any shown quest window with a reward to choose
+    return ((GetNumQuestChoices and GetNumQuestChoices() or 0) > 0) and (isUp("QuestFrameRewardPanel") or isUp("QuestFrame")) end
 function TM.qrewardSlots()
     local list = {}
     if not TM.qrewardOpen() then return list end
@@ -2851,6 +2933,7 @@ function TM.qrewardSlots()
         end
         scan(QuestFrameRewardPanel, 0)
         if #list == 0 and QuestInfoRewardsFrame then scan(QuestInfoRewardsFrame, 0) end
+        if #list == 0 and QuestFrame then scan(QuestFrame, 0) end   -- v132
         table.sort(list, function(a, b) if math.abs(a.y - b.y) > 6 then return a.y > b.y end return a.x < b.x end)
         ZenVCExportDB._qrewardFound = date("%H:%M:%S") .. " " .. #list .. " of " .. tostring(GetNumQuestChoices()) .. " choices, chosen " .. tostring(chosen)
     end)
@@ -2977,10 +3060,17 @@ local function lightUp(list)
     local e = list[mark.i]
     if e then
         if e.prof and e.node then e.fr = QG.profFrame(e) end   -- v130 a recipe or section line: scrolled into view, then outlined
-        if e.trainer then QG.trainerShow(e.trainer); e.fr = QG.trainerFrameFor(e.plain) or e.fr end   -- v131 a trainer line further down: scrolled to, then found
+        if e.trainer then
+            if not e.header and SelectTrainerService then pcall(SelectTrainerService, e.trainer) end   -- v136 the game's own highlight and details show this line too
+            QG.trainerShow(e.trainer); e.fr = QG.trainerFrameFor(e.plain) or e.fr   -- v131 a trainer line further down: scrolled to, then found
+            if C_Timer and C_Timer.After and not e.header then local plain = e.plain; C_Timer.After(0.15, function() pcall(function()
+                if mark.kind == "trainer" and QG.trainerOpen() then local f = QG.trainerFrameFor(plain); if f then markerOn(f) end end
+            end) end) end
+        end
         if e.fr then markerOn(e.fr) elseif markFrame then markFrame:Hide() end   -- v88: a flight point may have no button
-        if (mark.kind == "prof" or mark.kind == "proftab") and e.fr then pcall(function()   -- v130 select = the game's own click on it
-            QG.profSel = e.fr; aimKey("/click zenvcselect", "ZenVCProfSelect", e.fr)
+        if (mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and e.fr then pcall(function()   -- v130 select = the game's own click on it (v132 the overview too)
+            if e.unlearn then QG.profSel = nil; aimKey("/click zenvcselect")   -- v133 select never unlearns
+            else QG.profSel = e.fr; aimKey("/click zenvcselect", "ZenVCProfSelect", e.fr) end
         end) end
         if (mark.kind == "qlog" or mark.kind == "qmap") and e.fr then pcall(function()   -- v124
             if mark.kind == "qlog" then QG.qlogShow(e) end
@@ -3065,7 +3155,16 @@ local function lightUp(list)
                 t:AddLine("Typed: " .. (typed ~= "" and typed or "(nothing yet)"), 1, 1, 1)
                 t:AddLine("Say {Keypad Enter:enter} to press it", 0.6, 0.6, 0.6)
             elseif e.prof then   -- v130 the professions window
-                if e.tab then
+                if e.book and e.unlearn then   -- v133
+                    t:SetText(tostring(e.name), 1, 1, 1)
+                    if e.rank then t:AddLine(tostring(e.rank), 1, 1, 1) end
+                    t:AddLine("Say {Destroy That#unlearn:unlearn profession} to unlearn it. VCF asks first.", 0.6, 0.6, 0.6)
+                elseif e.book then   -- v132 a profession on the overview page
+                    t:SetText(tostring(e.name), 1, 1, 1)
+                    if e.pname and e.pname ~= e.name then t:AddLine(tostring(e.pname), 1, 1, 1) end
+                    if e.rank then t:AddLine(tostring(e.rank), 1, 1, 1) end
+                    t:AddLine("Say {Select:select} to choose it, or {Move My Box:move my box} for the tabs", 0.6, 0.6, 0.6)
+                elseif e.tab then
                     t:SetText(tostring(e.name), 1, 1, 1)
                     t:AddLine("Say {Select:select} to open it, or {Move My Box:move my box} for the recipes", 0.6, 0.6, 0.6)
                 elseif e.header then
@@ -3628,7 +3727,7 @@ local MAPLOOK = {}
 -- v128 LOOK ONLY for trainer and profession windows (see the note at v128 above startMoveStep's fallback)
 function MAPLOOK.window(quiet)
     local roots = {}
-    for _, nm in ipairs({ "ClassTrainerFrame", "TradeSkillFrame", "ProfessionsFrame", "CraftFrame", "TrainerFrame" }) do
+    for _, nm in ipairs({ "ClassTrainerFrame", "TradeSkillFrame", "ProfessionsFrame", "CraftFrame", "TrainerFrame", "QuestFrame" }) do   -- v132 QuestFrame (reward choices)
         local fr = _G[nm]
         if fr and fr.IsVisible and fr:IsVisible() then roots[#roots + 1] = nm end
     end
@@ -3666,9 +3765,10 @@ function MAPLOOK.window(quiet)
         rec.api[#rec.api + 1] = "C_TradeSkillUI=" .. type(C_TradeSkillUI)
         if C_TradeSkillUI then for _, fn in ipairs({ "GetAllRecipeIDs", "GetRecipeInfo", "GetFilteredRecipeIDs", "OpenTradeSkill", "GetCategories" }) do rec.api[#rec.api + 1] = "C_TradeSkillUI." .. fn .. "=" .. type(C_TradeSkillUI[fn]) end end
         if GetNumTrainerServices then rec.api[#rec.api + 1] = "trainer services=" .. tostring(GetNumTrainerServices()) end
+        if GetNumQuestChoices then rec.api[#rec.api + 1] = "quest choices=" .. tostring(GetNumQuestChoices()) end   -- v132
     end)
     ZenVCExportDB._windowLook = rec
-    if not quiet and DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r this window was noted for the voice commander (nothing was pressed). Close the game as usual to save the note.") end
+    if not quiet and DEFAULT_CHAT_FRAME then ZenVCChat("|cff2ee6d6VCF:|r this window was noted for the voice commander (nothing was pressed). Close the game as usual to save the note.") end
     return true
 end
 function MAPLOOK.run(quiet)
@@ -3713,7 +3813,7 @@ function MAPLOOK.run(quiet)
         if m and m.GetMapID then rec.api[#rec.api + 1] = "mapID=" .. tostring(m:GetMapID()) end
     end)
     ZenVCExportDB._mapLook = rec
-    if not quiet and DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("|cff2ee6d6VCF:|r the map's windows were noted for the voice commander (nothing was pressed). Close the game as usual to save the note.") end
+    if not quiet and DEFAULT_CHAT_FRAME then ZenVCChat("|cff2ee6d6VCF:|r the map's windows were noted for the voice commander (nothing was pressed). Close the game as usual to save the note.") end
 end
 
 local function startMoveStep()
@@ -3733,6 +3833,7 @@ local function startMoveStep()
         { "qreward", function() return TM.qrewardOpen() and TM.qrewardSlots() or {} end },   -- v106
         { "qgreet", qgreetLines },   -- v122 an NPC's list of quests
         { "prof", function() return QG.profOpen() and QG.profLines() or {} end },   -- v130 the professions window's recipes
+        { "profbook", function() return QG.profBookOpen() and QG.profBookLines() or {} end },   -- v132 the professions OVERVIEW page
         { "trainer", function() return QG.trainerOpen() and QG.trainerLines() or {} end },   -- v129 a trainer's list
         { "trade", function() return TM.tradeOpen() and TM.tradeSlots() or {} end },   -- v95
         { "mail", function() return TM.mailOpen() and TM.mailSlots() or {} end },   -- v95
@@ -3829,7 +3930,7 @@ C_Timer.NewTicker(0.5, function()
         end)
         -- v95 mail: the outline left the mailbox (select back to normal); a waiting "send mail" is cancelled when the mail changes; the outline
         -- follows a change of tab
-        if QG.profSel and not ((mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen()) then aimKey("/click zenvcselect"); QG.profSel = nil end   -- v130
+        if QG.profSel and not ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) then aimKey("/click zenvcselect"); QG.profSel = nil end   -- v130
         if QG.mapSel and not ((mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen())) then aimKey("/click zenvcselect"); QG.mapSel = nil end   -- v124
         if mailSelTarget and not ((mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen())) then aimKey("/click zenvcselect"); mailSelTarget = nil end
         -- v98 (user: "it should only do that once MOVE START or START MOVE is initiated")
@@ -3857,7 +3958,7 @@ C_Timer.NewTicker(0.5, function()
             mailLastSend = sv
         else mailLastSend = nil end
         if not mark.kind then lastPage = nil return end
-        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
+        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
         if not open then mark.kind, mark.i = nil, 0; markerOff(); lastPage = nil return end
         if mark.kind == "merchant" then
             local page = MerchantFrame and MerchantFrame.page
@@ -3879,8 +3980,8 @@ local function moveStep(dir)
             rec.acted = "pad key " .. tostring(list[mark.i] and list[mark.i].padKey)
             return
         end
-        if (mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen() then   -- v130 recipes, or the tabs
-            local list = mark.kind == "prof" and QG.profLines() or QG.profTabs()
+        if (mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny() then   -- v130 recipes, or the tabs (v132 or the overview)
+            local list = (mark.kind == "prof" and QG.profLines()) or (mark.kind == "profbook" and QG.profBookLines()) or QG.profTabs()
             if #list == 0 then say1("nothing here to move to") return end
             local step = (dir == "up" or dir == "left") and -1 or 1
             local want = (mark.i == 0) and 1 or mark.i + step
@@ -4012,15 +4113,48 @@ local function moveStep(dir)
     ZenVCExportDB._move = rec
 end
 
+-- v136 NEW SPELLS (user 2026-11-16: "the /zenvc bars needs to have a voiced command ... NEW SPELLS"): what /zenvc bars yes does, from a key. Only spells on NO bar,
+-- only into a completely empty bar, nothing on the player's bars is replaced; /zenvc undo takes them away. VCF asks first in its own box, then asks to reload twice.
+buttonOwner.zvNewSpells = function()
+    if InCombatLockdown() then say1("not in combat, please.") return end
+    local plan, skipped, nbars = makePlan()
+    if #plan + #skipped == 0 then say1("NEW SPELLS: every spell you know is already on a bar. Nothing to place.") return end
+    if nbars == 0 or #plan == 0 then
+        say1("NEW SPELLS: " .. (#plan + #skipped) .. " spell(s) are on no bar, but there is no spare action bar to put them on (one with nothing on it, or free slots on the bar NEW SPELLS filled before), so nothing changed. Turn on another action bar in the game's settings, then say {New Spells:new spells} again.")
+        return
+    end
+    planned = plan
+    local n = doPlace(true) or 0
+    say1("NEW SPELLS: placed " .. n .. " spell(s) with keys. VCF now asks you to reload the game.")
+    if #skipped > 0 then say1("NEW SPELLS: no room or no free key for: " .. table.concat(skipped, ", ")) end
+end
+
 local function buyStep()
+    -- v136 (user: "I tried to buy my first spell ... wouldnt let me BUY THAT"): at a trainer with the outline not on its list, the outline goes to the first skill you can train
+    if QG.trainerOpen() and mark.kind ~= "trainer" and not (mark.kind == "merchant" and merchantOpen()) then
+        local list = QG.trainerLines()
+        local first
+        local money = GetMoney and GetMoney() or 0   -- one you can afford first, otherwise the first one you could train
+        for k, e in ipairs(list) do if not e.header and e.cat == "available" and not QG.trainWhy(e) and (GetTrainerServiceCost and GetTrainerServiceCost(e.trainer) or 0) <= money then first = k break end end
+        if not first then for k, e in ipairs(list) do if not e.header and e.cat == "available" and not QG.trainWhy(e) then first = k break end end end
+        if not first then say1("nothing at this trainer can be trained yet") return end
+        mark.kind, mark.i = "trainer", first
+        QG.trArm = nil
+        lightUp(list)
+    end
     if mark.kind == "trainer" and QG.trainerOpen() then   -- v129 train the outlined skill: the first "buy" asks, the second trains
         local e = QG.trainerLines()[mark.i]
         if not e or e.header then say1("move to a skill first") return end
-        if e.cat ~= "available" then say1(e.cat == "used" and "you already know this" or "this cannot be trained yet") return end
+        if e.cat == "used" then say1("you already know this") return end
+        local why = QG.trainWhy(e)   -- v136 the game's own reason
+        if why or e.cat ~= "available" then QG.trArm = nil; say1(why or ("cannot train " .. tostring(e.name) .. ": the game says it cannot be trained yet")) return end
+        local cost = GetTrainerServiceCost and GetTrainerServiceCost(e.trainer) or 0
+        local money = GetMoney and GetMoney() or 0
+        local function cash(c) return (GetMoneyString and c and c > 0) and GetMoneyString(c, true) or "nothing" end
+        if cost > money then QG.trArm = nil; say1("not enough money for " .. tostring(e.name) .. ": it costs " .. cash(cost) .. ", you have " .. cash(money)) return end
         if QG.trArm ~= e.trainer then
             QG.trArm = e.trainer
-            local cost = GetTrainerServiceCost and GetTrainerServiceCost(e.trainer) or 0
-            say1("train " .. tostring(e.name) .. " for " .. ((GetMoneyString and cost and cost > 0) and GetMoneyString(cost, true) or "nothing") .. "? say {Buy:buy} again to train it")
+            say1("train " .. tostring(e.name) .. " for " .. cash(cost) .. "? say {Buy:buy} again to train it")
             return
         end
         QG.trArm = nil
@@ -4030,7 +4164,7 @@ local function buyStep()
     end
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing" }
     pcall(function()
-        if not merchantOpen() then rec.acted = "no vendor open" return end
+        if not merchantOpen() then rec.acted = "no vendor open"; say1("open a vendor or a trainer first") return end   -- v136 it was silent
         local list = merchantSlots()
         local e = mark.kind == "merchant" and list[mark.i]
         if not e then say1("say {Move Down:move down} or {Move Right:move right} first, to choose what to buy") rec.acted = "nothing chosen" return end
@@ -4102,11 +4236,11 @@ end)
 local function switchSideStep()
     if EM.on then EM.pick(1) return end   -- v120 edit layout: next piece
     if (mark.kind == "qlog" or mark.kind == "qmap") and QG.mapOpen() then QG.flip() return end   -- v124 the map: quest log side <-> map side
-    if (mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen() then   -- v130 recipes <-> the profession tabs
-        local toTabs = mark.kind == "prof"
-        local list = toTabs and QG.profTabs() or QG.profLines()
+    if (mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny() then   -- v130 recipes <-> the profession tabs (v132 the overview too)
+        local toTabs = mark.kind ~= "proftab"
+        local list = toTabs and QG.profTabs() or (QG.profOpen() and QG.profLines() or QG.profBookLines())
         if #list == 0 then say1(toTabs and "no profession tabs here" or "no recipes here") return end
-        mark.kind, mark.i = toTabs and "proftab" or "prof", 1
+        mark.kind, mark.i = toTabs and "proftab" or (QG.profOpen() and "prof" or "profbook"), 1
         lightUp(list)
         return
     end
@@ -4199,8 +4333,58 @@ local function destroyThatStep()
     ZenVCExportDB._destroyThat = rec
 end
 
+-- v134 a snapshot for the blocked-action record (read only)
+buttonOwner.zvDiag = function()
+    local t = {}
+    pcall(function()
+        t[#t + 1] = "move=" .. tostring(mark.kind) .. " line " .. tostring(mark.i)
+        local on = markFrame and markFrame.IsShown and markFrame:IsShown()
+        local rel = on and markFrame.GetPoint and select(2, markFrame:GetPoint(1))
+        local rn = rel and ((rel.GetName and rel:GetName()) or (rel.GetDebugName and select(2, pcall(rel.GetDebugName, rel)))) or nil
+        t[#t + 1] = "outline=" .. (on and tostring(rn or "shown") or "off")
+        t[#t + 1] = "waiting=" .. tostring(armed.kind)
+        local open = {}
+        for _, n in ipairs({ "WorldMapFrame", "QuestFrame", "GossipFrame", "MerchantFrame", "ClassTrainerFrame", "ProfessionsFrame", "BankFrame", "MailFrame",
+                              "TradeFrame", "AuctionHouseFrame", "TaxiFrame", "ContainerFrameCombinedBags", "ContainerFrame1", "CharacterFrame", "SpellBookFrame",
+                              "PlayerSpellsFrame", "GameMenuFrame", "StaticPopup1" }) do if isUp(n) then open[#open + 1] = n end end
+        t[#t + 1] = "open=" .. (#open > 0 and table.concat(open, "+") or "none")
+        t[#t + 1] = "combat=" .. tostring(InCombatLockdown and InCombatLockdown())
+        t[#t + 1] = "target=" .. tostring(UnitExists and UnitExists("target")) .. (UnitName and UnitExists and UnitExists("target") and ("(" .. tostring(UnitName("target")) .. ")") or "")
+        t[#t + 1] = "softInteract=" .. tostring(GetCVar and GetCVar("SoftTargetInteract")) .. " gamepad=" .. tostring(GetCVar and GetCVar("GamePadEnable"))
+        local c = ZenVCExportDB._casts or {}
+        local last = {}
+        for k = math.max(1, #c - 3), #c do last[#last + 1] = tostring(c[k]) end
+        t[#t + 1] = "last presses=" .. table.concat(last, " / ")
+    end)
+    return table.concat(t, "; ")
+end
 local function armOrFire(kind, step, b)
     local now = GetTime and GetTime() or 0
+    if kind == "destroy" and mark.kind == "profbook" and QG.profBookOpen() then   -- v133 unlearn a profession, VCF asks first
+        local u = QG.profBookLines()[mark.i]
+        if not (u and u.unlearn) then say1("Say {Destroy That#unlearn:unlearn profession} to unlearn it. VCF asks first.") return end
+        if InCombatLockdown() then say1("not in combat, please.") return end
+        local sec = secureClicker("ZenVCUnlearnGo")
+        if not sec.zvHooked then
+            sec.zvHooked = true
+            sec:HookScript("PostClick", function()
+                if armed.kind ~= "unlearn" then return end
+                ZenVCExportDB._unlearn = { at = date("%Y-%m-%d %H:%M:%S"), acted = "pressed the game's Unlearn button for " .. tostring(sec.zvName) }
+                armed.kind = nil; markColor(MARK_ORANGE)
+                local f = armed.unaim; armed.unaim = nil
+                if f and C_Timer and C_Timer.After then C_Timer.After(0.3, function() pcall(f) end) end
+                say1("the game now asks too: say {Accept invite#unlearn:accept unlearn} to unlearn, or {Decline invite#unlearn:decline unlearn} to keep it")
+            end)
+        end
+        sec.zvName = u.pname
+        aimKey("/click zenvcdestroythat", "ZenVCUnlearnGo", u.fr)
+        armed.kind, armed.at = "unlearn", now
+        armed.unaim = function() aimKey("/click zenvcdestroythat") end
+        markColor(MARK_RED)
+        say1("unlearn " .. tostring(u.pname) .. "? Answer in VCF: say {App confirm_yes:yes do that} or {App confirm_no:no do not} (X or B on a controller)")
+        if C_Timer and C_Timer.After then C_Timer.After(30, function() if armed.kind == "unlearn" and (GetTime() - armed.at) >= 29 then disarm() end end) end
+        return
+    end
     if armed.kind == kind and now - armed.at < 30 then
         armed.kind = nil; markColor(MARK_ORANGE)
         if kind == "use" then useBindBack(); step(); return end   -- v74: a use press that reached this ordinary button did not go through the secure one
@@ -4416,7 +4600,8 @@ local function tipSizeStep(scale, word)
 end
 
 local function selectStep()
-    if (mark.kind == "prof" or mark.kind == "proftab") and QG.profOpen() then say1("select works here out of combat") return end   -- v130 (out of combat it is aimed at the line itself)
+    if mark.kind == "profbook" and QG.profBookOpen() then local u = QG.profBookLines()[mark.i]; if u and u.unlearn then say1("Say {Destroy That#unlearn:unlearn profession} to unlearn it. VCF asks first.") return end end   -- v133
+    if (mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny() then say1("select works here out of combat") return end   -- v130 (out of combat it is aimed at the line itself)
     if mark.kind == "trainer" and QG.trainerOpen() then   -- v129
         local e = QG.trainerLines()[mark.i]
         if not e then return end
@@ -4659,6 +4844,7 @@ local function ensureButton(b)
         end,
         ["/click zenvctakeoff"] = function() say1("talk to a flight master, say {Start Move:start move}, choose a flight point, then say {Take Off:take off}") end,   -- v90
         ["/click zenvcsearchnow"] = function() say1("open the auction house first, then say {Search Now:search now}") end,   -- v85
+        ["/click zenvcnewspells"] = function() buttonOwner.zvNewSpells() end,   -- v136 NEW SPELLS
         ["/click zenvctipsmall"] = function() tipSizeStep(0.5, "small") end, ["/click zenvctipnormal"] = function() tipSizeStep(1, "normal") end,
         ["/click zenvctiplarge"] = function() tipSizeStep(2, "large") end, ["/click zenvcstartmove"] = startMoveStep,
         ["/click zenvcusethat"] = function() armOrFire("use", useThatStep, b) end, ["/click zenvcdestroythat"] = function() armOrFire("destroy", destroyThatStep) end,
@@ -4790,7 +4976,7 @@ local function reapplyIfWanted()
     if keysWanted() then
         makeAllButtons()
         local n = applyKeys()
-        if n > 0 and not frame_announced then frame_announced = true; print("VCF Helper: " .. n .. " voice command(s) now run from their own key, with no chat box.") end
+        if n > 0 and not frame_announced then frame_announced = true; ZenVCChat("VCF Helper: " .. n .. " voice command(s) now run from their own key, with no chat box.") end
     elseif ZENVC_EMOTES_ON == false and not ZenVCExportDB._emotesOn then
         ClearOverrideBindings(buttonOwner)   -- the voice commander switched this off
     end
@@ -4839,7 +5025,7 @@ local function zvMainEvent(_, ev)
             if gone > 0 then SaveBindings(GetCurrentBindingSet and GetCurrentBindingSet() or 1) end
         end)
     end
-    if ev == "PLAYER_LOGIN" then print("VCF Helper: addon updated, version " .. VERSION .. " (spells, action bars read two ways, controller facts and buttons, all key bindings, a box offers to give your spells keys)") end
+    if ev == "PLAYER_LOGIN" then ZenVCChat("VCF Helper: addon updated, version " .. VERSION .. " (spells, action bars read two ways, controller facts and buttons, all key bindings, a box offers to give your spells keys)") end
     if ev == "PLAYER_ENTERING_WORLD" and C_Timer and C_Timer.After then
         -- the bars load a little after you enter the world, so look again a few times
         C_Timer.After(4, save); C_Timer.After(12, save); C_Timer.After(30, save)
@@ -4879,7 +5065,7 @@ frame:SetScript("OnEvent", zvMainEvent)
 -- v43 "/zvbind ACTION" only ever arrives typed when its key is not set up yet (before the two reloads): say so instead of "unknown command"
 SLASH_ZENVCBIND1 = "/zvbind"
 SlashCmdList["ZENVCBIND"] = function(msg)
-    print("|cff2ee6d6VCF:|r that voice command gets its key after /reload (twice). Then it works.")
+    ZenVCChat("|cff2ee6d6VCF:|r that voice command gets its key after /reload (twice). Then it works.")
 end
 
 SLASH_ZENVCEXPORT1 = "/zenvc"
@@ -4917,9 +5103,9 @@ SlashCmdList["ZENVCEXPORT"] = function(msg)
     save()
     local d = ZenVCExportDB[(UnitName("player") or "") .. "-" .. (GetRealmName and GetRealmName() or "")]
     if d then
-        print("VCF Helper: saved " .. #d.spells .. " spells and " .. #d.bindings .. " key bindings for " .. d.name .. " (" .. tostring(d.class) .. "). Type /reload to write the file now.")
+        ZenVCChat("VCF Helper: saved " .. #d.spells .. " spells and " .. #d.bindings .. " key bindings for " .. d.name .. " (" .. tostring(d.class) .. "). Type /reload to write the file now.")
     else
-        print("VCF Helper: nothing saved yet.")
+        ZenVCChat("VCF Helper: nothing saved yet.")
     end
 end
 
@@ -5024,7 +5210,11 @@ do
                 hits[b] = (hits[b] or 0) + 1
                 token = token + 1
                 local mine = token
-                if b == first and hits[b] >= 2 then C_Timer.After(1, finish) return end
+                if b == first and hits[b] >= 2 then   -- v132: only once most keys have arrived
+                    local got = 0
+                    for _, k in ipairs(ZENVC_KEYTEST) do if (hits[k] or 0) >= 1 then got = got + 1 end end
+                    if got * 2 >= #ZENVC_KEYTEST then C_Timer.After(1, finish) return end
+                end
                 C_Timer.After(600, function() if mine == token then finish() end end)
             end)
             SetOverrideBindingClick(owner, true, b, btn:GetName())

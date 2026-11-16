@@ -5,6 +5,27 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.198 and VCFI 0.10.198 (NEW SPELLS, trainer buying, chat colour)
+
+Published 2026-11-16 13:16 US Mountain Standard Time
+
+**New**
+- **NEW SPELLS:** say "new spells", or click NEW SPELLS on the MIC IS box. VCF asks first, then puts your spells that are on no bar onto a spare action bar, each with its own key: an empty bar, or the bar NEW SPELLS filled before. Nothing already on your bars is used or replaced. VCF then asks /RELOAD NOW? and /COMPLETE RELOAD.
+- **Buying at a trainer by voice:** "buy that" puts the outline on a spell you can afford and asks before training. If a spell cannot be trained yet, chat says the game's own reason (for example the level it needs, or not enough money). The game's own highlight follows the outline.
+- **Unlearn a profession (experimental):** say "unlearn profession" on its Unlearn line. VCF asks first, then the game asks too: "accept unlearn" or "decline unlearn".
+- **VCF HELPER TEXT IN THE GAME'S CHAT:** a colour picker at the top of the colours in the Control Panel for VCF's lines in the game's chat box. With no colour chosen, nothing changes. It shows after /RELOAD twice.
+- **SCAN AND REPAIR** on the MIC IS box: looks for what stops voice keys from working, shows what it found, and asks before repairing.
+
+**Changed**
+- A key test whose result looks wrong is no longer saved.
+- Moving the outline on the professions overview, and choosing quest rewards, cover more windows (experimental).
+- When the game blocks an action, more detail is written down so it can be fixed.
+- The FAQ has a NEW SPELLS section, and a note: movement is best handled by keyboard and mouse or controller, typing may be quicker on a keyboard, voice commands work once you are logged in, and some actions may still need physical input.
+
+**Not yet tested in the game:** NEW SPELLS, the trainer changes, the chat colour and unlearning. Please report anything that does not work to vcfireports@gmail.com.
+
+---
+
 ## VCF 0.10.187 and VCFI 0.10.187 (trainers: the whole list)
 
 Published 2026-11-12 01:14 US Mountain Standard Time
