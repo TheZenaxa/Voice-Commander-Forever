@@ -60,3 +60,5 @@ Thank you,
 TheZenaxa
 
 Reports and questions: vcfireports@<span>gmail.com</span>
+
+**Note: movement is best handled by keyboard and mouse or controller, and entering text may be more efficient with a keyboard. Voice commands take effect once the player is logged in, and some actions may still need physical input. Please report errors or requests to me.**
