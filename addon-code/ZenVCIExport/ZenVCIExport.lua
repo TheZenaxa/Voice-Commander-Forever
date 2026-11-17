@@ -49,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "150"
+local VERSION = "151"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCFI's Control Panel (ZENVCI_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -3168,7 +3168,7 @@ local function lightUp(list)
             if e.unlearn then QG.profSel = nil; aimKey("/click zenvciselect")   -- v133 select never unlearns
             else QG.profSel = e.fr; aimKey("/click zenvciselect", "ZenVCIProfSelect", e.fr) end
         end) end
-        if (mark.kind == "qlog" or mark.kind == "qmap" or mark.kind == "qmenu" or mark.kind == "popup") and e.fr then pcall(function()   -- v124 (v142 the quest menu too)
+        if (mark.kind == "qlog" or mark.kind == "qmap" or mark.kind == "qmenu" or mark.kind == "popup" or mark.kind == "roll") and e.fr then pcall(function()   -- v124 (v142 the quest menu too)
             if mark.kind == "qlog" then QG.qlogShow(e) end
             QG.mapSel = e.fr; aimKey("/click zenvciselect", "ZenVCIMapSelect", e.fr)
         end) end
@@ -4108,6 +4108,27 @@ function QG.popupLines()
     return list
 end
 function QG.popupOpen() return #QG.popupLines() > 0 end
+-- v151 the game's loot rolls (GroupLootFrame1-4): each visible roll's buttons, in order Need, Greed, Pass (and any other the game shows). Read only.
+function QG.rollFrames()
+    local out = {}
+    for n = 1, 4 do local f = _G["GroupLootFrame" .. n]; if f and f.IsVisible and f:IsVisible() then out[#out + 1] = f end end
+    return out
+end
+function QG.rollButtons(f)
+    local list = {}
+    local item = "an item"
+    pcall(function() local _, nm = GetLootRollItemInfo(f.rollID); if nm and nm ~= "" then item = nm end end)
+    for _, b in ipairs({ { f.NeedButton, "Need", "{Roll Need:roll need}" }, { f.GreedButton, "Greed", "{Roll Greed:roll greed}" }, { f.DisenchantButton, "Disenchant", nil }, { f.TransmogButton, "Transmog", nil }, { f.PassButton, "Pass", "{Roll Pass:roll pass}" } }) do
+        local btn = b[1]
+        if btn and btn.IsVisible and btn:IsVisible() then
+            local on = not (btn.IsEnabled and not btn:IsEnabled())
+            list[#list + 1] = { fr = btn, kind = b[2], roll = f, name = item .. ": " .. b[2] .. (on and (": say {Select:select}" .. (b[3] and (" or " .. b[3]) or "")) or " (not possible on this item)"), off = not on }
+        end
+    end
+    return list
+end
+function QG.rollLines() local f = QG.rollFrames()[1]; return f and QG.rollButtons(f) or {} end
+function QG.rollOpen() return #QG.rollLines() > 0 end
 function QG.popupText()
     local t
     pcall(function() for n = 1, 4 do local f = _G["StaticPopup" .. n]; if f and f:IsVisible() then local fs = _G["StaticPopup" .. n .. "Text"] or f.Text; t = fs and fs.GetText and fs:GetText() return end end end)
@@ -4194,6 +4215,24 @@ local lastPage
 local mailLastSend   -- v95
 C_Timer.NewTicker(0.5, function()
     pcall(QG.qoptsAim)   -- v141
+    pcall(function()   -- v151 a loot roll: its buttons take the outline, once per roll; the roll keys press its own buttons
+        local fr1 = QG.rollFrames()[1]
+        local btns = fr1 and QG.rollButtons(fr1) or {}
+        if not InCombatLockdown() then
+            for _, w in ipairs({ "Need", "Greed", "Pass" }) do
+                local target
+                for _, e in ipairs(btns) do if e.kind == w and not e.off then target = e.fr end end
+                if target then aimKey("/click zenvciroll" .. w:lower(), "ZenVCIRoll" .. w .. "Go", target) else aimKey("/click zenvciroll" .. w:lower()) end
+            end
+        end
+        if #btns == 0 then QG.rollSeen = nil return end
+        local key = tostring(fr1) .. tostring(fr1.rollID)
+        if QG.rollSeen == key or mark.kind == "roll" or mark.kind == "popup" or InCombatLockdown() then return end
+        QG.rollSeen = key
+        mark.kind, mark.i = "roll", 1
+        lightUp(btns)
+        say1("loot roll: {Move Right:move right} through Need, Greed and Pass and say {Select:select}, or {Roll Need:roll need} / {Roll Greed:roll greed} / {Roll Pass:roll pass}")
+    end)
     pcall(function()   -- v144 the game's own yes/no box: the outline goes on its buttons, once per box
         local l = QG.popupLines()
         if #l == 0 then QG.popSeen = nil return end
@@ -4273,7 +4312,7 @@ C_Timer.NewTicker(0.5, function()
         -- v95 mail: the outline left the mailbox (select back to normal); a waiting "send mail" is cancelled when the mail changes; the outline
         -- follows a change of tab
         if QG.profSel and not ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) then aimKey("/click zenvciselect"); QG.profSel = nil end   -- v130
-        if QG.mapSel and not ((mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen())) then aimKey("/click zenvciselect"); QG.mapSel = nil end   -- v124
+        if QG.mapSel and not ((mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen())) then aimKey("/click zenvciselect"); QG.mapSel = nil end   -- v124
         if mailSelTarget and not ((mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen())) then aimKey("/click zenvciselect"); mailSelTarget = nil end
         -- v98 (user: "it should only do that once MOVE START or START MOVE is initiated")
         if (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "pad" and (pad.from == "mail" or pad.from == "trade")) then
@@ -4302,7 +4341,7 @@ C_Timer.NewTicker(0.5, function()
             mailLastSend = sv
         else mailLastSend = nil end
         if not mark.kind then lastPage = nil return end
-        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
+        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
         if not open then mark.kind, mark.i = nil, 0; markerOff(); lastPage = nil return end
         if mark.kind == "merchant" then
             local page = MerchantFrame and MerchantFrame.page
@@ -4357,8 +4396,8 @@ local function moveStep(dir)
             rec.acted = "trainer " .. mark.i
             return
         end
-        if (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) then   -- v142 the game's quest menu (v144 or its yes/no box)
-            local list = mark.kind == "popup" and QG.popupLines() or QG.qmenuLines()
+        if (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen()) then   -- v142 the game's quest menu (v144 or its yes/no box, v151 or a loot roll)
+            local list = (mark.kind == "popup" and QG.popupLines()) or (mark.kind == "roll" and QG.rollLines()) or QG.qmenuLines()
             local step = (dir == "up" or dir == "left") and -1 or 1
             local want = mark.i + step
             if want > #list then say1("end of the list") elseif want < 1 then say1("top of the list") end
@@ -5237,6 +5276,9 @@ local function ensureButton(b)
         -- v142 these run only when no quest line is outlined (otherwise the key right-clicks it and the game's menu opens)
         ["/click zenvciabandonquest"] = function() say1("outline the quest in your quest log first: at the map say {Start Move:start move} and move to the quest (its line in the list, not its open page), then say {Abandon Quest:abandon quest}") end,
         ["/click zenvcisharequest"] = function() say1("outline the quest in your quest log first: at the map say {Start Move:start move} and move to the quest (its line in the list, not its open page), then say {Share Quest:share quest}") end,
+        ["/click zenvcirollneed"] = function() say1(QG.rollOpen() and "Need is not possible on this item" or "no loot roll is showing") end,   -- v151
+        ["/click zenvcirollgreed"] = function() say1(QG.rollOpen() and "Greed is not possible on this item" or "no loot roll is showing") end,
+        ["/click zenvcirollpass"] = function() say1(QG.rollOpen() and "Pass is not possible on this item" or "no loot roll is showing") end,
         ["/click zenvciquestoptions"] = function() end,   -- v144 not aimed: nothing to go back from (the menu key that follows says what to do)
         ["/click zenvciquestmenu"] = function() say1("open a quest in your quest log first: at the map say {Start Move:start move}, move to the quest, say {Select:select}, then say {Quest Options:options}") end,
         ["/click zenvcilinkquest"] = function() say1("outline the quest in your quest log first: at the map say {Start Move:start move} and move to the quest (its line in the list, not its open page), then say {Link Quest:link quest}") end,

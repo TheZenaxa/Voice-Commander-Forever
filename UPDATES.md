@@ -5,6 +5,22 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.212 and VCFI 0.10.212 (need, greed, pass: IN TESTING)
+
+Published 2026-11-16 19:08 US Mountain Standard Time
+
+**NEED / GREED / PASS: IN TESTING.** This update's new part has not been tried in a real loot roll yet. Please report anything that does not work to vcfireports@gmail.com.
+
+
+**New (in testing)**
+- **Loot rolls by voice:** when the game shows a group loot roll, the outline goes on its Need, Greed and Pass buttons, and each line names its words. "select" presses the outlined button, "move right" goes along.
+- "roll need" and "roll pass" press the game's button straight away. "roll greed" asks yes or no first.
+- If the item binds when picked up, the game asks once more: answer with "yes select" or "no don't".
+
+Everything else is as in 0.10.211.
+
+---
+
 ## VCF 0.10.211 and VCFI 0.10.211 (quest options, yes select, saved names, move that twice)
 
 Published 2026-11-16 17:22 US Mountain Standard Time
