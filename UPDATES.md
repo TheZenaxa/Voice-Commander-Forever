@@ -5,6 +5,21 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.218 and VCFI 0.10.218 (rename list cleans itself, KEEP THIS, chat check)
+
+Published 2026-11-17 00:55 US Mountain Standard Time
+
+**Rename an item**
+- Items you no longer carry now leave the list by themselves at the next reload, with their words and key.
+- New tick in RENAME AN ITEM: **KEEP THIS even if empty**, on every "use" item. Tick it for potions, food or drinks you restock: they keep their words when you run out and get their key back when you carry them again.
+- An item whose key the game no longer binds now gets a fresh key by itself at every reload. SCAN AND REPAIR also lists and fixes these.
+- Items like a fishing pole now get their own key (before, any item whose name began with a profession's name was treated like the profession itself).
+
+**Chat**
+- A chat command ("chat say", "chat party" ...) now opens the chat box only when VCF's second listener hears the same words too, so noise in the room no longer opens the chat box and starts dictation by mistake.
+
+---
+
 ## VCF 0.10.212 and VCFI 0.10.212 (need, greed, pass: IN TESTING)
 
 Published 2026-11-16 19:08 US Mountain Standard Time
