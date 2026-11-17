@@ -5,6 +5,26 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.211 and VCFI 0.10.211 (quest options, yes select, saved names, move that twice)
+
+Published 2026-11-16 17:22 US Mountain Standard Time
+
+**New**
+- **Quest options:** on a quest's open page in the quest log, say "options" (like Y on a controller). The game's own menu for that quest opens; move up or down, then "select". "abandon quest", "share quest" and "link quest" put the outline straight on that line.
+- **The game's yes/no boxes** (such as "Abandon this quest?"): the outline goes on its buttons and each line names its words. "select" presses the outlined button, "move right" goes to the other. New first words "yes select" and "no don't" press the game's button straight away; "tick yes" and "tick no" still work.
+- **Mail, who to send to:** on the To line, "select" offers Type a name, Your characters or Saved names. After you type a name you can choose "Save and select" or "Save". Saved names keeps your names per realm, with "Remove a name" at the end. (The game does not let add-ons read the names in your friends list, so this replaces a friends list.)
+- **Mail and trade, putting items in:** "move that" on an item in your bags, then "move that" again, puts it in the first empty slot of the letter or of your side of the trade. Hints on the mail page say so.
+- **Outline colour:** "THE OUTLINE IN THE GAME" in the Control Panel picks the outline's colour. Warning colours for use and destroy stay as they are.
+- **SAVE A REPORT:** after SCAN AND REPAIR repairs something, VCF asks whether to save a report file in Documents, REPORTS FOR VCF, to email to the author if you like. Nothing is sent.
+
+**Changed**
+- After picking a turn-in from an NPC's quest list, "move right" goes straight to the rewards.
+- In mail, the item cards close when you switch between the Inbox and Send Mail pages.
+
+**Not yet tested in the game:** the trade window, sharing a quest, removing a saved name, SAVE A REPORT and the outline colour. A game yes/no box does not close by itself after a while yet. Please report anything that does not work to vcfireports@gmail.com.
+
+---
+
 ## VCF 0.10.198 and VCFI 0.10.198 (NEW SPELLS, trainer buying, chat colour)
 
 Published 2026-11-16 13:16 US Mountain Standard Time
