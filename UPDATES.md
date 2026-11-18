@@ -5,6 +5,23 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.235 and VCFI 0.10.235 (FAQ search, MIC IS box glossary, tooltip box at the bottom)
+
+Published 2026-11-17 21:27 US Mountain Standard Time
+
+**FAQ search**
+- The FAQ has a search box at the top. Type a few words in your own way ("fishing key", "mic does not hear me", "controler"); small words, word endings and small typos do not matter.
+- The questions that fit best show first, closed: click one to open its answer. Matching glossary terms show too. Clear the box (or press Escape) to see the whole FAQ.
+
+**Glossary**
+- Every control on the MIC IS box now has a short entry: the character and microphone pickers, turning the mic on or off, how the mic starts, the control panel, RENAME AN ITEM, KEY CLEANUP, KEY TEST, SCAN AND REPAIR, shrinking the window, text size, FAQ / HOW TO and the links.
+
+**Tooltip box (mouse-over)**
+- With the small or average box, the copy of the game's tooltip is not shown when the game's own tooltip is down by the action bars.
+- With the big box it shows there too, and moves to the side (never up) only if the two would overlap.
+
+---
+
 ## VCF 0.10.231 and VCFI 0.10.231 (professions by voice, create, item numbers, key test cancel)
 
 Published 2026-11-17 20:31 US Mountain Standard Time

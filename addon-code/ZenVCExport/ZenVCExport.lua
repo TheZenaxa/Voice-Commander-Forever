@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "161"
+local VERSION = "163"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -2523,6 +2523,30 @@ do
             end
             t.zvMirror = true
             t:Show()
+            -- v162 (user: it "runs into the games tooltips when icons are near bottom area"). v163 (user): NEVER UP ("UP is a problem for vision (myopia)";
+            -- "I DONT WANT A BIG BOX I CANT READ SITTING UP HIGHER"): with the small or average box the copy is not shown in the bottom zone; the big box moves
+            -- SIDEWAYS (left, else right) at its usual height, only when it would really overlap. Only the mouse-over copy; the outline's box never changes.
+            pcall(function()
+                local ge, te = gt:GetEffectiveScale(), t:GetEffectiveScale()
+                local gl, gr, gb, gtop = gt:GetLeft(), gt:GetRight(), gt:GetBottom(), gt:GetTop()
+                local tl, tr, tb, ttop = t:GetLeft(), t:GetRight(), t:GetBottom(), t:GetTop()
+                if not (gl and gr and gb and gtop and tl and tr and tb and ttop) then return end
+                gl, gr, gb, gtop = gl * ge, gr * ge, gb * ge, gtop * ge
+                tl, tr, tb, ttop = tl * te, tr * te, tb * te, ttop * te
+                -- v163 (user: "if the mouse is at the bottom, on action bars down there, the tooltips are right down there too ... we dont need side by side
+                -- tooltips in that zone for people who can see the small or average well enough"): the game's tooltip in our box's height band = the bottom zone
+                if gb < ttop and gtop > tb and scale < 2 then t.zvMirror = nil; t:Hide() return end   -- small or average box: not shown in the bottom zone
+                if gl < tr and gr > tl and gb < ttop and gtop > tb then   -- big box, really overlapping: to the SIDE, never up (user: "NOT MOVE" = not up)
+                    local w = tr - tl
+                    local screenW = UIParent:GetWidth() * UIParent:GetEffectiveScale()
+                    local left = gl - 10 * te - w            -- where our box's left edge would be, to the LEFT of the game's tooltip
+                    local x
+                    if left >= 0 then x = left else x = gr + 10 * te end   -- no room on the left: to the right
+                    if x + w > screenW then x = math.max(0, screenW - w) end
+                    t:ClearAllPoints()
+                    t:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x / te, tb / te)
+                end
+            end)
         end)
     end
     local function later() if C_Timer and C_Timer.After then C_Timer.After(0, copy) else copy() end end   -- after the game has filled its tooltip
