@@ -49,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "167"
+local VERSION = "169"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCFI's Control Panel (ZENVCI_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -1750,6 +1750,114 @@ do
     function QG.coinRestore(t) if not t then return end; ZenVCIExportDB._coinBox = t; if f then place(); if t.shown then f:Show() else f:Hide() end end end
     local boot = CreateFrame("Frame"); boot:RegisterEvent("PLAYER_LOGIN"); boot:SetScript("OnEvent", function() if db().shown then QG.coinShow(true) end end)
 end
+-- v168/v169 (2026-11-17, user: "can you make it possible for me to move where my bags open up?"; "can I not move them independently if I open them
+-- independently?", "Yes, each on its own"): MOVABLE BAGS (a test). The game places the bags; right after, each bag the player moved goes to its own saved spot
+-- (by bag: backpack, bag 1, bag 2 ...), out of combat only. A bag the player never moved keeps the game's place, even when the bag it was stacked on moves.
+do
+    local function db() ZenVCIExportDB._bagPos = ZenVCIExportDB._bagPos or {}; return ZenVCIExportDB._bagPos end
+    local base, rect = {}, {}   -- each bag frame's points and its spot on screen, as the game last set them
+    local function bagFrames()
+        local t = {}
+        local cb = _G.ContainerFrameCombinedBags
+        if cb and cb.IsShown and cb:IsShown() then t[#t + 1] = cb end
+        for i = 1, 13 do local f = _G["ContainerFrame" .. i]; if f and f.IsShown and f:IsShown() then t[#t + 1] = f end end
+        return t
+    end
+    local function keyOf(f)
+        if f == _G.ContainerFrameCombinedBags then return "combined" end
+        local id
+        pcall(function() id = (f.GetBagID and f:GetBagID()) or (f.GetID and f:GetID()) end)
+        return id and ("bag" .. tostring(id)) or nil
+    end
+    local function ratio(f) return (f:GetEffectiveScale() or 1) / (UIParent:GetEffectiveScale() or 1) end
+    local function remember()
+        for _, f in ipairs(bagFrames()) do
+            local pts = {}
+            for i = 1, (f:GetNumPoints() or 0) do pts[i] = { f:GetPoint(i) } end
+            base[f] = pts
+            local l, b = f:GetLeft(), f:GetBottom()
+            rect[f] = (l and b) and { l * ratio(f), b * ratio(f) } or nil
+        end
+    end
+    local function pin(f, x, y) f:ClearAllPoints(); f:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x / ratio(f), y / ratio(f)) end
+    function QG.bagApply()
+        if InCombatLockdown() then return end
+        local pos = db()
+        local frames = bagFrames()
+        local moved = {}
+        for _, f in ipairs(frames) do local k = keyOf(f); if k and pos[k] then moved[f] = pos[k] end end
+        for _, f in ipairs(frames) do
+            pcall(function()
+                if moved[f] then pin(f, moved[f].x, moved[f].y)
+                else
+                    -- not moved by the player: the game's place; if it was stacked on a bag that has moved, it stays where the game put it
+                    local onMoved = false
+                    for _, p in ipairs(base[f] or {}) do if moved[p[2]] then onMoved = true end end
+                    if onMoved and rect[f] then pin(f, rect[f][1], rect[f][2])
+                    elseif base[f] and #base[f] > 0 then f:ClearAllPoints(); for _, p in ipairs(base[f]) do f:SetPoint(p[1], p[2], p[3], p[4], p[5]) end end
+                end
+            end)
+        end
+    end
+    local function placed() remember(); QG.bagApply() end
+    local gameHook = false
+    if hooksecurefunc and _G.UpdateContainerFrameAnchors then hooksecurefunc("UpdateContainerFrameAnchors", placed); gameHook = true end
+    local function opened() if gameHook then QG.bagApply() else placed() end end   -- never adds up: the game's place is already known
+    local hooked = {}
+    local drag = CreateFrame("Frame")
+    local function hookFrame(f)
+        if not f or hooked[f] then return end
+        hooked[f] = true
+        f:HookScript("OnShow", function() if C_Timer and C_Timer.After then C_Timer.After(0, opened) end end)
+        -- press on THIS bag's own frame (its title or edge; an item takes its own click) and move: only this bag follows
+        f:HookScript("OnMouseDown", function(self, button)
+            if button ~= "LeftButton" or InCombatLockdown() then return end
+            local k = keyOf(self)
+            local l, b = self:GetLeft(), self:GetBottom()
+            if not (k and l and b) then return end
+            local r, s = ratio(self), UIParent:GetEffectiveScale()
+            local sl, sb = l * r, b * r
+            local cx, cy = GetCursorPosition()
+            local sx, sy = cx / s, cy / s
+            drag:SetScript("OnUpdate", function()
+                if InCombatLockdown() then drag:SetScript("OnUpdate", nil) return end
+                local x, y = GetCursorPosition()
+                db()[k] = { x = math.floor(sl + x / s - sx + 0.5), y = math.floor(sb + y / s - sy + 0.5) }
+                QG.bagApply()
+            end)
+        end)
+        f:HookScript("OnMouseUp", function() drag:SetScript("OnUpdate", nil) end)
+        f:HookScript("OnHide", function() drag:SetScript("OnUpdate", nil) end)
+    end
+    local function hookAll()
+        hookFrame(_G.ContainerFrameCombinedBags)
+        for i = 1, 13 do hookFrame(_G["ContainerFrame" .. i]) end
+    end
+    hookAll()
+    local ev = CreateFrame("Frame"); ev:RegisterEvent("PLAYER_LOGIN"); ev:RegisterEvent("PLAYER_REGEN_ENABLED")
+    ev:SetScript("OnEvent", function() hookAll(); opened() end)   -- after combat: back to the player's spots
+    -- edit layout: each open bag is a piece of its own
+    function QG.bagPieces() local t = {}; for _, f in ipairs(bagFrames()) do local k = keyOf(f); if k then t[#t + 1] = k end end; return t end
+    function QG.bagFrameOf(k) for _, f in ipairs(bagFrames()) do if keyOf(f) == k then return f end end end
+    function QG.bagName(k)
+        local f = QG.bagFrameOf(k)
+        local n
+        pcall(function() n = f and f.GetTitle and f:GetTitle() end)
+        if (not n or n == "") and f and f.Name and f.Name.GetText then n = f.Name:GetText() end
+        if (not n or n == "") and f and f.TitleContainer and f.TitleContainer.TitleText then n = f.TitleContainer.TitleText:GetText() end
+        return (type(n) == "string" and n ~= "") and n or QG.tr("bags")
+    end
+    function QG.bagNudge(k, dx, dy)
+        local f = QG.bagFrameOf(k); if not f then return end
+        local pos = db()
+        if not pos[k] then local l, b = f:GetLeft(), f:GetBottom(); if not (l and b) then return end; pos[k] = { x = l * ratio(f), y = b * ratio(f) } end
+        pos[k] = { x = pos[k].x + dx, y = pos[k].y + dy }
+        QG.bagApply()
+    end
+    function QG.bagReset(k) db()[k] = nil; QG.bagApply() end
+    function QG.bagSnap() local t = {}; for k, v in pairs(db()) do t[k] = { x = v.x, y = v.y } end; return t end   -- its own copy of every spot
+    function QG.bagRestore(t) if not t then return end; ZenVCIExportDB._bagPos = t; QG.bagApply() end
+end
 
 local function gossipLines()
     local list = {}
@@ -2208,6 +2316,7 @@ local function emChangeable(info)
 end
 local function emFrameFor(sys, idx)
     if sys == "coin" then return QG.coinFrame() end   -- v164 the coin box
+    if type(sys) == "string" and sys:find("^bag") then return QG.bagFrameOf(sys) end   -- v169 each open bag
     local m = _G.EditModeManagerFrame
     for _, f in ipairs((m and m.registeredSystemFrames) or {}) do
         if f.system == sys and f.systemIndex == idx then return f end
@@ -2215,6 +2324,7 @@ local function emFrameFor(sys, idx)
 end
 local function emSystemKey(sys) for k, v in pairs(Enum.EditModeSystem) do if v == sys then return k end end end
 local function emNameOf(pc)
+    if type(pc.system) == "string" and pc.system:find("^bag") then return QG.bagName(pc.system) end   -- v169 the bag's own title
     local f = emFrameFor(pc.system, pc.systemIndex)
     if f and f.GetSystemName then
         local ok, n = pcall(f.GetSystemName, f)
@@ -2291,6 +2401,8 @@ function EM.toggle()
     end
     if emPieceOnScreen({ system = "coin" }) then pieces[#pieces + 1] = { system = "coin" } end   -- v164 the coin box
     EM.coinOrig = QG.coinSnap()
+    for _, k in ipairs(QG.bagPieces()) do pieces[#pieces + 1] = { system = k } end   -- v169 each open bag is a piece
+    EM.bagOrig = QG.bagSnap()
     if #pieces == 0 then emSay("nothing on screen can be edited right now.") return end
     mark.kind, mark.i = nil, 0
     EM.on, EM.info, EM.original, EM.pieces, EM.i, EM.changed, EM.said = true, info, CopyTable(info), pieces, 1, false, nil
@@ -2306,6 +2418,7 @@ function EM.cancel()
     if not EM.on then return end
     EM.n = (EM.n or 0) + 1
     QG.coinRestore(EM.coinOrig)   -- v164 the coin box goes back too
+    QG.bagRestore(EM.bagOrig)   -- v168 the bags too
     if EM.changed then
         if InCombatLockdown() then emEnd("LIMITED EDITING ended in combat: the changes already saved stay. Edit again after combat.") return end
         local ok, err = pcall(function()
@@ -2336,6 +2449,11 @@ function EM.nudge(dir)
     local pc = EM.pieces[EM.i]
     if pc and pc.system == "coin" then   -- v164 the coin box moves itself (it is not one of the game's layout pieces)
         QG.coinNudge((dir == "left" and -EM_STEP) or (dir == "right" and EM_STEP) or 0, (dir == "up" and EM_STEP) or (dir == "down" and -EM_STEP) or 0)
+        emShow(); emSay(emNameOf(pc) .. " moved.")
+        return
+    end
+    if pc and type(pc.system) == "string" and pc.system:find("^bag") then   -- v169 one bag moves on its own
+        QG.bagNudge(pc.system, (dir == "left" and -EM_STEP) or (dir == "right" and EM_STEP) or 0, (dir == "up" and EM_STEP) or (dir == "down" and -EM_STEP) or 0)
         emShow(); emSay(emNameOf(pc) .. " moved.")
         return
     end
@@ -2372,6 +2490,10 @@ function EM.size(d)   -- +1 bigger, -1 smaller, 0 normal (100%)
     if not emOk() then return end
     local pc = EM.pieces[EM.i]
     if pc and pc.system == "coin" then local sc = QG.coinSize(d); emShow(); emSay(emNameOf(pc) .. " size " .. math.floor(sc * 100 + 0.5) .. ".") return end   -- v164
+    if pc and type(pc.system) == "string" and pc.system:find("^bag") then   -- v169 bags have no size here; normal size puts this bag back where the game puts it
+        if d == 0 then QG.bagReset(pc.system); emShow(); emSay(emNameOf(pc) .. " back in the game's place.") else emSay(emNameOf(pc) .. " has no size to change by voice.") end
+        return
+    end
     local e = pc and emSizeInfo(pc)
     if not e then emSay(emNameOf(pc) .. " has no size to change by voice.") return end
     local sy = emSystem(emEdit(), pc)

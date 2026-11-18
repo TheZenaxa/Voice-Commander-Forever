@@ -5,6 +5,18 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.242 and VCFI 0.10.242 (move your bags, each on its own)
+
+Published 2026-11-17 23:48 US Mountain Standard Time
+
+**Move your bags**
+- Press on a bag's frame (its title or edge, not an item) and drag: that bag moves and opens there from then on. Each bag keeps its own spot, by bag slot, so a bigger or smaller bag in the same slot opens in the same place.
+- Bags you never moved stay where the game puts them.
+- By voice: say edit layout; each open bag is a piece of its own. Normal size puts a bag back where the game puts it, and cancel editing undoes your changes.
+- In combat, bags open in the game's own place (the game does not allow moving them then).
+
+---
+
 ## VCF 0.10.240 and VCFI 0.10.240 (coin purse, comma keys fixed)
 
 Published 2026-11-17 22:39 US Mountain Standard Time

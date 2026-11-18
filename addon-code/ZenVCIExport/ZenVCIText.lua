@@ -264,6 +264,7 @@ ZENVCI_TEXT = {
     ["coin purse"] = "bourse",
     ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "bourse affichée : faites-la glisser avec la souris, ou dites {Edit Layout:edit layout} pour la déplacer ou la redimensionner",
     ["coin purse off"] = "bourse masquée",
+    ["bags"] = "sacs",
   },
   ["de"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r wähle zuerst eine Belohnung: Sag {Start Move:start move}, geh zu einer, sag {Select:select}, dann {Complete (short):complete}",
@@ -527,6 +528,7 @@ ZENVCI_TEXT = {
     ["coin purse"] = "Geldbeutel",
     ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "Geldbeutel an: zieh ihn mit der Maus, oder sag {Edit Layout:edit layout}, um ihn zu verschieben oder die Größe zu ändern",
     ["coin purse off"] = "Geldbeutel aus",
+    ["bags"] = "Taschen",
   },
   ["es"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r elige primero una recompensa: di {Start Move:start move}, ve a una, di {Select:select} y luego {Complete (short):complete}",
@@ -790,6 +792,7 @@ ZENVCI_TEXT = {
     ["coin purse"] = "monedero",
     ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "monedero activado: arrástralo con el ratón, o di {Edit Layout:edit layout} para moverlo o cambiar su tamaño",
     ["coin purse off"] = "monedero desactivado",
+    ["bags"] = "bolsas",
   },
   ["zh-CN"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先选择一个奖励：说 {Start Move:start move}，移到其中一个，说 {Select:select}，然后说 {Complete (short):complete}",
@@ -1053,6 +1056,7 @@ ZENVCI_TEXT = {
     ["coin purse"] = "钱袋",
     ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "钱袋已开启：用鼠标拖动它，或说 {Edit Layout:edit layout} 来移动或调整大小",
     ["coin purse off"] = "钱袋已关闭",
+    ["bags"] = "背包",
   },
   ["ja"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先に報酬を選んでください：{Start Move:start move} と言い、どれかに移動して {Select:select} と言い、それから {Complete (short):complete}",
@@ -1316,6 +1320,7 @@ ZENVCI_TEXT = {
     ["coin purse"] = "財布",
     ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "財布をオンにしました。マウスでドラッグするか、{Edit Layout:edit layout} と言って移動やサイズ変更ができます",
     ["coin purse off"] = "財布をオフにしました",
+    ["bags"] = "バッグ",
   },
   ["zh-TW"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先選擇一個獎勵：說 {Start Move:start move}，移到其中一個，說 {Select:select}，然後說 {Complete (short):complete}",
@@ -1579,5 +1584,6 @@ ZENVCI_TEXT = {
     ["coin purse"] = "錢袋",
     ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "錢袋已開啟：用滑鼠拖動它，或說 {Edit Layout:edit layout} 來移動或調整大小",
     ["coin purse off"] = "錢袋已關閉",
+    ["bags"] = "揹包",
   },
 }
