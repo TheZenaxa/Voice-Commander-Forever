@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "163"
+local VERSION = "167"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -1676,6 +1676,79 @@ end
 local mark = { kind = nil, i = 0 }
 local function isUp(n) local fr = _G[n]; return fr and fr.IsVisible and fr:IsVisible() end
 local function say1(t) if DEFAULT_CHAT_FRAME then ZenVCChat("|cff2ee6d6VCF:|r " .. QG.say(QG.tr(t))) end end
+-- v164 (2026-11-17, user: "can i get a box that just displays how much coin I have?", "can it be made and able to be moved?"): the COIN BOX. Read only.
+do
+    local function db() ZenVCExportDB._coinBox = ZenVCExportDB._coinBox or {}; return ZenVCExportDB._coinBox end
+    local f
+    local function place()
+        local d = db()
+        f:ClearAllPoints()
+        f:SetPoint(d.point or "CENTER", UIParent, d.rel or "CENTER", d.x or 0, d.y or 0)   -- v165 (user: "maybe go for the middle of the screen")
+        f:SetScale(d.scale or 1)
+    end
+    local function save()
+        local p, _, rp, x, y = f:GetPoint(1)
+        local d = db(); d.point, d.rel, d.x, d.y = p, rp, x, y
+    end
+    local function fill()
+        if not f then return end
+        local m = (GetMoney and GetMoney()) or 0
+        -- v166 (user: screenshot 442 showed "2840"; "maybe put copper number in copper color, silver in shiny silver color and gold in metallic gold color"):
+        -- the game's GetCoinTextureString gave nothing here, so the text is built: each amount in its coin's colour with the game's coin picture, spaced apart.
+        -- Gold shows once there is any, silver once there is gold or silver; copper always.
+        local g, sv, c = math.floor(m / 10000), math.floor(m / 100) % 100, m % 100
+        local function coin(n, colour, icon) return "|cff" .. colour .. n .. "|r |TInterface\\MoneyFrame\\UI-" .. icon .. "Icon:26:26:0:0|t" end
+        local parts = {}
+        if g > 0 then parts[#parts + 1] = coin(g, "ffd100", "Gold") end
+        if g > 0 or sv > 0 then parts[#parts + 1] = coin(sv, "e6e8fa", "Silver") end
+        parts[#parts + 1] = coin(c, "eda55f", "Copper")
+        f.text:SetText(table.concat(parts, "    "))
+        f:SetWidth(f.text:GetStringWidth() + 40); f:SetHeight(f.text:GetStringHeight() + 24)
+    end
+    function QG.coinMake()
+        if f then return f end
+        f = CreateFrame("Frame", "ZenVCCoinBox", UIParent, "BackdropTemplate")
+        f:SetFrameStrata("HIGH"); f:SetFrameLevel(50);   -- v165 above the quest tracker and bars
+        f:SetClampedToScreen(true); f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+        f:SetScript("OnDragStart", function(self) if not InCombatLockdown() then self:StartMoving() end end)
+        f:SetScript("OnDragStop", function(self) self:StopMovingOrSizing(); save() end)
+        if f.SetBackdrop then
+            f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 2 })
+            f:SetBackdropColor(0, 0, 0, 0.85); f:SetBackdropBorderColor(0.45, 0.45, 0.45, 1)
+        end
+        f.text = f:CreateFontString(nil, "OVERLAY")
+        f.text:SetFont(STANDARD_TEXT_FONT, 30, "OUTLINE"); f.text:SetPoint("CENTER")
+        f.GetSystemName = function() return QG.tr("coin purse") end   -- its name in edit layout
+        local ev = CreateFrame("Frame"); ev:RegisterEvent("PLAYER_MONEY"); ev:RegisterEvent("PLAYER_ENTERING_WORLD"); ev:SetScript("OnEvent", fill)
+        place(); fill()
+        return f
+    end
+    -- v165 (user: "TEST ... still no coin box"; the press arrived and shown was saved): what the box really is on screen, a second after it is shown
+    local function look()
+        pcall(function()
+            local pt, _, rp, x, y = f:GetPoint(1)
+            ZenVCExportDB._coinLook = date("%H:%M:%S") .. " shown=" .. tostring(f:IsShown()) .. " visible=" .. tostring(f:IsVisible()) .. " size=" .. math.floor(f:GetWidth() or 0) .. "x" .. math.floor(f:GetHeight() or 0)
+                .. " scale=" .. tostring(f:GetEffectiveScale()) .. " at " .. tostring(pt) .. " " .. tostring(rp) .. " " .. tostring(x) .. "," .. tostring(y) .. " left=" .. tostring(f:GetLeft()) .. " bottom=" .. tostring(f:GetBottom())
+                .. " strata=" .. tostring(f:GetFrameStrata()) .. " alpha=" .. tostring(f:GetEffectiveAlpha()) .. " text=" .. tostring(f.text and f.text:GetText())
+                .. " screen=" .. math.floor(UIParent:GetWidth()) .. "x" .. math.floor(UIParent:GetHeight())
+        end)
+    end
+    function QG.coinShow(on)
+        db().shown = on and true or nil
+        if on then
+            local ok, err = pcall(function() QG.coinMake():Show(); fill() end)
+            if not ok then ZenVCExportDB._coinLook = "could not make the coin box: " .. tostring(err) end
+            if C_Timer and C_Timer.After then C_Timer.After(1, look) end
+        elseif f then f:Hide() end
+    end
+    function QG.coinToggle() QG.coinShow(not db().shown); return db().shown end
+    function QG.coinFrame() return f end
+    function QG.coinNudge(dx, dy) if not f then return end; local d = db(); d.x = (d.x or 0) + dx; d.y = (d.y or 0) + dy; place() end
+    function QG.coinSize(step) local d = db(); d.scale = (step == 0) and 1 or math.max(0.5, math.min(3, (d.scale or 1) + 0.1 * step)); if f then place() end; return d.scale end
+    function QG.coinSnap() return CopyTable(db()) end
+    function QG.coinRestore(t) if not t then return end; ZenVCExportDB._coinBox = t; if f then place(); if t.shown then f:Show() else f:Hide() end end end
+    local boot = CreateFrame("Frame"); boot:RegisterEvent("PLAYER_LOGIN"); boot:SetScript("OnEvent", function() if db().shown then QG.coinShow(true) end end)
+end
 
 local function gossipLines()
     local list = {}
@@ -2133,6 +2206,7 @@ local function emChangeable(info)
     return copy, true
 end
 local function emFrameFor(sys, idx)
+    if sys == "coin" then return QG.coinFrame() end   -- v164 the coin box
     local m = _G.EditModeManagerFrame
     for _, f in ipairs((m and m.registeredSystemFrames) or {}) do
         if f.system == sys and f.systemIndex == idx then return f end
@@ -2214,6 +2288,8 @@ function EM.toggle()
         local pc = { system = sy.system, systemIndex = sy.systemIndex }
         if emPieceOnScreen(pc) then pieces[#pieces + 1] = pc end
     end
+    if emPieceOnScreen({ system = "coin" }) then pieces[#pieces + 1] = { system = "coin" } end   -- v164 the coin box
+    EM.coinOrig = QG.coinSnap()
     if #pieces == 0 then emSay("nothing on screen can be edited right now.") return end
     mark.kind, mark.i = nil, 0
     EM.on, EM.info, EM.original, EM.pieces, EM.i, EM.changed, EM.said = true, info, CopyTable(info), pieces, 1, false, nil
@@ -2228,6 +2304,7 @@ end
 function EM.cancel()
     if not EM.on then return end
     EM.n = (EM.n or 0) + 1
+    QG.coinRestore(EM.coinOrig)   -- v164 the coin box goes back too
     if EM.changed then
         if InCombatLockdown() then emEnd("LIMITED EDITING ended in combat: the changes already saved stay. Edit again after combat.") return end
         local ok, err = pcall(function()
@@ -2256,6 +2333,11 @@ end
 function EM.nudge(dir)
     if not emOk() then return end
     local pc = EM.pieces[EM.i]
+    if pc and pc.system == "coin" then   -- v164 the coin box moves itself (it is not one of the game's layout pieces)
+        QG.coinNudge((dir == "left" and -EM_STEP) or (dir == "right" and EM_STEP) or 0, (dir == "up" and EM_STEP) or (dir == "down" and -EM_STEP) or 0)
+        emShow(); emSay(emNameOf(pc) .. " moved.")
+        return
+    end
     local sy = pc and emSystem(emEdit(), pc)
     if not (sy and sy.anchorInfo and type(sy.anchorInfo.offsetX) == "number") then emSay("this piece cannot be moved.") return end
     local dx = (dir == "left" and -EM_STEP) or (dir == "right" and EM_STEP) or 0
@@ -2288,6 +2370,7 @@ end
 function EM.size(d)   -- +1 bigger, -1 smaller, 0 normal (100%)
     if not emOk() then return end
     local pc = EM.pieces[EM.i]
+    if pc and pc.system == "coin" then local sc = QG.coinSize(d); emShow(); emSay(emNameOf(pc) .. " size " .. math.floor(sc * 100 + 0.5) .. ".") return end   -- v164
     local e = pc and emSizeInfo(pc)
     if not e then emSay(emNameOf(pc) .. " has no size to change by voice.") return end
     local sy = emSystem(emEdit(), pc)
@@ -5507,6 +5590,7 @@ local function ensureButton(b)
         -- v142 these run only when no quest line is outlined (otherwise the key right-clicks it and the game's menu opens)
         ["/click zenvcabandonquest"] = function() say1("outline the quest in your quest log first: at the map say {Start Move:start move} and move to the quest (its line in the list, not its open page), then say {Abandon Quest:abandon quest}") end,
         ["/click zenvcsharequest"] = function() say1("outline the quest in your quest log first: at the map say {Start Move:start move} and move to the quest (its line in the list, not its open page), then say {Share Quest:share quest}") end,
+        ["/click zenvccointoggle"] = function() local on = QG.coinToggle(); say1(on and "coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it" or "coin purse off") end,   -- v164
         ["/click zenvccreate"] = function() say1(QG.profOpen() and "the game cannot make this now: check the reagents, the tools and the forge or anvil" or "open a profession and choose a recipe first") end,   -- v161
         ["/click zenvcrollneed"] = function() say1(QG.rollOpen() and "Need is not possible on this item" or "no loot roll is showing") end,   -- v151
         ["/click zenvcrollgreed"] = function() say1(QG.rollOpen() and "Greed is not possible on this item" or "no loot roll is showing") end,

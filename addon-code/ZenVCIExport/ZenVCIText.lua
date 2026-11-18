@@ -261,6 +261,9 @@ ZENVCI_TEXT = {
     ["this tab cannot be opened by voice"] = "cet onglet ne peut pas être ouvert à la voix",
     ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "le jeu ne peut pas fabriquer ceci maintenant : vérifiez les composants, les outils et la forge ou l'enclume",
     ["open a profession and choose a recipe first"] = "ouvrez une profession et choisissez d'abord une recette",
+    ["coin purse"] = "bourse",
+    ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "bourse affichée : faites-la glisser avec la souris, ou dites {Edit Layout:edit layout} pour la déplacer ou la redimensionner",
+    ["coin purse off"] = "bourse masquée",
   },
   ["de"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r wähle zuerst eine Belohnung: Sag {Start Move:start move}, geh zu einer, sag {Select:select}, dann {Complete (short):complete}",
@@ -521,6 +524,9 @@ ZENVCI_TEXT = {
     ["this tab cannot be opened by voice"] = "dieser Reiter kann nicht per Stimme geöffnet werden",
     ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "das Spiel kann das jetzt nicht herstellen: prüfe die Reagenzien, die Werkzeuge und die Schmiede oder den Amboss",
     ["open a profession and choose a recipe first"] = "öffne zuerst einen Beruf und wähle ein Rezept",
+    ["coin purse"] = "Geldbeutel",
+    ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "Geldbeutel an: zieh ihn mit der Maus, oder sag {Edit Layout:edit layout}, um ihn zu verschieben oder die Größe zu ändern",
+    ["coin purse off"] = "Geldbeutel aus",
   },
   ["es"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r elige primero una recompensa: di {Start Move:start move}, ve a una, di {Select:select} y luego {Complete (short):complete}",
@@ -781,6 +787,9 @@ ZENVCI_TEXT = {
     ["this tab cannot be opened by voice"] = "esta pestaña no se puede abrir por voz",
     ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "el juego no puede fabricar esto ahora: revisa los componentes, las herramientas y la forja o el yunque",
     ["open a profession and choose a recipe first"] = "abre una profesión y elige primero una receta",
+    ["coin purse"] = "monedero",
+    ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "monedero activado: arrástralo con el ratón, o di {Edit Layout:edit layout} para moverlo o cambiar su tamaño",
+    ["coin purse off"] = "monedero desactivado",
   },
   ["zh-CN"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先选择一个奖励：说 {Start Move:start move}，移到其中一个，说 {Select:select}，然后说 {Complete (short):complete}",
@@ -1041,6 +1050,9 @@ ZENVCI_TEXT = {
     ["this tab cannot be opened by voice"] = "这个标签无法用语音打开",
     ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "现在无法制作：请检查材料、工具以及熔炉或铁砧",
     ["open a profession and choose a recipe first"] = "请先打开一个专业并选择配方",
+    ["coin purse"] = "钱袋",
+    ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "钱袋已开启：用鼠标拖动它，或说 {Edit Layout:edit layout} 来移动或调整大小",
+    ["coin purse off"] = "钱袋已关闭",
   },
   ["ja"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先に報酬を選んでください：{Start Move:start move} と言い、どれかに移動して {Select:select} と言い、それから {Complete (short):complete}",
@@ -1301,6 +1313,9 @@ ZENVCI_TEXT = {
     ["this tab cannot be opened by voice"] = "このタブは音声では開けません",
     ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "今は作成できません。素材、道具、炉や金床を確認してください",
     ["open a profession and choose a recipe first"] = "先に専門技能を開いてレシピを選んでください",
+    ["coin purse"] = "財布",
+    ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "財布をオンにしました。マウスでドラッグするか、{Edit Layout:edit layout} と言って移動やサイズ変更ができます",
+    ["coin purse off"] = "財布をオフにしました",
   },
   ["zh-TW"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先選擇一個獎勵：說 {Start Move:start move}，移到其中一個，說 {Select:select}，然後說 {Complete (short):complete}",
@@ -1561,5 +1576,8 @@ ZENVCI_TEXT = {
     ["this tab cannot be opened by voice"] = "這個標籤無法用語音開啟",
     ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "現在無法制作：請檢查材料、工具以及熔爐或鐵砧",
     ["open a profession and choose a recipe first"] = "請先開啟一個專業並選擇配方",
+    ["coin purse"] = "錢袋",
+    ["coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it"] = "錢袋已開啟：用滑鼠拖動它，或說 {Edit Layout:edit layout} 來移動或調整大小",
+    ["coin purse off"] = "錢袋已關閉",
   },
 }

@@ -5,6 +5,22 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.240 and VCFI 0.10.240 (coin purse, comma keys fixed)
+
+Published 2026-11-17 22:39 US Mountain Standard Time
+
+**Coin purse (new)**
+- Say **coin purse** to show or hide a box with your coin in big text: each amount in its own coin colour with the coin's picture, spaced apart. Gold shows once you have some.
+- Drag it with the mouse, or say edit layout: it is one of the pieces you can move and size by voice. Where you put it, and whether it is on, are remembered.
+
+**Keys with punctuation**
+- A voice key that ends in a comma (such as Ctrl+Shift+,) is now sent whole. Before, it was cut off and did nothing (camera "click in" was one of these). Every punctuation key was checked the same way.
+
+**Second chance**
+- When the second listener hears a command's words run together ("coinbox" for "coin box"), it now counts.
+
+---
+
 ## VCF 0.10.235 and VCFI 0.10.235 (FAQ search, MIC IS box glossary, tooltip box at the bottom)
 
 Published 2026-11-17 21:27 US Mountain Standard Time
