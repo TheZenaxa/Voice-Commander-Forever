@@ -116,4 +116,12 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] Read quest: the open quest or what someone says read aloud with WoW's own voice (VCF and VCFI 0.10.176; tested in the game with VCF)
 - [x] Trainers by voice: start move, move, select, buy twice to train (0.10.186; tested in the game)
 - [x] Professions by voice: recipes, what they need, tabs, and crafting with "create" (tested 2026-11-17, VCF 0.10.231)
+- [x] Coin purse: your coin in big text, moved with the mouse or by voice (tested 2026-11-17, VCF 0.10.240)
+- [x] Move each bag where you want it to open (tested 2026-11-17, VCF 0.10.242)
+- [x] The tooltip box also copies the game's own tooltip when you point at something (tested 2026-11-17 with keyboard and mouse)
+- [x] KEY TEST can be cancelled, with the two reloads done for you (tested 2026-11-17)
+- [x] Keys ending in a comma sent whole (the coin purse, camera click in) (tested 2026-11-17, VCF 0.10.240)
+- [x] The FAQ rewritten in a new player's order, with a search box and See also links to the glossary (VCF and VCFI 0.10.246)
+- [ ] Quest page hints in the player's own words (built in VCF and VCFI 0.10.245, pending testing)
+- [ ] "voice expand" brings a minimized MIC IS box back without leaving the game (built in 0.10.243, pending testing)
 - [ ] Heal, potions, bandages and Healthstone by voice

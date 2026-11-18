@@ -46,9 +46,14 @@ It uses only the standard World of Warcraft add-on API. It:
 - Saves the character's spells, items, key bindings and a few settings, so the voice program knows what each character can do.
 - Gives voice commands hidden keys through override bindings to its own buttons (spells, items, emotes), set out of combat.
 - Uses secure action buttons for protected actions, so those happen only through the game's own approved click path, after a key press.
-- Places spells that are on no bar onto a spare action bar (an empty one, or the one it filled before), with keys, only when the player asks: by saying "new spells" or clicking NEW SPELLS in VCF and then answering VCF's yes or no question, or by typing /zenvc bars yes. It never uses or replaces anything on the player's own bars, and does nothing in combat.
+- Places spells that are on no bar onto a spare action bar (one the player has not placed anything on, including the one it started filling), with keys, only when the player asks: by saying "new spells" or clicking NEW SPELLS in VCF and then answering VCF's yes or no question, or by typing /zenvc bars yes. It never uses or replaces anything on the player's own bars, and does nothing in combat.
 - Lets the player move an outline through bags, vendors, trainers, professions, the map and the quest log by voice, and select with the game's own clicks. Its own tooltip shows the outlined item in large text.
 - Buys, sells or trains only the outlined line, one per spoken command. At a trainer it asks first, and says the game's own reason when something cannot be trained yet.
+- In the professions window, opens a profession when the player selects its tab (C_TradeSkillUI.OpenTradeSkill) and shows the outlined recipe in the window's own recipe panel, out of combat. When the player says "create", it presses the window's own Create button through a secure click, making one item per spoken command.
+- Copies the text of the game's own tooltip into its own larger box (read only, from the tooltip's after-hooks; the game's tooltip is never changed).
+- Shows the player's coin in its own box, read only, when the player asks.
+- Moves the player's bag frames to the places the player chose, only out of combat and only after the game has placed them.
+- Shows short hint lines in chat with the player's own command words, for example when a quest page opens.
 - Reads quest text aloud with World of Warcraft's own text-to-speech.
 - Asks the player to confirm before using, destroying or unlearning anything. The game's own confirmation boxes still appear and are answered by the player.
 - Writes down any action the game blocks, so problems can be fixed.

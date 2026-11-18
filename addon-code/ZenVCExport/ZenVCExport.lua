@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "169"
+local VERSION = "171"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -1582,6 +1582,29 @@ end
 function QG.say(text)
     if type(text) ~= "string" or not text:find("{", 1, true) then return text end
     return (text:gsub("{([^:{}]+):([^{}]+)}", function(n, d) return QG.word(n, d) end))
+end
+-- v171 (2026-11-18, user: "the hint text in game needs to suggest it too where and if applicable", "I guess add, 'select' may work here"): one hint line when a
+-- quest page opens, in this character's own words. Display only.
+do
+    local function hint(t) if DEFAULT_CHAT_FRAME then ZenVCChat(QG.say(QG.tr(t))) end end
+    local qev = CreateFrame("Frame")
+    qev:RegisterEvent("QUEST_DETAIL"); qev:RegisterEvent("QUEST_PROGRESS"); qev:RegisterEvent("QUEST_COMPLETE")
+    qev:SetScript("OnEvent", function(_, ev)
+        local function say()
+            pcall(function()
+                if ev == "QUEST_DETAIL" then
+                    hint("|cff2ee6d6VCF:|r to accept this quest, say {Accept this quest:accept this quest}. {Select:select} may work here.")
+                elseif ev == "QUEST_PROGRESS" then
+                    hint("|cff2ee6d6VCF:|r to go on, say {Complete (short):complete}. {Select:select} may work here.")
+                elseif (GetNumQuestChoices and GetNumQuestChoices() or 0) > 1 then
+                    hint("|cff2ee6d6VCF:|r choose a reward: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}.")
+                else
+                    hint("|cff2ee6d6VCF:|r to hand it in, say {Complete (short):complete}. {Select:select} may work here.")
+                end
+            end)
+        end
+        if C_Timer and C_Timer.After then C_Timer.After(0.2, say) else say() end
+    end)
 end
 local QUEST_BUTTONS = { "QuestFrameAcceptButton", "QuestFrameCompleteButton", "QuestFrameCompleteQuestButton" }
 local function questStep()

@@ -5,6 +5,28 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.246 and VCFI 0.10.246 (new FAQ, quest hints, voice expand from the taskbar)
+
+Published 2026-11-18 14:09 US Mountain Standard Time
+
+**A new FAQ**
+- Rewritten in the order a new player meets things: the MIC IS box, reloading twice, your first quest step by step, the Control Panel, then everything else.
+- It explains that VCF has two parts, VCF (the MIC IS box) and the VCF Helper add-on, which must be ticked on in the game's AddOns list.
+- What counts as a reload: two whole reloads, in the game, one after the other.
+- Each answer can end with **See also** buttons that open the glossary at that word.
+- New in the glossary: "Assigned words". Changes to your words take effect after your next /RELOAD.
+
+**Quest hints**
+- When a quest page opens, the chat shows what to say, in that character's own words: accept the quest, go on, or hand it in ("select" may work there too).
+
+**MIC IS box**
+- "voice expand" brings the MIC IS box back from the taskbar without leaving the game.
+
+**In the game's AddOns list**
+- The VCF Helper's description now lists what it does today.
+
+---
+
 ## VCF 0.10.242 and VCFI 0.10.242 (move your bags, each on its own)
 
 Published 2026-11-17 23:48 US Mountain Standard Time
