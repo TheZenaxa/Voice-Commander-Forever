@@ -36,6 +36,38 @@ A free tool that shows how well Windows understands you and how good the transla
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/download/voice-test-1.0.0/VOICE.LANGUAGE.TEST.exe"><img src="buttons/voice-language-test-1.1.0.png" width="390" height="50" alt="Download VOICE LANGUAGE TEST.exe, version 1.1.0"></a></p>
 <p><a href="https://github.com/TheZenaxa/Voice-Commander-Forever/releases/download/voice-test-1.0.0/READ.ME.-.VOICE.LANGUAGE.TEST.txt"><img src="buttons/readme-voice-language-test.png" width="404" height="50" alt="Download READ ME - VOICE LANGUAGE TEST"></a></p>
 
+## WHAT YOU NEED
+
+- Windows 10 or 11 (64-bit).
+- World of Warcraft: Forever, played through Blizzard's Battle.net app.
+- A microphone.
+- Windows speech recognition in your language (usually already part of Windows).
+- About 200 MB of space, and about 150 MB more if you switch on dictation (experimental).
+
+## PRIVACY
+
+- Your voice is recognised on your own computer. Nothing you say is recorded or sent anywhere.
+- The only download is the dictation model, once, if you switch dictation on.
+- VCF and VCFI keep a log on your computer of the commands they heard and the messages you dictated, to help find problems. You choose how long it is kept.
+- SCAN AND REPAIR saves a report only if you say yes, in your Documents folder. It holds the recent log, which includes what was heard and your character names. You decide whether to send it.
+
+## KNOWN ISSUES
+
+- Windows may say "Windows protected your PC" when you run the installer, because the programs are not signed. Click "More info", then "Run anyway".
+- After switching controller mode on or off, Loot, Catch or another Interact command may stop working. Restart the game.
+- While fishing, the X to interact may not show on the bobber. The FAQ has what helps.
+- Need, greed and pass are still in testing.
+
+## REPORTING A PROBLEM
+
+1. Find your version number: in the FAQ, "What version is this?".
+2. Click SCAN AND REPAIR on the MIC IS box, and say yes to saving a report.
+3. Email vcfireports@gmail.com: what you did, what happened, your version number, and the report if you like.
+
+## CHECKING YOUR DOWNLOAD
+
+Each release lists a fingerprint (SHA256) for every file, and a virus-scan result. To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the file onto the window, press Enter, and compare the Hash with the release.
+
 ## ABOUT
 
 VCF, VCFI and the voice language test are free, independent, unofficial fan-made accessibility tools by TheZenaxa. They are not made by, endorsed by, or affiliated with Blizzard Entertainment. Nobody may sell them or charge for them.
