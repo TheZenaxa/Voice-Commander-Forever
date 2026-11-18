@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "152"
+local VERSION = "161"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -1475,6 +1475,41 @@ local function setButtonAction(f, b)
         end
         return
     end
+    -- v153 (2026-11-17, Gallagar: "get prot" pressed this button 13 times, "/equip Outrunner's Shield", and the game never put the shield on, with no error,
+    -- while "/equip Bronze Mace" from the same kind of button works): an "/equip" whose item name has an apostrophe equips by the item's number instead.
+    -- Widened the same day (user: "let's do that with all weapons, trinkets, off hands and shields"): those always equip by the item's number.
+    local equipName = b.text:match("^/equip%s+(.-)%s*$")
+    if equipName then
+        local want, eid = equipName:lower(), nil
+        local function nameOf(id, link)
+            local n
+            pcall(function() n = (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(id)) or (GetItemInfo and (GetItemInfo(id))) end)
+            if (not n or n == "") and link then n = link:match("%[(.-)%]") end
+            return n
+        end
+        pcall(function()
+            for slot = 1, 19 do
+                local id = GetInventoryItemID and GetInventoryItemID("player", slot)
+                if not eid and id then local n = nameOf(id, GetInventoryItemLink and GetInventoryItemLink("player", slot)); if n and n:lower() == want then eid = id end end
+            end
+            for bag = 0, 4 do
+                local cnt = (C_Container and C_Container.GetContainerNumSlots and C_Container.GetContainerNumSlots(bag)) or 0
+                for s = 1, cnt do
+                    local info = not eid and C_Container.GetContainerItemInfo(bag, s)
+                    if info and info.itemID then local n = nameOf(info.itemID, info.hyperlink); if n and n:lower() == want then eid = info.itemID end end
+                end
+            end
+        end)
+        local loc
+        if eid then pcall(function() local _, _, _, l = GetItemInfoInstant(eid); loc = l end) end
+        local byNumber = { INVTYPE_WEAPON = true, INVTYPE_2HWEAPON = true, INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPONOFFHAND = true, INVTYPE_SHIELD = true,
+                           INVTYPE_HOLDABLE = true, INVTYPE_TRINKET = true, INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THROWN = true }
+        if eid and (equipName:find("'", 1, true) or byNumber[loc or ""]) then
+            f:SetAttribute("type", "macro"); f:SetAttribute("macrotext", "/equip item:" .. eid); f:SetAttribute("action", nil)
+            f.zvSlot = nil
+            return
+        end
+    end
     local castName = b.text:match("^/cast%s+(.-)%s*$")
     if castName and castName:find("[%[%];,]") then castName = nil end   -- only a plain "/cast Name"
     local slot
@@ -1797,6 +1832,62 @@ function QG.profTabs()
         end
     end
     return list
+end
+-- v154 READ ONLY (2026-11-17, user: "Yes, add the record"): select on a profession tab did nothing. What each tab is, and which tab shows after a select press.
+function QG.profTabLook(why)
+    pcall(function()
+        local pf = _G.ProfessionsFrame
+        if not pf then return end
+        local rec = ZenVCExportDB._profTabLook or {}
+        ZenVCExportDB._profTabLook = rec
+        local function s(v) return tostring(v) end
+        local function shown()
+            local out = {}
+            for _, key in ipairs({ "ProfessionsOverviewTab", "Professions1Tab", "Professions2Tab", "Professions3Tab", "Professions4Tab", "Professions5Tab" }) do
+                local t = pf[key]
+                if t then
+                    local sel = (t.IsSelected and t:IsSelected()) or (t.GetChecked and t:GetChecked()) or (t.isSelected)
+                    out[#out + 1] = key .. (sel and "*" or "")
+                end
+            end
+            local tabNow = pf.GetTab and pf:GetTab()
+            return table.concat(out, " ") .. " | GetTab=" .. s(tabNow) .. " | crafting=" .. s(QG.profOpen()) .. " | book=" .. s(QG.profBookOpen())
+                .. " | selectedSkillLine=" .. s(C_TradeSkillUI and C_TradeSkillUI.GetBaseProfessionInfo and (C_TradeSkillUI.GetBaseProfessionInfo() or {}).professionName)
+        end
+        if why == "tabs" then
+            rec.at = date("%Y-%m-%d %H:%M:%S")
+            rec.tabs = {}
+            rec.frame = "SetTab=" .. s(pf.SetTab ~= nil) .. " GetTab=" .. s(pf.GetTab ~= nil) .. " TabSystem=" .. s(pf.TabSystem ~= nil) .. " protected=" .. s(pf.IsProtected and pf:IsProtected())
+            for _, key in ipairs({ "ProfessionsOverviewTab", "Professions1Tab", "Professions2Tab", "Professions3Tab", "Professions4Tab", "Professions5Tab" }) do
+                local t = pf[key]
+                if t then
+                    local line = key .. " name=" .. s(t.GetName and t:GetName()) .. " type=" .. s(t.GetObjectType and t:GetObjectType())
+                        .. " shown=" .. s(t.IsVisible and t:IsVisible()) .. " enabled=" .. s(t.IsEnabled and t:IsEnabled())
+                        .. " protected=" .. s(t.IsProtected and t:IsProtected()) .. " forbidden=" .. s(t.IsForbidden and t:IsForbidden())
+                        .. " id=" .. s(t.GetID and t:GetID()) .. " tabID=" .. s(t.tabID) .. " tip=" .. s(t.tooltipText or t.tooltip)
+                    for _, h in ipairs({ "OnClick", "OnMouseDown", "OnMouseUp", "PreClick", "PostClick" }) do
+                        local has = t.HasScript and t:HasScript(h) and t:GetScript(h) ~= nil
+                        line = line .. " " .. h .. "=" .. s(has)
+                    end
+                    for _, a in ipairs({ "type", "spell", "macrotext", "clickbutton", "action" }) do
+                        local v = t.GetAttribute and t:GetAttribute(a)
+                        if v ~= nil then line = line .. " attr." .. a .. "=" .. s(v) end
+                    end
+                    rec.tabs[#rec.tabs + 1] = line
+                end
+            end
+            rec.before = shown()
+        else
+            rec.presses = rec.presses or {}
+            local tgt = _G.ZenVCProfSelect and _G.ZenVCProfSelect:GetAttribute("clickbutton")
+            local line = date("%H:%M:%S") .. " select pressed, aimed at " .. s(tgt and tgt.GetName and tgt:GetName()) .. " | before: " .. shown()
+            if C_Timer and C_Timer.After then C_Timer.After(0.4, function() pcall(function()
+                line = line .. " || 0.4 s later: " .. shown()
+                rec.presses[#rec.presses + 1] = line
+                while #rec.presses > 20 do table.remove(rec.presses, 1) end
+            end) end) else rec.presses[#rec.presses + 1] = line end
+        end
+    end)
 end
 -- the outlined line on screen: scrolled into view first (the list is longer than its window)
 function QG.profFrame(e)
@@ -2394,7 +2485,55 @@ local function tip()
     end
     return zvTip
 end
-local function unhover() pcall(function() if zvTip then zvTip:Hide() end; for _, f in ipairs(zvCmp or {}) do f:Hide() end end) end
+local function unhover() pcall(function() if zvTip then zvTip.zvMirror = nil; zvTip:Hide() end; for _, f in ipairs(zvCmp or {}) do f:Hide() end end) end
+-- v155 (2026-11-17, user: "to be able to read things i hover over with my mouse", "can you do that in controller mode too??"): what the game's own tooltip shows,
+-- our lower-middle box shows too, at the player's size (tooltip small / normal / large). READ ONLY: the game's tooltip is only read (its lines and colours) from
+-- the game's own after-hooks, never moved, changed, hidden or called. The outline's tooltip always has the box first: while it shows, nothing is copied.
+do
+    local gt = _G.GameTooltip
+    local base = gt and getmetatable(gt).__index   -- the plain tooltip methods (our box's AddLine/SetText put the player's words into hints)
+    local function copy()
+        pcall(function()
+            if not gt or not gt:IsShown() then return end
+            local t = tip()
+            if t:IsShown() and not t.zvMirror then return end   -- the outline's own tooltip is showing: it wins
+            local n = gt:NumLines() or 0
+            if n == 0 then return end
+            local scale = tonumber(ZenVCExportDB._tipScale) or 1
+            t:SetOwner(UIParent, "ANCHOR_NONE")
+            base.ClearLines(t)
+            t:SetScale(scale)
+            t:ClearAllPoints()
+            t:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 140 / scale)
+            t:SetClampedToScreen(true)
+            local gname = gt:GetName()
+            for i = 1, n do
+                local l, r = _G[gname .. "TextLeft" .. i], _G[gname .. "TextRight" .. i]
+                local lt = l and l:IsShown() and l:GetText() or nil
+                local rt = r and r:IsShown() and r:GetText() or nil
+                if lt or rt then
+                    local lr, lg, lb = 1, 1, 1
+                    local rr, rg, rb = 1, 1, 1
+                    if l then lr, lg, lb = l:GetTextColor() end
+                    if r then rr, rg, rb = r:GetTextColor() end
+                    if rt and rt ~= "" then base.AddDoubleLine(t, lt or " ", rt, lr, lg, lb, rr, rg, rb)
+                    elseif i == 1 then base.SetText(t, lt, lr, lg, lb)
+                    else base.AddLine(t, lt, lr, lg, lb, true) end
+                end
+            end
+            t.zvMirror = true
+            t:Show()
+        end)
+    end
+    local function later() if C_Timer and C_Timer.After then C_Timer.After(0, copy) else copy() end end   -- after the game has filled its tooltip
+    if gt then
+        gt:HookScript("OnShow", later)
+        gt:HookScript("OnHide", function() pcall(function() if zvTip and zvTip.zvMirror then zvTip.zvMirror = nil; zvTip:Hide() end end) end)
+        if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall and TooltipDataProcessor.AllTypes then
+            TooltipDataProcessor.AddTooltipPostCall(TooltipDataProcessor.AllTypes, function(tt) if tt == gt then later() end end)   -- the tooltip changed while shown
+        end
+    end
+end
 
 -- v72 (2026-11-07, user: "can we introduce our own?" comparison): the game shows its "Equipped" comparison only beside its own controller cursor.
 -- Ours: what you have on in the slot the outlined item goes in, in our own boxes. Read only (item links and what is worn); nothing of the game's is set.
@@ -3153,6 +3292,23 @@ local function lightUp(list)
     local e = list[mark.i]
     if e then
         if e.prof and e.node then e.fr = QG.profFrame(e) end   -- v130 a recipe or section line: scrolled into view, then outlined
+        -- v160 (2026-11-17, user: "Yes, build it"): the game's middle panel follows the outline: its recipe list selects the outlined recipe (out of combat)
+        if e.prof and e.node and e.info and not e.header and not InCombatLockdown() then
+            local how = "nothing"
+            pcall(function()
+                local pf = _G.ProfessionsFrame
+                local cp = pf and pf.CraftingPage
+                local rl = cp and cp.RecipeList
+                if rl and rl.SelectRecipe then rl:SelectRecipe(e.info, false); how = "RecipeList:SelectRecipe"
+                elseif rl and rl.selectionBehavior and rl.selectionBehavior.SelectElementData then rl.selectionBehavior:SelectElementData(e.node); how = "selectionBehavior"
+                elseif cp and cp.SelectRecipe then cp:SelectRecipe(e.info); how = "CraftingPage:SelectRecipe" end
+            end)
+            pcall(function()
+                local shown = C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo and ProfessionsFrame.CraftingPage.SchematicForm and ProfessionsFrame.CraftingPage.SchematicForm.GetRecipeInfo
+                    and ProfessionsFrame.CraftingPage.SchematicForm:GetRecipeInfo()
+                ZenVCExportDB._recipeFollow = date("%H:%M:%S") .. " " .. tostring(e.name) .. " (" .. tostring(e.recipeID) .. ") by " .. how .. "; the panel shows " .. tostring(shown and shown.name)
+            end)
+        end
         if e.trainer then
             if not e.header and SelectTrainerService then pcall(SelectTrainerService, e.trainer) end   -- v136 the game's own highlight and details show this line too
             QG.trainerShow(e.trainer); e.fr = QG.trainerFrameFor(e.plain) or e.fr   -- v131 a trainer line further down: scrolled to, then found
@@ -3163,7 +3319,13 @@ local function lightUp(list)
         if e.fr then markerOn(e.fr) elseif markFrame then markFrame:Hide() end   -- v88: a flight point may have no button
         if (mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and e.fr then pcall(function()   -- v130 select = the game's own click on it (v132 the overview too)
             if e.unlearn then QG.profSel = nil; aimKey("/click zenvcselect")   -- v133 select never unlearns
+            elseif e.tab then QG.profSel = nil; aimKey("/click zenvcselect")   -- v158 a tab answers no click: select runs the helper's own select (selectStep)
             else QG.profSel = e.fr; aimKey("/click zenvcselect", "ZenVCProfSelect", e.fr) end
+            if mark.kind == "proftab" then   -- v154 READ ONLY record of the tabs, and of each select press on one
+                QG.profTabLook("tabs")
+                local sc = _G.ZenVCProfSelect
+                if sc and not sc.zvLook then sc.zvLook = true; sc:HookScript("OnClick", function() if mark.kind == "proftab" then QG.profTabLook("press") end end) end
+            end
         end) end
         if (mark.kind == "qlog" or mark.kind == "qmap" or mark.kind == "qmenu" or mark.kind == "popup" or mark.kind == "roll") and e.fr then pcall(function()   -- v124 (v142 the quest menu too)
             if mark.kind == "qlog" then QG.qlogShow(e) end
@@ -4212,6 +4374,11 @@ local lastPage
 local mailLastSend   -- v95
 C_Timer.NewTicker(0.5, function()
     pcall(QG.qoptsAim)   -- v141
+    pcall(function()   -- v161 "create": the key presses the professions window's own Create button (the game's own click) while it shows and can be pressed
+        if InCombatLockdown() then return end
+        local cb = QG.profOpen() and ProfessionsFrame.CraftingPage.CreateButton
+        if cb and cb.IsVisible and cb:IsVisible() and cb.IsEnabled and cb:IsEnabled() then aimKey("/click zenvccreate", "ZenVCCreateGo", cb) else aimKey("/click zenvccreate") end
+    end)
     pcall(function()   -- v151 a loot roll: its buttons take the outline, once per roll; the roll keys press its own buttons
         local fr1 = QG.rollFrames()[1]
         local btns = fr1 and QG.rollButtons(fr1) or {}
@@ -5001,6 +5168,49 @@ local function tipSizeStep(scale, word)
 end
 
 local function selectStep()
+    if mark.kind == "proftab" and QG.profAny() then   -- v158 (2026-11-17, user: "Yes, try that"): the professions window itself shows the outlined tab
+        local e = QG.profTabs()[mark.i]
+        if not e then return end
+        if InCombatLockdown() then say1("not in combat, please.") return end
+        local pf = _G.ProfessionsFrame
+        local id = e.fr and e.fr.GetID and e.fr:GetID()
+        -- v159: SetTab (v158) did nothing in the game. A profession's tab opens that profession with the game's own call: its skill line from the professions list
+        local rec = ZenVCExportDB._profTabLook or {}
+        ZenVCExportDB._profTabLook = rec
+        rec.presses = rec.presses or {}
+        local function state()
+            local s = ""
+            pcall(function() s = s .. "crafting=" .. tostring(QG.profOpen()) end)
+            pcall(function() s = s .. " book=" .. tostring(QG.profBookOpen()) end)
+            pcall(function() local i = C_TradeSkillUI.GetBaseProfessionInfo(); s = s .. " open=" .. tostring(i and i.professionName) end)
+            return s
+        end
+        local line = date("%H:%M:%S") .. " select on tab '" .. tostring(e.name) .. "' id " .. tostring(id) .. " | before: " .. state()
+        local skill
+        pcall(function()
+            local want = tostring(e.name):lower()
+            for _, ix in ipairs({ GetProfessions() }) do
+                if ix then
+                    local nm, _, _, _, _, _, sl = GetProfessionInfo(ix)
+                    if nm and nm:lower() == want then skill = sl end
+                end
+            end
+        end)
+        local ok, err
+        if skill and C_TradeSkillUI and C_TradeSkillUI.OpenTradeSkill then
+            ok, err = pcall(C_TradeSkillUI.OpenTradeSkill, skill)
+            line = line .. " | OpenTradeSkill(" .. tostring(skill) .. ") " .. (ok and "ran" or ("failed: " .. tostring(err)))
+        elseif pf and pf.SetTab and id then
+            ok, err = pcall(pf.SetTab, pf, id)
+            line = line .. " | no skill line, SetTab(" .. tostring(id) .. ") " .. (ok and "ran" or ("failed: " .. tostring(err)))
+        else
+            line = line .. " | nothing to call"
+        end
+        local function keep(l) rec.presses[#rec.presses + 1] = l; while #rec.presses > 20 do table.remove(rec.presses, 1) end end
+        if C_Timer and C_Timer.After then C_Timer.After(0.5, function() keep(line .. " || 0.5 s later: " .. state()) end) else keep(line) end
+        if not ok then say1("this tab cannot be opened by voice") end
+        return
+    end
     if mark.kind == "profbook" and QG.profBookOpen() then local u = QG.profBookLines()[mark.i]; if u and u.unlearn then say1("Say {Destroy That#unlearn:unlearn profession} to unlearn it. VCF asks first.") return end end   -- v133
     if (mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny() then say1("select works here out of combat") return end   -- v130 (out of combat it is aimed at the line itself)
     if mark.kind == "trainer" and QG.trainerOpen() then   -- v129
@@ -5273,6 +5483,7 @@ local function ensureButton(b)
         -- v142 these run only when no quest line is outlined (otherwise the key right-clicks it and the game's menu opens)
         ["/click zenvcabandonquest"] = function() say1("outline the quest in your quest log first: at the map say {Start Move:start move} and move to the quest (its line in the list, not its open page), then say {Abandon Quest:abandon quest}") end,
         ["/click zenvcsharequest"] = function() say1("outline the quest in your quest log first: at the map say {Start Move:start move} and move to the quest (its line in the list, not its open page), then say {Share Quest:share quest}") end,
+        ["/click zenvccreate"] = function() say1(QG.profOpen() and "the game cannot make this now: check the reagents, the tools and the forge or anvil" or "open a profession and choose a recipe first") end,   -- v161
         ["/click zenvcrollneed"] = function() say1(QG.rollOpen() and "Need is not possible on this item" or "no loot roll is showing") end,   -- v151
         ["/click zenvcrollgreed"] = function() say1(QG.rollOpen() and "Greed is not possible on this item" or "no loot roll is showing") end,
         ["/click zenvcrollpass"] = function() say1(QG.rollOpen() and "Pass is not possible on this item" or "no loot roll is showing") end,

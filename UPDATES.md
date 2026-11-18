@@ -5,6 +5,30 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.231 and VCFI 0.10.231 (professions by voice, create, item numbers, key test cancel)
+
+Published 2026-11-17 20:31 US Mountain Standard Time
+
+**Professions**
+- Select on a profession's tab down the side of the professions window now opens that profession.
+- As the outline moves through the recipes, the game's own recipe page in the middle follows it.
+- New voice command **create** (Interaction): on a recipe page it presses the game's own Create button once. If the game cannot make it, VCF says to check the reagents, the tools and the forge or anvil.
+
+**Items and keys**
+- Weapons, trinkets, off hands and shields, and any item with an apostrophe in its name (like Outrunner's Shield), are now put on by the item's own number, so the game always finds them. You still see and say the name.
+- Anything on both the main action bar and a side bar now uses the side bar's key. The main bar changes with a stance or form, so its key could press an empty slot (War Stomp on a warrior).
+
+**KEY TEST**
+- A test that stopped part way can now be cancelled: click KEY TEST and choose CANCEL THE TEST. It ends for good and VCF does the two reloads, so your voice keys come back.
+
+**Tooltip box**
+- The lower-middle tooltip box now also shows what the game's own tooltip shows when you point at something with the mouse or the controller, at your tooltip size.
+
+**FAQ**
+- New: step by step for switching between keyboard and mouse and a controller.
+
+---
+
 ## VCF 0.10.218 and VCFI 0.10.218 (rename list cleans itself, KEEP THIS, chat check)
 
 Published 2026-11-17 00:55 US Mountain Standard Time

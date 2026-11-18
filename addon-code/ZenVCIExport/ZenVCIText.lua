@@ -258,6 +258,9 @@ ZENVCI_TEXT = {
     ["Greed is not possible on this item"] = "Cupidité n'est pas possible pour cet objet",
     ["Pass is not possible on this item"] = "Passer n'est pas possible pour cet objet",
     ["no loot roll is showing"] = "aucun jet de butin n'est affiché",
+    ["this tab cannot be opened by voice"] = "cet onglet ne peut pas être ouvert à la voix",
+    ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "le jeu ne peut pas fabriquer ceci maintenant : vérifiez les composants, les outils et la forge ou l'enclume",
+    ["open a profession and choose a recipe first"] = "ouvrez une profession et choisissez d'abord une recette",
   },
   ["de"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r wähle zuerst eine Belohnung: Sag {Start Move:start move}, geh zu einer, sag {Select:select}, dann {Complete (short):complete}",
@@ -515,6 +518,9 @@ ZENVCI_TEXT = {
     ["Greed is not possible on this item"] = "Gier ist für diesen Gegenstand nicht möglich",
     ["Pass is not possible on this item"] = "Passen ist für diesen Gegenstand nicht möglich",
     ["no loot roll is showing"] = "kein Beutewurf wird gezeigt",
+    ["this tab cannot be opened by voice"] = "dieser Reiter kann nicht per Stimme geöffnet werden",
+    ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "das Spiel kann das jetzt nicht herstellen: prüfe die Reagenzien, die Werkzeuge und die Schmiede oder den Amboss",
+    ["open a profession and choose a recipe first"] = "öffne zuerst einen Beruf und wähle ein Rezept",
   },
   ["es"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r elige primero una recompensa: di {Start Move:start move}, ve a una, di {Select:select} y luego {Complete (short):complete}",
@@ -772,6 +778,9 @@ ZENVCI_TEXT = {
     ["Greed is not possible on this item"] = "Codicia no es posible para este objeto",
     ["Pass is not possible on this item"] = "Pasar no es posible para este objeto",
     ["no loot roll is showing"] = "no se muestra ninguna tirada de botín",
+    ["this tab cannot be opened by voice"] = "esta pestaña no se puede abrir por voz",
+    ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "el juego no puede fabricar esto ahora: revisa los componentes, las herramientas y la forja o el yunque",
+    ["open a profession and choose a recipe first"] = "abre una profesión y elige primero una receta",
   },
   ["zh-CN"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先选择一个奖励：说 {Start Move:start move}，移到其中一个，说 {Select:select}，然后说 {Complete (short):complete}",
@@ -1029,6 +1038,9 @@ ZENVCI_TEXT = {
     ["Greed is not possible on this item"] = "这个物品不能选贪婪",
     ["Pass is not possible on this item"] = "这个物品不能选放弃",
     ["no loot roll is showing"] = "现在没有拾取掷骰",
+    ["this tab cannot be opened by voice"] = "这个标签无法用语音打开",
+    ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "现在无法制作：请检查材料、工具以及熔炉或铁砧",
+    ["open a profession and choose a recipe first"] = "请先打开一个专业并选择配方",
   },
   ["ja"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先に報酬を選んでください：{Start Move:start move} と言い、どれかに移動して {Select:select} と言い、それから {Complete (short):complete}",
@@ -1286,6 +1298,9 @@ ZENVCI_TEXT = {
     ["Greed is not possible on this item"] = "このアイテムでは欲しいを選べません",
     ["Pass is not possible on this item"] = "このアイテムではパスを選べません",
     ["no loot roll is showing"] = "ロールは表示されていません",
+    ["this tab cannot be opened by voice"] = "このタブは音声では開けません",
+    ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "今は作成できません。素材、道具、炉や金床を確認してください",
+    ["open a profession and choose a recipe first"] = "先に専門技能を開いてレシピを選んでください",
   },
   ["zh-TW"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先選擇一個獎勵：說 {Start Move:start move}，移到其中一個，說 {Select:select}，然後說 {Complete (short):complete}",
@@ -1543,5 +1558,8 @@ ZENVCI_TEXT = {
     ["Greed is not possible on this item"] = "這個物品不能選貪婪",
     ["Pass is not possible on this item"] = "這個物品不能選放棄",
     ["no loot roll is showing"] = "現在沒有拾取擲骰",
+    ["this tab cannot be opened by voice"] = "這個標籤無法用語音開啟",
+    ["the game cannot make this now: check the reagents, the tools and the forge or anvil"] = "現在無法制作：請檢查材料、工具以及熔爐或鐵砧",
+    ["open a profession and choose a recipe first"] = "請先開啟一個專業並選擇配方",
   },
 }

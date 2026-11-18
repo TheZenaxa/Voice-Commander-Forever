@@ -115,5 +115,5 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] The helper add-ons' code readable on this page (addon-code)
 - [x] Read quest: the open quest or what someone says read aloud with WoW's own voice (VCF and VCFI 0.10.176; tested in the game with VCF)
 - [x] Trainers by voice: start move, move, select, buy twice to train (0.10.186; tested in the game)
-- [ ] Professions by voice: recipes, what they need, tabs (built in 0.10.186, EXPERIMENTAL, not tested yet); crafting by voice still to come
+- [x] Professions by voice: recipes, what they need, tabs, and crafting with "create" (tested 2026-11-17, VCF 0.10.231)
 - [ ] Heal, potions, bandages and Healthstone by voice
