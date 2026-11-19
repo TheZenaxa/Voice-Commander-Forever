@@ -124,6 +124,7 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - The character pane by voice: worn slots, tooltips, move my box from your bags (tested 2026-11-18, 0.10.254)
 - The spellbook by voice: spells with their tooltips, the tabs, the pages (tested 2026-11-18, 0.10.256, keyboard and mouse and controller)
 - The talents by voice: name, rank and what each does, the Primary and Secondary tabs (tested 2026-11-18, 0.10.257, keyboard and mouse and controller)
+- Limited editing: moving and sizing pieces of the screen by voice, through a list of only the pieces on screen (EXPERIMENTAL; built in VCF and VCFI 0.10.175, tested in the game 2026-11-18)
 
 ## Still to come
 
@@ -139,7 +140,6 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Trade tested with another player
 - The guild bank by voice (built, pending testing)
 - The vowel check proven in play (READY FORMANTS)
-- Limited editing: moving and sizing pieces of the screen by voice (built in VCF and VCFI 0.10.175, EXPERIMENTAL; moving and sizing tested in the game, the on-screen-only list not yet)
 - Heal and Healthstone by voice
 - Talents: spending a point by voice
 - Taking gear off the character pane into your bags
