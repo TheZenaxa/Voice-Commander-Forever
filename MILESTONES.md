@@ -1,133 +1,145 @@
 # MILESTONES
 
-What has been done, and what is still to come, for VCF and VCFI. Ticked items are done. For every change in detail, newest first, see UPDATES.
+What has been done, and what is still to come, for VCF and VCFI. For every change in detail, newest first, see UPDATES.
 
 ## Milestone 1: Launch (4 November 2026)
 
-- [x] VCF and VCFI available to download, still in testing
-- [x] The voice language test available to download
-- [x] READ ME FIRST for VCF and for VCFI
-- [x] This download page
+- VCF and VCFI available to download, still in testing
+- The voice language test available to download
+- READ ME FIRST for VCF and for VCFI
+- This download page
 
 ## Milestone 2: Your spells, items and words (5 November 2026)
 
-- [x] Spells grouped the way the game shows them (spellbook sections, talents, items)
-- [x] All races and classes checked in the game
-- [x] Talents and the Legacy screen
-- [x] Preset keys for the game's own windows
-- [x] Several ways to say one command, separated by commas
-- [x] RENAME AN ITEM: give your own items your own words, and equip or use them by voice
-- [x] Fishing by voice
-- [x] Words already in use: a newer command never takes your words, and its box says so
-- [x] Commands that do the same thing can share words
-- [x] "Superfood" words for food and drink in one
+- Spells grouped the way the game shows them (spellbook sections, talents, items)
+- All races and classes checked in the game
+- Talents and the Legacy screen
+- Preset keys for the game's own windows
+- Several ways to say one command, separated by commas
+- RENAME AN ITEM: give your own items your own words, and equip or use them by voice
+- Fishing by voice
+- Words already in use: a newer command never takes your words, and its box says so
+- Commands that do the same thing can share words
+- "Superfood" words for food and drink in one
 
 ## Milestone 3: Reliability (6 November 2026)
 
-- [x] Autorun no longer turns Num Lock off
-- [x] Loot, Catch and the other Interact commands follow your Auto Loot setting
-- [x] Fishing: the game's interact range widens while your line is out
-- [x] Accept takes everything in an open loot window
-- [x] RENAME AN ITEM finds grey weapons and armour, with a "Hide junk items" option
-- [x] Items that are ignored, destroyed or sold give up their key
-- [x] VCFI: autorun and the never-type-into-chat protection work
-- [x] Voice language test 1.1.0: test your own words, with a license to agree to
-- [x] FAQ: Num Lock, and the fishing known issue
-- [x] UPDATES page and version numbers on the download buttons
+- Autorun no longer turns Num Lock off
+- Loot, Catch and the other Interact commands follow your Auto Loot setting
+- Fishing: the game's interact range widens while your line is out
+- Accept takes everything in an open loot window
+- RENAME AN ITEM finds grey weapons and armour, with a "Hide junk items" option
+- Items that are ignored, destroyed or sold give up their key
+- VCFI: autorun and the never-type-into-chat protection work
+- Voice language test 1.1.0: test your own words, with a license to agree to
+- FAQ: Num Lock, and the fishing known issue
+- UPDATES page and version numbers on the download buttons
 
 ## Milestone 4: Windows by voice (7 November 2026)
 
-- [x] Start move and stop move: an outline on the vendor, your bags or a talk window, moved by voice
-- [x] Vendor pages turned by voice
-- [x] A tooltip for the outlined item, in three sizes
-- [x] A comparison with what you have on, beside the tooltip
-- [x] The Glossary explains every window command (WINDOWS BY VOICE)
-- [x] Use or destroy the outlined bag item, asked first
-- [x] Answer VCF's question boxes by voice
-- [x] The outline switches off when its window closes
-- [x] All of the above in VCFI too, in every VCFI language
+- Start move and stop move: an outline on the vendor, your bags or a talk window, moved by voice
+- Vendor pages turned by voice
+- A tooltip for the outlined item, in three sizes
+- A comparison with what you have on, beside the tooltip
+- The Glossary explains every window command (WINDOWS BY VOICE)
+- Use or destroy the outlined bag item, asked first
+- Answer VCF's question boxes by voice
+- The outline switches off when its window closes
+- All of the above in VCFI too, in every VCFI language
 
 ## Milestone 5: Keys you can trust (9 November 2026)
 
-- [x] A blocked action no longer switches your voice keys off, and switched-off keys come back on
-- [x] "Use that" uses items the way the game allows
-- [x] Importing a shared profile never switches off the Interaction and Movement commands
-- [x] 45 more hidden keys, tested in the game first, so new commands and items get a key
+- A blocked action no longer switches your voice keys off, and switched-off keys come back on
+- "Use that" uses items the way the game allows
+- Importing a shared profile never switches off the Interaction and Movement commands
+- 45 more hidden keys, tested in the game first, so new commands and items get a key
 
 ## Milestone 6: The camera and turning by voice (9 November 2026)
 
-- [x] Zoom the camera in and out by voice ("click in", "click out")
-- [x] Zoom by up to ten steps at once ("click out five")
-- [x] Turn left and right by voice, by the face of a clock ("go left three")
+- Zoom the camera in and out by voice ("click in", "click out")
+- Zoom by up to ten steps at once ("click out five")
+- Turn left and right by voice, by the face of a clock ("go left three")
 
 ## Milestone 7: The Auction House by voice (9 November 2026)
 
-- [x] Move through the categories, results and search row by voice
-- [x] Item tooltips with the lowest auction price, and each auction's own price
-- [x] Select, go back, search now, and scrolling past the rows on screen
-- [x] Accept or decline guild invites by voice, with a yes/no check before accepting
-- [x] Fly from a flight master by voice, with a yes/no check before take-off
-- [x] A key that came before game crashes is never used again
-- [x] An on-screen keypad for the search and quantity boxes
-- [x] Buy at vendors and the Auction House with "buy that"
-- [x] Mail by voice: read the inbox, "get that", send to your characters or a typed name
-- [x] The trade window by voice (built; not yet tested with another player)
-- [x] "move start" works as well as "start move"
-- [x] The bank by voice, and "move that" to move items between the bank and your bags or sort your bags
-- [x] "tick yes" and "tick no" answer the game's question boxes
-- [x] Camera up and lower camera, 1 to 3
-- [x] Choosing a quest reward by voice
-- [x] VCFI has trade, mail, the bank, move that, tick yes and tick no, and the camera tilt
-- [x] Follow a friendly (start walk / stop walk), walk 1 to 3, and snap cam
-- [x] NPCs by voice: say friend first, then talk or shop
+- Move through the categories, results and search row by voice
+- Item tooltips with the lowest auction price, and each auction's own price
+- Select, go back, search now, and scrolling past the rows on screen
+- Accept or decline guild invites by voice, with a yes/no check before accepting
+- Fly from a flight master by voice, with a yes/no check before take-off
+- A key that came before game crashes is never used again
+- An on-screen keypad for the search and quantity boxes
+- Buy at vendors and the Auction House with "buy that"
+- Mail by voice: read the inbox, "get that", send to your characters or a typed name
+- The trade window by voice (built; not yet tested with another player)
+- "move start" works as well as "start move"
+- The bank by voice, and "move that" to move items between the bank and your bags or sort your bags
+- "tick yes" and "tick no" answer the game's question boxes
+- Camera up and lower camera, 1 to 3
+- Choosing a quest reward by voice
+- VCFI has trade, mail, the bank, move that, tick yes and tick no, and the camera tilt
+- Follow a friendly (start walk / stop walk), walk 1 to 3, and snap cam
+- NPCs by voice: say friend first, then talk or shop
 
 ## Milestone 8: Keys and your voice (10 to 11 November 2026)
 
-- [x] KEY TEST: finds keys that never reach the game on your computer, and the program stops using them
-- [x] KEY CLEANUP and OOPS!, and a FREE KEY ON CLEANUP tick box for each command
-- [x] No "keys you cannot touch": your own game keys always win; Drink and Eat use the last two slots of your main bar
-- [x] Move up, down, left and right by 2 to 20 spaces at once, with no new keys
-- [x] Voice check: ignores voices clearly outside your own pitch range, learned from how you really talk, with "My lowest note"
-- [x] Blunt background noise: Windows hears your words better when the room is noisy
-- [x] Vowel check: built, learning how you say your vowels (switch it on when it says READY)
-- [x] READY PITCH and READY FORMANTS on the MIC IS box when a check has proved itself
-- [x] All of the above in VCFI too, in every VCFI language
+- KEY TEST: finds keys that never reach the game on your computer, and the program stops using them
+- KEY CLEANUP and OOPS!, and a FREE KEY ON CLEANUP tick box for each command
+- No "keys you cannot touch": your own game keys always win; Drink and Eat use the last two slots of your main bar
+- Move up, down, left and right by 2 to 20 spaces at once, with no new keys
+- Voice check: ignores voices clearly outside your own pitch range, learned from how you really talk, with "My lowest note"
+- Blunt background noise: Windows hears your words better when the room is noisy
+- Vowel check: built, learning how you say your vowels (switch it on when it says READY)
+- READY PITCH and READY FORMANTS on the MIC IS box when a check has proved itself
+- All of the above in VCFI too, in every VCFI language
+
+## Milestone 9: More windows by voice, and your screen (11 to 18 November 2026)
+
+- Find Minerals by voice (tested)
+- Cooking and Blacksmithing opened by voice (tested)
+- Camp items: "place campfire" by voice (tested 2026-11-17)
+- Dictating chat by voice (built in VCF 0.10.171 and VCFI 0.10.172, EXPERIMENTAL; tested in English only so far)
+- Dictating into mail and Auction House searches (tested in English)
+- The map and its quest log by voice: start move, move, select, move my box between the quest log and the map (VCF and VCFI 0.10.180; tested in the game with VCF)
+- Select and accept in an NPC's list of quests (0.10.177; tested in the game)
+- The helper add-ons' code readable on this page (addon-code)
+- Read quest: the open quest or what someone says read aloud with WoW's own voice (VCF and VCFI 0.10.176; tested in the game with VCF)
+- Trainers by voice: start move, move, select, buy twice to train (0.10.186; tested in the game)
+- Professions by voice: recipes, what they need, tabs, and crafting with "create" (tested 2026-11-17, VCF 0.10.231)
+- Coin purse: your coin in big text, moved with the mouse or by voice (tested 2026-11-17, VCF 0.10.240)
+- Move each bag where you want it to open (tested 2026-11-17, VCF 0.10.242)
+- The tooltip box also copies the game's own tooltip when you point at something (tested 2026-11-17 with keyboard and mouse)
+- KEY TEST can be cancelled, with the two reloads done for you (tested 2026-11-17)
+- Keys ending in a comma sent whole (the coin purse, camera click in) (tested 2026-11-17, VCF 0.10.240)
+- The FAQ rewritten in a new player's order, with a search box and See also links to the glossary (VCF and VCFI 0.10.246)
+- Quest page hints in the player's own words (tested 2026-11-18, VCF 0.10.246)
+- "voice expand" brings a minimized MIC IS box back without leaving the game (tested, VCF 0.10.246)
+- Bandages by voice (tested)
+- Healing potions by voice ("heal me", tested 2026-11-17)
+- VCF's own messages box for its tips and hints instead of the chat, moved, sized, shrunk and scrolled by voice or mouse (tested 2026-11-18, 0.10.247)
+- FIND COIN PURSE and "where's my purse" bring the coin purse back to the middle (tested 2026-11-18)
+- Mail: the letter tooltips and hints, "read text" reads a letter aloud, Open All, Prev and Next page (tested 2026-11-18)
+- Second chance near misses ("coinverse" for "coin purse") (0.10.250)
+- The "blocked" box in controller mode after MOVE on talents or the spellbook, fixed (tested 2026-11-18, 0.10.253)
+- The character pane by voice: worn slots, tooltips, move my box from your bags (tested 2026-11-18, 0.10.254)
+- The spellbook by voice: spells with their tooltips, the tabs, the pages (tested 2026-11-18, 0.10.256, keyboard and mouse and controller)
+- The talents by voice: name, rank and what each does, the Primary and Secondary tabs (tested 2026-11-18, 0.10.257, keyboard and mouse and controller)
 
 ## Still to come
 
-- [x] Find Minerals by voice (tested)
-- [x] Cooking and Blacksmithing opened by voice (tested)
-- [ ] Mining, Fishing and First Aid opened by voice (tested: they do not open yet)
-- [ ] Other profession abilities tested by voice, so they leave "ALPHA TESTING"
-- [x] Camp items: "place campfire" by voice (tested 2026-11-17)
-- [ ] Mount Up and Dismount, once a character can ride (level 40)
-- [ ] VCFI: RENAME AN ITEM and the preset keys tested in the game
-- [ ] VCFI's translations checked by native speakers
-- [ ] Why the game sometimes needs a restart before Interact works again
-- [ ] Why the game sometimes turns Auto Loot off by itself
-- [ ] Item sets: several items under one word (later)
-- [ ] A first-time install tested on a fresh computer
-- [ ] Trade tested with another player
-- [ ] The guild bank by voice (built, pending testing)
-- [ ] The spellbook by voice, in a way the game allows
-- [ ] The vowel check proven in play (READY FORMANTS)
-- [x] Dictating chat by voice (built in VCF 0.10.171 and VCFI 0.10.172, EXPERIMENTAL; tested in English only so far)
-- [x] Dictating into mail and Auction House searches (tested in English)
-- [ ] Limited editing: moving and sizing pieces of the screen by voice (built in VCF and VCFI 0.10.175, EXPERIMENTAL; moving and sizing tested in the game, the on-screen-only list not yet)
-- [x] The map and its quest log by voice: start move, move, select, move my box between the quest log and the map (VCF and VCFI 0.10.180; tested in the game with VCF)
-- [x] Select and accept in an NPC's list of quests (0.10.177; tested in the game)
-- [x] The helper add-ons' code readable on this page (addon-code)
-- [x] Read quest: the open quest or what someone says read aloud with WoW's own voice (VCF and VCFI 0.10.176; tested in the game with VCF)
-- [x] Trainers by voice: start move, move, select, buy twice to train (0.10.186; tested in the game)
-- [x] Professions by voice: recipes, what they need, tabs, and crafting with "create" (tested 2026-11-17, VCF 0.10.231)
-- [x] Coin purse: your coin in big text, moved with the mouse or by voice (tested 2026-11-17, VCF 0.10.240)
-- [x] Move each bag where you want it to open (tested 2026-11-17, VCF 0.10.242)
-- [x] The tooltip box also copies the game's own tooltip when you point at something (tested 2026-11-17 with keyboard and mouse)
-- [x] KEY TEST can be cancelled, with the two reloads done for you (tested 2026-11-17)
-- [x] Keys ending in a comma sent whole (the coin purse, camera click in) (tested 2026-11-17, VCF 0.10.240)
-- [x] The FAQ rewritten in a new player's order, with a search box and See also links to the glossary (VCF and VCFI 0.10.246)
-- [x] Quest page hints in the player's own words (tested 2026-11-18, VCF 0.10.246)
-- [x] "voice expand" brings a minimized MIC IS box back without leaving the game (tested, VCF 0.10.246)
-- [x] Bandages by voice (tested)
-- [x] Healing potions by voice ("heal me", tested 2026-11-17)
-- [ ] Heal and Healthstone by voice
+- Mining, Fishing and First Aid opened by voice (tested: they do not open yet)
+- Other profession abilities tested by voice, so they leave "ALPHA TESTING"
+- Mount Up and Dismount, once a character can ride (level 40)
+- VCFI: RENAME AN ITEM and the preset keys tested in the game
+- VCFI's translations checked by native speakers
+- Why the game sometimes needs a restart before Interact works again
+- Why the game sometimes turns Auto Loot off by itself
+- Item sets: several items under one word (later)
+- A first-time install tested on a fresh computer
+- Trade tested with another player
+- The guild bank by voice (built, pending testing)
+- The vowel check proven in play (READY FORMANTS)
+- Limited editing: moving and sizing pieces of the screen by voice (built in VCF and VCFI 0.10.175, EXPERIMENTAL; moving and sizing tested in the game, the on-screen-only list not yet)
+- Heal and Healthstone by voice
+- Talents: spending a point by voice
+- Taking gear off the character pane into your bags
