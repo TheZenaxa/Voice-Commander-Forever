@@ -5,6 +5,51 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.257 and VCFI 0.10.257 (messages box, MOVE in character pane, spellbook and talents)
+
+Published 2026-11-18 23:04 US Mountain Standard Time
+
+**VCF's own messages box**
+- VCF's tips, hints and announcements now show in their own box in the game, not in the chat.
+- It starts in the middle of the screen. Drag it by its top to move it, drag its bottom-right corner to size it, or move and size it in edit layout.
+- "messages small" (or its - button) shrinks it to one line; "messages big" (or +) opens it again.
+- Scroll it with the mouse wheel, its UP and DOWN buttons, or by saying "messages up" and "messages down" (two thirds of the box at a time).
+
+**MOVE in more windows**
+- Character pane: move between your worn slots; each shows what you wear there. "move my box" goes between your bags and the character pane.
+- Spellbook: move between the spells, each with the game's own tooltip. "move my box" goes to the tabs along the top; "select" opens a tab or turns the page. Read only.
+- Talents: move across the three trees; each talent shows its name, rank and what it does. "move my box" goes to the Primary and Secondary tabs. Read only.
+
+**Mail**
+- The tooltip on a letter in the inbox shows again, with its hint ("select" to open it). It did not show before.
+- An open letter's tooltip says to "move down" to reach its money and items.
+- "read text" (the same command as "read quest") reads an open letter aloud with the game's own text-to-speech; for an auction house letter it reads the sale.
+- The inbox's Open All, Prev and Next page buttons are in the MOVE list; "select" presses them.
+
+**Coin purse**
+- FIND COIN PURSE on the MIC IS box, or saying "where's my purse", puts the coin purse back in the middle of the screen. In controller mode the game puts its own things in the lower corners, so a purse placed there can be hidden.
+
+**Hearing**
+- When Windows is unsure and the second listen hears something very close to what Windows guessed ("coinverse" for "coin purse"), and not close to any of your other commands, the command now goes through. VCFI: English, French, German and Spanish.
+
+**Fixed**
+- In controller mode the game could show "ZenVCExport has been blocked from an action only available to the Blizzard UI" after using MOVE on the talents or the spellbook. The helper now never touches a window the game keeps out of add-ons' reach.
+
+**FAQ**
+- How to switch on dictation (Control Panel, right side, under THE MICROPHONE).
+- With keyboard and mouse, "catch" and "loot" cannot reel in a fish, and a mailbox has to be opened with the mouse; voice works once it is open.
+- New answers for the messages box, the coin purse, and MOVE in the character pane, spellbook and talents.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `b8e7001ce5d338e3440ab4c97e9df39b6befdbbb31aa237e62e2da6404d027fe`
+- VCFI.SETUP.exe: `ffc683ba4e713dbd7d2d12466488f58320729fd58de32bb628da212f5797421e`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.246 and VCFI 0.10.246 (new FAQ, quest hints, voice expand from the taskbar)
 
 Published 2026-11-18 14:09 US Mountain Standard Time
@@ -24,6 +69,18 @@ Published 2026-11-18 14:09 US Mountain Standard Time
 
 **In the game's AddOns list**
 - The VCF Helper's description now lists what it does today.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `2e319fbfe4f2007aab0790c09f73278798e91a20bec365fe1b96bbbf0dd2ec91`
+- VCFI.SETUP.exe: `ae66de3c440843557fe9004f00aea57b014485a2ed6bff4109485514e0466414`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+**Virus scans (VirusTotal)**
+- VCF.NET.SETUP.exe: no security vendor flagged it. https://www.virustotal.com/gui/file/2e319fbfe4f2007aab0790c09f73278798e91a20bec365fe1b96bbbf0dd2ec91
+- VCFI.SETUP.exe: no security vendor flagged it. https://www.virustotal.com/gui/file/ae66de3c440843557fe9004f00aea57b014485a2ed6bff4109485514e0466414
 
 ---
 

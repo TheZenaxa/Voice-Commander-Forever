@@ -53,7 +53,11 @@ It uses only the standard World of Warcraft add-on API. It:
 - Copies the text of the game's own tooltip into its own larger box (read only, from the tooltip's after-hooks; the game's tooltip is never changed).
 - Shows the player's coin in its own box, read only, when the player asks.
 - Moves the player's bag frames to the places the player chose, only out of combat and only after the game has placed them.
-- Shows short hint lines in chat with the player's own command words, for example when a quest page opens.
+- Shows short hint lines (in its own box, see below) with the player's own command words, for example when a quest page opens.
+- Shows its own lines (hints, tips, announcements) in its own movable box instead of the game's chat, and keeps the last 300 lines in its saved file.
+- Reads the character pane's worn slots, the spellbook and the talents as outline lists (read only: names, ranks and the game's own tooltips). In the spellbook and the talents, the only button it presses is a tab or page button, through a secure click, when the player says "select".
+- Reads an open letter aloud with the game's own text-to-speech when the player asks.
+- Never touches a window the game marks as forbidden to add-ons.
 - Reads quest text aloud with World of Warcraft's own text-to-speech.
 - Asks the player to confirm before using, destroying or unlearning anything. The game's own confirmation boxes still appear and are answered by the player.
 - Writes down any action the game blocks, so problems can be fixed.
