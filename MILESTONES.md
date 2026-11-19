@@ -125,21 +125,21 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - The spellbook by voice: spells with their tooltips, the tabs, the pages (tested 2026-11-18, 0.10.256, keyboard and mouse and controller)
 - The talents by voice: name, rank and what each does, the Primary and Secondary tabs (tested 2026-11-18, 0.10.257, keyboard and mouse and controller)
 - Limited editing: moving and sizing pieces of the screen by voice, through a list of only the pieces on screen (EXPERIMENTAL; built in VCF and VCFI 0.10.175, tested in the game 2026-11-18)
+- The vowel check on and working in play
+- Auto Loot no longer turns itself off
+- Interact after using the mouse, the keyboard or another window: tap a stick or press a button on the controller first, so the game takes the controller as the active input again (how the game works, not a fault)
+- Professions by voice, each by its own words (for example "bandage making" for First Aid, "smelting" for the mining window, "fish" to fish); a player can remove the ones they do not need to free keys
+- Heal and Healthstone by voice (a Healthstone works from an action bar or renamed with RENAME AN ITEM)
+- Mounts by voice: a mount on an action bar answers to its own name
 
 ## Still to come
 
-- Mining, Fishing and First Aid opened by voice (tested: they do not open yet)
-- Other profession abilities tested by voice, so they leave "ALPHA TESTING"
-- Mount Up and Dismount, once a character can ride (level 40)
 - VCFI: RENAME AN ITEM and the preset keys tested in the game
 - VCFI's translations checked by native speakers
-- Why the game sometimes needs a restart before Interact works again
-- Why the game sometimes turns Auto Loot off by itself
 - Item sets: several items under one word (later)
 - A first-time install tested on a fresh computer
 - Trade tested with another player
 - The guild bank by voice (built, pending testing)
-- The vowel check proven in play (READY FORMANTS)
-- Heal and Healthstone by voice
+- Fewer of your own words stopped by the vowel check
 - Talents: spending a point by voice
 - Taking gear off the character pane into your bags
