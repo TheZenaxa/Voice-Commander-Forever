@@ -95,8 +95,9 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 
 ## Still to come
 
-- [ ] Profession abilities (Cooking, First Aid, Find Minerals and others) tested by voice, so they leave "ALPHA TESTING"
-- [ ] Camp items
+- [x] Find Minerals by voice (tested)
+- [ ] Profession abilities (Cooking, First Aid and others) tested by voice, so they leave "ALPHA TESTING"
+- [x] Camp items: "place campfire" by voice (tested 2026-11-17)
 - [ ] Mount Up and Dismount, once a character can ride (level 40)
 - [ ] VCFI: RENAME AN ITEM and the preset keys tested in the game
 - [ ] VCFI's translations checked by native speakers
@@ -108,7 +109,8 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [ ] The guild bank by voice (built, pending testing)
 - [ ] The spellbook by voice, in a way the game allows
 - [ ] The vowel check proven in play (READY FORMANTS)
-- [ ] Dictating chat, mail and Auction House searches by voice (built in VCF 0.10.171 and VCFI 0.10.172, EXPERIMENTAL; tested in English only so far)
+- [x] Dictating chat by voice (built in VCF 0.10.171 and VCFI 0.10.172, EXPERIMENTAL; tested in English only so far)
+- [ ] Dictating into mail and Auction House searches, tested in the game
 - [ ] Limited editing: moving and sizing pieces of the screen by voice (built in VCF and VCFI 0.10.175, EXPERIMENTAL; moving and sizing tested in the game, the on-screen-only list not yet)
 - [x] The map and its quest log by voice: start move, move, select, move my box between the quest log and the map (VCF and VCFI 0.10.180; tested in the game with VCF)
 - [x] Select and accept in an NPC's list of quests (0.10.177; tested in the game)
@@ -124,4 +126,5 @@ What has been done, and what is still to come, for VCF and VCFI. Ticked items ar
 - [x] The FAQ rewritten in a new player's order, with a search box and See also links to the glossary (VCF and VCFI 0.10.246)
 - [ ] Quest page hints in the player's own words (built in VCF and VCFI 0.10.245, pending testing)
 - [ ] "voice expand" brings a minimized MIC IS box back without leaving the game (built in 0.10.243, pending testing)
-- [ ] Heal, potions, bandages and Healthstone by voice
+- [x] Bandages by voice (tested)
+- [ ] Heal, potions and Healthstone by voice
