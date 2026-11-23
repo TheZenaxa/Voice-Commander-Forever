@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "180"
+local VERSION = "187"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -76,14 +76,21 @@ end
 -- v172 (2026-11-18, user: VCF's tips in chat, "where ... all the rest of WoW in your zone yapping at each other. that is NOT the best place for VCF to be giving
 -- instructions, tips, or announcements"; "can be placed where ever for the player and can be minimized so not stealing space"; "it needs to be able to be
 -- scrolled. and your log file needs to read that now instead of the chat box"). VCF's OWN MESSAGE BOX: every line VCF showed in chat shows here instead.
--- Starts in the middle of the screen; drag it, size it from its corner, or move and size it in edit layout. "-" (or saying "messages small") shrinks it to
--- the newest line, "+" ("messages big") opens it again. Mouse wheel, UP and DOWN scroll it. Every line is also kept (last 300) for the voice commander's makers.
+-- Starts in the middle of the screen; drag it, size it from its corner, or move and size it in edit layout. "-" shrinks it to
+-- the newest line, "+" opens it again; saying "messages size" does either (v187). Mouse wheel, UP and DOWN scroll it. Every line is also kept (last 300) for the voice commander's makers.
 ZenVCMsg = {}
 do
     local B = ZenVCMsg
     local f, smf, ready, broken = nil, nil, false, false
     local pending = {}
     local LINE, HEAD = 15, 24
+    local last, lastAt = {}, -10   -- v185 the newest message: the lines that came in together (within a second of each other)
+    local function note(msg)
+        local now = GetTime and GetTime() or 0
+        if now - lastAt > 1 then last = {} end
+        last[#last + 1] = msg; lastAt = now
+    end
+    local function baseFont() local _, sz = ChatFontNormal:GetFont(); return math.floor((tonumber(sz) or 14) + 0.5) end
     local function db() if type(ZenVCExportDB) ~= "table" then return nil end; ZenVCExportDB._msgBox = ZenVCExportDB._msgBox or {}; return ZenVCExportDB._msgBox end
     local function remember(when, msg)
         if type(ZenVCExportDB) ~= "table" then return end
@@ -97,8 +104,9 @@ do
         f:ClearAllPoints()
         f:SetPoint(d.point or "CENTER", UIParent, d.rel or "CENTER", d.x or 0, d.y or 0)
         f:SetScale(d.scale or 1)
-        local w = d.w or 460
-        if d.small then f:SetSize(w, HEAD + LINE + 8) else f:SetSize(w, d.h or 170) end
+        local w = math.max(d.w or 480, 480)   -- v185/v186 room for read progress, A- A+ READ
+        if d.font then local path, _, flags = ChatFontNormal:GetFont(); pcall(smf.SetFont, smf, path, d.font, flags or "") end   -- v185 text size
+        if d.small then f:SetSize(w, HEAD + (d.font and (d.font + 2) or LINE) + 8) else f:SetSize(w, d.h or 170) end
         f.toggle:SetText(d.small and "+" or "-")
         if f.grip then if d.small then f.grip:Hide() else f.grip:Show() end end
         if f.up then if d.small then f.up:Hide(); f.down:Hide() else f.up:Show(); f.down:Show() end end
@@ -121,7 +129,7 @@ do
         f = CreateFrame("Frame", "ZenVCMsgBox", UIParent, "BackdropTemplate")
         f:SetFrameStrata("MEDIUM"); f:SetFrameLevel(40)
         f:SetClampedToScreen(true); f:SetMovable(true); f:SetResizable(true)
-        pcall(function() f:SetResizeBounds(220, HEAD + LINE * 3, 1600, 1000) end)
+        pcall(function() f:SetResizeBounds(480, HEAD + LINE * 3, 1600, 1000) end)   -- v186 480 wide: room for read progress, A- A+ READ
         f:EnableMouse(true); f:RegisterForDrag("LeftButton")
         f:SetScript("OnDragStart", function(self) if not InCombatLockdown() then self:StartMoving() end end)
         f:SetScript("OnDragStop", function(self) self:StopMovingOrSizing(); B.save() end)
@@ -131,10 +139,25 @@ do
         end
         local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", 8, -6); title:SetText((B.tr or tostring)("VCF messages"))
+        -- v186 the "read progress" tick box: quest progress lines read aloud as they come in (the same as saying "progress read")
+        pcall(function()
+            local cb = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
+            cb:SetSize(20, 20); cb:SetPoint("LEFT", title, "RIGHT", 6, 0)
+            local cl = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            cl:SetPoint("LEFT", cb, "RIGHT", 1, 0); cl:SetText((B.tr or tostring)("read progress"))
+            cb:SetScript("OnClick", function(self) if type(ZenVCExportDB) == "table" then ZenVCExportDB._progressRead = self:GetChecked() and true or nil end end)
+            f.prog = cb
+        end)
         f.toggle = button("-", 24); f.toggle:SetPoint("TOPRIGHT", -4, -3)
         f.toggle:SetScript("OnClick", function() local d = db(); B.small(not (d and d.small)) end)
         f.down = button((B.tr or tostring)("DOWN"), 56); f.down:SetPoint("RIGHT", f.toggle, "LEFT", -4, 0)
         f.up = button((B.tr or tostring)("UP"), 44); f.up:SetPoint("RIGHT", f.down, "LEFT", -4, 0)
+        f.read = button((B.tr or tostring)("READ"), 52); f.read:SetPoint("RIGHT", f.up, "LEFT", -4, 0)   -- v185 reads the newest message once
+        f.aplus = button("A+", 28); f.aplus:SetPoint("RIGHT", f.read, "LEFT", -4, 0)   -- v185 text size
+        f.aminus = button("A-", 28); f.aminus:SetPoint("RIGHT", f.aplus, "LEFT", -4, 0)
+        f.read:SetScript("OnClick", function() B.read() end)
+        f.aplus:SetScript("OnClick", function() B.text(1) end)
+        f.aminus:SetScript("OnClick", function() B.text(-1) end)
         smf = CreateFrame("ScrollingMessageFrame", nil, f)
         smf:SetPoint("TOPLEFT", 8, -HEAD); smf:SetPoint("BOTTOMRIGHT", -8, 6)
         smf:SetFontObject(ChatFontNormal); smf:SetJustifyH("LEFT")
@@ -150,6 +173,7 @@ do
         f.grip:SetScript("OnMouseUp", function() f:StopMovingOrSizing(); B.save() end)
         f.GetSystemName = function() return (B.tr or tostring)("VCF messages") end   -- its name in edit layout
         place()
+        B.progressSync()   -- v186
         f:Show()
         return f
     end
@@ -159,6 +183,7 @@ do
         if not ready then pending[#pending + 1] = { when, msg }; return true end
         smf:AddMessage(msg)
         remember(when, msg)
+        note(msg)   -- v185
         return true
     end
     -- "messages up" / "messages down" (user: "only scroll like, 2/3s the size of the length of the window at a time"): two thirds of the lines the box shows
@@ -169,6 +194,25 @@ do
         local n = math.max(1, math.floor(shown * 2 / 3))
         for _ = 1, n do if dir > 0 then smf:ScrollUp() else smf:ScrollDown() end end
     end
+    -- v185 A- / A+ ("messages text smaller" / "messages text bigger"): the text size, 10 to 40, remembered
+    function B.text(step)
+        local d = db(); if not d then return end
+        d.font = math.max(10, math.min(40, (d.font or baseFont()) + 2 * step))
+        if f then place() end
+        return d.font
+    end
+    -- v185 READ ("messages read"): the newest message, once, in the game's own voice; pressed again it starts over. Never by itself.
+    function B.read()
+        if #last == 0 or not B.speak then return end
+        local t = {}
+        for _, m in ipairs(last) do
+            local x = tostring(m):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+            x = x:gsub("^%s*VCFI?:%s*", "")
+            t[#t + 1] = x
+        end
+        B.speak(table.concat(t, " "))
+    end
+    function B.progressSync() if f and f.prog and type(ZenVCExportDB) == "table" then f.prog:SetChecked(ZenVCExportDB._progressRead and true or false) end end   -- v186
     function B.small(on) local d = db(); if d then d.small = on and true or nil end; if f then place() end end
     function B.frame() return f end
     function B.nudge(dx, dy) local d = db(); if not (f and d) then return end; B.save(); d = db(); d.x = (d.x or 0) + dx; d.y = (d.y or 0) + dy; place() end
@@ -183,16 +227,73 @@ do
         ready = true
         for _, p in ipairs(list) do
             if broken then if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(p[2]) end
-            else smf:AddMessage(p[2]); remember(p[1], p[2]) end
+            else smf:AddMessage(p[2]); remember(p[1], p[2]); note(p[2]) end
         end
     end)
 end
 
+-- v186 (2026-11-23, user: quest progress "6 of 10 of yadda yadda" in the VCF messages box, "colors and such too", and read aloud "without having to have vcf
+-- helper messages always be on too"): every quest progress line the game shows ("Kobold Candle: 6/10") also goes into the messages box, in the colour picked
+-- in the panel (none = the game's own colour for these lines). With "progress read" switched on, each one is read aloud as it comes in; nothing else in the box is.
+do
+    local pf = CreateFrame("Frame")
+    pcall(pf.RegisterEvent, pf, "UI_INFO_MESSAGE")
+    pf:SetScript("OnEvent", function(_, _, a, b)
+        local msg = type(b) == "string" and b or a
+        if type(msg) ~= "string" or not msg:find("%d+/%d+") then return end
+        local c = type(ZENVC_PROGRESS_COLOR) == "string" and ZENVC_PROGRESS_COLOR:match("^%x%x%x%x%x%x$") or "ffff00"
+        pcall(ZenVCMsg.add, "|cff" .. c .. msg .. "|r")
+        if type(ZenVCExportDB) == "table" and ZenVCExportDB._progressRead and ZenVCMsg.queue then pcall(ZenVCMsg.queue, msg) end
+    end)
+end
+-- v187 (2026-11-23, user: "do the non risky changes"): camera up / lower camera use ONE key each way. One press tilts 1.2 seconds; each further press adds 1.2
+-- seconds to the time left (camera 2 = 2 presses = 2.4 s, camera 3 = 4 presses = 4.8 s, exactly as before), so the camera never stops early.
+ZenVCCam = {}
+do
+    local untilAt = { up = 0, down = 0 }
+    function ZenVCCam.step(dir)
+        local now = GetTime()
+        if untilAt[dir] > now then untilAt[dir] = untilAt[dir] + 1.2; return end
+        untilAt[dir] = now + 1.2
+        local stop = dir == "up" and MoveViewUpStop or MoveViewDownStop
+        pcall(dir == "up" and MoveViewUpStart or MoveViewDownStart, 0.1)
+        local function check()
+            local left = untilAt[dir] - GetTime()
+            if left > 0.02 then C_Timer.After(left, check) else untilAt[dir] = 0; pcall(stop) end
+        end
+        C_Timer.After(1.2, check)
+    end
+end
 -- ------------------------------------------------------------------------------------------------------------------
 -- Ranks. The game casts the rank that is on the button. Default: the HIGHEST rank you know. Per character and per spell
 -- you can ask for lower ranks too:  /zenvc ranks   and   /zenvc rank Moonfire 1 max
 -- ------------------------------------------------------------------------------------------------------------------
-local function charKey() return (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "") end
+-- v182 (2026-11-23, user: "CHARACTERS ARE SUPPOSED TO BE IN THERE BY ID NUMBER NOT JUST NAME"): everything kept per character is filed under the
+-- character's own game ID, never name and realm (the game once gave an empty realm and Zenaxa got a second save). Name-realm only if the game gives no ID.
+-- what an older helper filed under this character's name-realm is carried over to the ID, once; nothing is deleted
+local function carryToId()
+    pcall(function()
+        local id = UnitGUID and UnitGUID("player"); if not id then return end
+        local name = UnitName("player") or "?"
+        local olds = { name .. "-" .. (GetRealmName and GetRealmName() or "") }
+        for k, v in pairs(ZenVCExportDB) do   -- the realm this ID was last saved under, and the empty-realm key
+            if type(v) == "table" and v.guid == id and type(k) == "string" and k ~= id then olds[#olds + 1] = k end
+        end
+        olds[#olds + 1] = name .. "-"
+        for _, t in ipairs({ "_prefs", "_hiddenResult", "_placed", "_extra", "_noask", "_barkeys" }) do
+            local tbl = ZenVCExportDB[t]
+            if type(tbl) == "table" and tbl[id] == nil then
+                for _, k in ipairs(olds) do if tbl[k] ~= nil then tbl[id] = tbl[k]; break end end
+            end
+        end
+    end)
+end
+local carried = false
+local function charKey()
+    local id = UnitGUID and UnitGUID("player")
+    if id and not carried then carried = true; carryToId() end   -- the first time the ID is known, before anything is read under it
+    return id or ((UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or ""))
+end
 local petBarRows   -- v41 filled in further down; DECLARED HERE so the export code above it can see it (declared later, it was a different, empty variable and the pet bar always came out empty)
 
 local function rankOf(id)
@@ -877,8 +978,9 @@ end
 local function save()
     local ok, db = pcall(collect)
     if ok and db and db.name then
-        local key = db.name .. "-" .. (db.realm or "")
+        local key = charKey()   -- v182 the character's game ID
         local old = ZenVCExportDB[key]
+        if not old then for k, v in pairs(ZenVCExportDB) do if type(v) == "table" and v.guid and v.guid == db.guid and k ~= key then old = v end end end   -- v182 its last save under name-realm
         -- never replace good action-bar data with an empty read (bars are not readable while the UI is loading or closing)
         if #db.actions == 0 and old and old.actions and #old.actions > 0 then
             db.actions = old.actions
@@ -1076,7 +1178,7 @@ local function doPlace(quiet)   -- v136 quiet: NEW SPELLS says the result itself
     if InCombatLockdown() then say("not in combat, please.") return end
     if not planned then say("type /zenvc bars first to see the plan.") return end
     local plan = makePlan()   -- recompute: only what is STILL empty and free is touched
-    local key = (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "")
+    local key = charKey()   -- v182 by ID
     ZenVCExportDB._placed = ZenVCExportDB._placed or {}
     local done = ZenVCExportDB._placed[key] or {}
     local count = 0
@@ -1112,7 +1214,7 @@ local refreshPending
 local function refreshRanks()
     if InCombatLockdown() then refreshPending = true return end
     refreshPending = nil
-    local key = (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "")
+    local key = charKey()   -- v182 by ID
     local done = ZenVCExportDB._placed and ZenVCExportDB._placed[key]
     if not done or #done == 0 then return end
     local best = bestRanks()
@@ -1187,7 +1289,7 @@ end
 
 local function doFixKeys()
     if InCombatLockdown() then say("not in combat, please.") return end
-    local key = (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "")
+    local key = charKey()   -- v182 by ID
     local done = ZenVCExportDB._placed and ZenVCExportDB._placed[key]
     if not done or #done == 0 then say("nothing placed by me to fix for this character.") return end
     local allBars = { "ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", "MultiBarRightButton",
@@ -1255,7 +1357,7 @@ end
 
 local function doUndo()
     if InCombatLockdown() then say("not in combat, please.") return end
-    local key = (UnitName("player") or "?") .. "-" .. (GetRealmName and GetRealmName() or "")
+    local key = charKey()   -- v182 by ID
     local ex = ZenVCExportDB._extra and ZenVCExportDB._extra[key]
     if ex and #ex > 0 then
         for _, e in ipairs(ex) do SetBinding(e.key) end
@@ -1370,6 +1472,13 @@ local guard = CreateFrame("Frame")
 guard:RegisterEvent("ADDON_ACTION_FORBIDDEN")
 guard:RegisterEvent("ADDON_ACTION_BLOCKED")
 guard:SetScript("OnEvent", function(_, ev, addonName, funcName)
+    -- v181 (2026-11-19, user: "I got the blocked interaction notice but not the disable addon message", in the professions window): EVERY block event is
+    -- noted, whatever add-on name the game gives it (the one shown came without ours), with the time and the last window action
+    pcall(function()
+        local l = ZenVCExportDB._blockedAny or {}; ZenVCExportDB._blockedAny = l
+        l[#l + 1] = date("%Y-%m-%d %H:%M:%S") .. " " .. tostring(ev) .. " addon=" .. tostring(addonName) .. " func=" .. tostring(funcName) .. " last action: " .. tostring(ZenVCExportDB._lastAct)
+        while #l > 50 do table.remove(l, 1) end
+    end)
     if addonName == "ZenVCExport" then
         local since = lastBoxAt and GetTime and string.format("%.0f s after a box of mine was shown", GetTime() - lastBoxAt) or "no box of mine had been shown"
         ZenVCExportDB._blocked = ZenVCExportDB._blocked or {}
@@ -2731,6 +2840,10 @@ local function rqText()
         if rqUp("QuestFrameGreetingPanel") then return "", rqCall(GetGreetingText), "talk" end
         return title, (rqCall(GetQuestText) or "") .. " " .. (rqCall(GetObjectiveText) or ""), "quest"
     end
+    -- v183 a corpse, plaque, book, sign or other object's reading panel: its title and the page shown
+    if rqUp("ItemTextFrame") then
+        return rqCall(ItemTextGetItem) or "", rqCall(ItemTextGetText) or "", "item"
+    end
     if rqUp("GossipFrame") then
         local said = (C_GossipInfo and rqCall(C_GossipInfo.GetText)) or rqCall(GetGossipText)
         return "", said, "talk"
@@ -2769,8 +2882,12 @@ local function rqVoice()
     local vol = C_TTSSettings and rqCall(C_TTSSettings.GetSpeechVolume)
     return id, type(rate) == "number" and rate or 0, type(vol) == "number" and vol or 100
 end
-local function rqStop() RQ.reading, RQ.pieces = false, nil end
+local function rqStop() RQ.reading, RQ.pieces, RQ.waitPage = false, nil, nil end
 local function rqNext()
+    -- v183 the item-text panel: when its page is read and there is another, turn to it (the next page comes with ITEM_TEXT_READY)
+    if RQ.kind == "item" and (not RQ.pieces or #RQ.pieces == 0) and rqUp("ItemTextFrame") and ItemTextHasNextPage and rqCall(ItemTextHasNextPage) then
+        if pcall(ItemTextNextPage) then RQ.waitPage = true; return end
+    end
     local piece = RQ.pieces and table.remove(RQ.pieces, 1)
     if not piece then rqStop() return end
     local id, rate, vol = rqVoice()
@@ -2794,15 +2911,52 @@ function RQ.toggle()
     local title, body, kind = rqText()
     title = rqClean(title); body = rqClean(body)
     local text = (title ~= "" and (title .. ". ") or "") .. body
-    if body == "" then rqSay("nothing to read: open a quest, talk to someone, or pick a quest in your quest log.") return end
-    RQ.pieces, RQ.reading = rqPieces(text), true
-    rqSay((kind == "talk" and "reading what they say." or kind == "mail" and "reading the letter." or "reading the quest.") .. " Say {Read Quest:read quest} again to stop.")
+    if body == "" then
+        -- v183 which windows were open, so a panel this does not read yet can be found (read only; forbidden windows are never touched)
+        pcall(function()
+            local open = {}
+            for _, fr in ipairs({ UIParent:GetChildren() }) do
+                if not (fr.IsForbidden and fr:IsForbidden()) and fr.IsVisible and fr:IsVisible() and fr.GetName then
+                    local nm = fr:GetName(); if nm and not nm:find("^ZenVC") then open[#open + 1] = nm end
+                end
+            end
+            ZenVCExportDB._readLook = date("%Y-%m-%d %H:%M:%S") .. " nothing to read; open: " .. table.concat(open, ", ")
+        end)
+        rqSay("nothing to read: open a quest, talk to someone, or pick a quest in your quest log.") return
+    end
+    RQ.pieces, RQ.reading, RQ.kind = rqPieces(text), true, kind
+    rqSay((kind == "talk" and "reading what they say." or kind == "mail" and "reading the letter." or kind == "item" and "reading the page." or "reading the quest.") .. " Say {Read Quest:read quest} again to stop.")
     rqNext()
 end
+-- v185 the messages box READ button: what it is given, once; if something is being read it stops first, then starts over
+function RQ.speak(text)
+    if not (C_VoiceChat and C_VoiceChat.SpeakText) then rqSay("this game has no text-to-speech that add-ons can use.") return end
+    text = rqClean(text); if text == "" then return end
+    local function go() RQ.pieces, RQ.reading, RQ.kind = rqPieces(text), true, "msg"; rqNext() end
+    if RQ.reading then
+        rqStop()
+        if C_VoiceChat.StopSpeakingText then pcall(C_VoiceChat.StopSpeakingText) end
+        if C_Timer and C_Timer.After then C_Timer.After(0.3, go) else go() end
+    else go() end
+end
+ZenVCMsg.speak = RQ.speak
+-- v186 a quest progress line: read after whatever is being read now, never cutting it off
+function RQ.queue(text)
+    if not (C_VoiceChat and C_VoiceChat.SpeakText) then return end
+    text = rqClean(text); if text == "" then return end
+    if RQ.reading then RQ.pieces = RQ.pieces or {}; RQ.pieces[#RQ.pieces + 1] = text; return end
+    RQ.pieces, RQ.reading, RQ.kind = { text }, true, "msg"; rqNext()
+end
+ZenVCMsg.queue = RQ.queue
 local rqEvents = CreateFrame("Frame")
 for _, ev in ipairs({ "VOICE_CHAT_TTS_PLAYBACK_FINISHED", "VOICE_CHAT_TTS_PLAYBACK_FAILED" }) do pcall(rqEvents.RegisterEvent, rqEvents, ev) end
+pcall(rqEvents.RegisterEvent, rqEvents, "ITEM_TEXT_READY")   -- v183 a new page of the item-text panel
 rqEvents:SetScript("OnEvent", function(_, ev)
     if not RQ.reading then return end
+    if ev == "ITEM_TEXT_READY" then
+        if RQ.waitPage then RQ.waitPage = nil; RQ.pieces = rqPieces(rqClean(rqCall(ItemTextGetText) or "")); rqNext() end
+        return
+    end
     if ev == "VOICE_CHAT_TTS_PLAYBACK_FAILED" then rqStop(); rqSay("WoW's text-to-speech could not read that.") return end
     rqNext()   -- the next piece, or the end
 end)
@@ -3327,9 +3481,9 @@ function TM.mailNames()
     local fromGame = #out
     if #out == 0 then
         pcall(function()
-            local realm = GetRealmName and GetRealmName()
-            for _, v in pairs(ZenVCExportDB) do
-                if type(v) == "table" and type(v.name) == "string" and v.realm == realm then add(v.name) end
+            local seenN = {}
+            for _, v in pairs(ZenVCExportDB) do   -- v184 by the realm number in each character's ID; each name once
+                if type(v) == "table" and type(v.name) == "string" and TM.sameRealm(v) and not seenN[v.name:lower()] then seenN[v.name:lower()] = true; add(v.name) end
             end
             table.sort(out)
         end)
@@ -3338,13 +3492,21 @@ function TM.mailNames()
 end
 
 -- v143 the player's own characters on this realm (each one the helper has saved), and the friends from the Social tab, read live each time
+-- v184 (2026-11-23): the realm NUMBER in a character's own ID ("Player-6794-0013609C" -> "6794"); the game hides the realm NAME from add-ons since 11-20
+function TM.realmNo(guid) return type(guid) == "string" and guid:match("^Player%-(%d+)%-") or nil end
+function TM.sameRealm(v)
+    local mine = TM.realmNo(UnitGUID and UnitGUID("player"))
+    local theirs = TM.realmNo(v.guid)
+    if mine and theirs then return mine == theirs end
+    local r = GetRealmName and GetRealmName() or ""
+    return r ~= "" and v.realm == r   -- no ID to go by: the old way, only while the game still names the realm
+end
 function TM.myChars()
     local out, seen = {}, {}
     local me = UnitName and UnitName("player")
     pcall(function()
-        local realm = GetRealmName and GetRealmName()
-        for _, v in pairs(ZenVCExportDB) do
-            if type(v) == "table" and type(v.name) == "string" and v.realm == realm and v.name ~= me and not seen[v.name:lower()] then seen[v.name:lower()] = true; out[#out + 1] = v.name end
+        for _, v in pairs(ZenVCExportDB) do   -- v184 by the realm number in each character's ID
+            if type(v) == "table" and type(v.name) == "string" and TM.sameRealm(v) and v.name ~= me and not seen[v.name:lower()] then seen[v.name:lower()] = true; out[#out + 1] = v.name end
         end
         table.sort(out)
     end)
@@ -3404,9 +3566,22 @@ end
 -- v148 the names the player saved (per realm), and the To list's first rows: a "Save <name>" line while the To box holds a name not saved yet
 function TM.savedNames()
     ZenVCExportDB._savedNames = ZenVCExportDB._savedNames or {}
-    local realm = (GetRealmName and GetRealmName()) or "?"
-    ZenVCExportDB._savedNames[realm] = ZenVCExportDB._savedNames[realm] or {}
-    return ZenVCExportDB._savedNames[realm]
+    -- v184 filed under the realm number in the character's ID; names saved under the old realm name are carried over once (nothing deleted)
+    local no = TM.realmNo(UnitGUID and UnitGUID("player"))
+    local realm = no and ("realm " .. no) or (((GetRealmName and GetRealmName()) or "") ~= "" and GetRealmName() or "?")
+    local sn = ZenVCExportDB._savedNames
+    if not sn[realm] and no then
+        local t = {}
+        for _, v in pairs(ZenVCExportDB) do
+            if type(v) == "table" and v.realm and v.realm ~= "" and TM.realmNo(v.guid) == no and type(sn[v.realm]) == "table" then
+                for _, n in ipairs(sn[v.realm]) do local dup = false; for _, m in ipairs(t) do if m == n then dup = true end end; if not dup then t[#t + 1] = n end end
+            end
+        end
+        if type(sn[""]) == "table" then for _, n in ipairs(sn[""]) do local dup = false; for _, m in ipairs(t) do if m == n then dup = true end end; if not dup then t[#t + 1] = n end end end
+        sn[realm] = t
+    end
+    sn[realm] = sn[realm] or {}
+    return sn[realm]
 end
 function TM.mailChoiceRows(box)
     local rows = { { "Type a name" }, { "Your characters" }, { "Saved names" } }
@@ -6111,10 +6286,10 @@ local function ensureButton(b)
         -- the game's own camera tilt (MoveViewUpStart / MoveViewDownStart) at a tenth of its speed, stopped after a moment. No key is held in the game.
         -- v108 (user, after the first test): the commands are CAMERA UP 1-3 and LOWER CAMERA 1-3; "CAMERA UP 1 like 3 times what the look up 3 was" (0.4 s -> 1.2 s),
         -- "add that to itself" for 2 (2.4 s), "double that" for 3 (4.8 s); the same times the other way for LOWER CAMERA.
-        ["/click zenvclookup1"] = function() pcall(function() MoveViewUpStart(0.1); C_Timer.After(1.2, function() pcall(MoveViewUpStop) end) end) end,
+        ["/click zenvclookup1"] = function() ZenVCCam.step("up") end,   -- v187 one step; camera up 2 and 3 press it 2 and 4 times
         ["/click zenvclookup2"] = function() pcall(function() MoveViewUpStart(0.1); C_Timer.After(2.4, function() pcall(MoveViewUpStop) end) end) end,
         ["/click zenvclookup3"] = function() pcall(function() MoveViewUpStart(0.1); C_Timer.After(4.8, function() pcall(MoveViewUpStop) end) end) end,
-        ["/click zenvclookdown1"] = function() pcall(function() MoveViewDownStart(0.1); C_Timer.After(1.2, function() pcall(MoveViewDownStop) end) end) end,
+        ["/click zenvclookdown1"] = function() ZenVCCam.step("down") end,   -- v187 one step; lower camera 2 and 3 press it 2 and 4 times
         ["/click zenvclookdown2"] = function() pcall(function() MoveViewDownStart(0.1); C_Timer.After(2.4, function() pcall(MoveViewDownStop) end) end) end,
         ["/click zenvclookdown3"] = function() pcall(function() MoveViewDownStart(0.1); C_Timer.After(4.8, function() pcall(MoveViewDownStop) end) end) end,
         -- v100 "move that" (user: "MOVE item once picks it up then MOVE DIRECTION or MOVE BAG from bank to bag or bag to bank then MOVE THAT again drops it";
@@ -6211,8 +6386,14 @@ local function ensureButton(b)
         ["/click zenvccointoggle"] = function() local on = QG.coinToggle(); say1(on and "coin purse on: drag it with the mouse, or say {Edit Layout:edit layout} to move or size it" or "coin purse off") end,   -- v164
         ["/click zenvcmsgsmall"] = function() ZenVCMsg.small(true) end,   -- v172
         ["/click zenvcmsgbig"] = function() ZenVCMsg.small(false) end,   -- v172
+        ["/click zenvcmsgsize"] = function() local d = type(ZenVCExportDB) == "table" and ZenVCExportDB._msgBox; ZenVCMsg.small(not (d and d.small)) end,   -- v187 "messages size": shrinks or opens, like - / +
         ["/click zenvcmsgup"] = function() ZenVCMsg.scroll(1) end,   -- v172
         ["/click zenvcmsgdown"] = function() ZenVCMsg.scroll(-1) end,   -- v172
+        ["/click zenvcmsgread"] = function() ZenVCMsg.read() end,   -- v185
+        ["/click zenvcmsgtextbig"] = function() ZenVCMsg.text(1) end,   -- v185
+        ["/click zenvcmsgtextsmall"] = function() ZenVCMsg.text(-1) end,   -- v185
+        ["/click zenvcprogress"] = function() ZenVCExportDB._progressRead = (not ZenVCExportDB._progressRead) or nil; ZenVCMsg.progressSync(); say1(ZenVCExportDB._progressRead and "quest progress will be read aloud. Say {Progress Read:progress read} again to stop." or "quest progress will not be read aloud.") end,   -- v186 one word switches it
+
         ["/click zenvccoinfind"] = function() QG.coinFind(); say1("coin purse is in the middle of the screen: drag it where you want it") end,   -- v172
         ["/click zenvccreate"] = function() say1(QG.profOpen() and "the game cannot make this now: check the reagents, the tools and the forge or anvil" or "open a profession and choose a recipe first") end,   -- v161
         ["/click zenvcrollneed"] = function() say1(QG.rollOpen() and "Need is not possible on this item" or "no loot roll is showing") end,   -- v151
@@ -6477,7 +6658,7 @@ SlashCmdList["ZENVCEXPORT"] = function(msg)
     if msg:find("^ranks") then showRanks() return end
     if msg:find("^rank%s+") then setRank(msg:match("^rank%s+(.+)$")) return end
     save()
-    local d = ZenVCExportDB[(UnitName("player") or "") .. "-" .. (GetRealmName and GetRealmName() or "")]
+    local d = ZenVCExportDB[charKey()]   -- v182 by ID
     if d then
         ZenVCChat("VCF Helper: saved " .. #d.spells .. " spells and " .. #d.bindings .. " key bindings for " .. d.name .. " (" .. tostring(d.class) .. "). Type /reload to write the file now.")
     else

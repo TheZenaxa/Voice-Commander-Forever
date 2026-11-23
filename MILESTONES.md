@@ -132,6 +132,17 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Heal and Healthstone by voice (a Healthstone works from an action bar or renamed with RENAME AN ITEM)
 - Mounts by voice: a mount on an action bar answers to its own name
 
+## Milestone 10: Reading aloud and more room for keys (19 to 23 November 2026)
+
+- Characters filed by their own game ID, so reloads and profiles work after Blizzard's 20 November hotfix (0.10.261)
+- Mail lists by the realm number in each character's ID (0.10.263)
+- "read text" reads the panels of corpses, plaques, books and signs, every page (built, 0.10.262)
+- The messages box text made bigger or smaller with A- and A+ (built, 0.10.265)
+- READ on the messages box reads the newest message once in the game's own voice (built, 0.10.265)
+- Quest progress lines in the messages box in their own colour, read aloud with "progress read" or the read progress tick box (built, 0.10.266)
+- Messages size, sit or stand, and the camera steps each use fewer keys, and freed keys go back to the pool (built, 0.10.267)
+- FAQ: keyboard and mouse, or controller mode
+
 ## Still to come
 
 - VCFI: RENAME AN ITEM and the preset keys tested in the game
@@ -143,3 +154,4 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Fewer of your own words stopped by the vowel check
 - Talents: spending a point by voice
 - Taking gear off the character pane into your bags
+- Abilities that only work in one stance or form (warriors, druids and others) sharing keys, so a fully levelled character has room for every ability

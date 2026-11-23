@@ -5,6 +5,45 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.267 and VCFI 0.10.269 (characters by ID, reading aloud, quest progress, more keys)
+
+Published 2026-11-23 15:45 US Mountain Standard Time
+
+**Characters by their ID**
+- Since Blizzard's hotfix of 20 November, the game no longer tells add-ons the realm's name. VCF could then keep two saves for one character, keep asking for two reloads, and not switch to that character's profile. Every character is now filed by its own game ID, and VCF uses only the newest save of each. Players still see names.
+- The mail lists (your characters, saved names) now go by the realm number in each character's ID, so they work again. Names you saved before are carried over.
+
+**Reading aloud**
+- "read text" now also reads the panel that opens when you click a corpse, a plaque, a book or a sign, every page.
+- The messages box has A- and A+ buttons for its text size (remembered), or say "messages text smaller" and "messages text bigger".
+- READ on the messages box, or saying "messages read", reads the newest message once in the game's own voice. It never reads by itself.
+
+**Quest progress**
+- Every quest progress line the game shows (like "Kobold Candle: 6/10") also goes into the messages box, in its own colour, picked in the Control Panel. It still shows in the middle of the screen as before.
+- Tick "read progress" on the messages box, or say "progress read", to hear each one read aloud as it comes in. Say it again, or untick it, to stop. Works with keyboard and mouse and in controller mode.
+
+**Keys**
+- "messages size" shrinks the messages box or opens it again (it replaces "messages small" and "messages big"; the - and + buttons are unchanged).
+- Sit, sit down and stand use the game's own sit-or-stand.
+- Camera up and lower camera 1 to 3 use one key each way, with the same words and the same distances as before.
+- Keys given up by commands that were combined now go back to the pool for new words, instead of staying with each character.
+
+**Hearing**
+- When the vowel check stops a word, a second listen now lets more of your own words through (not yet checked over a full play session).
+
+**FAQ**
+- New: "Should I play with keyboard and mouse, or in controller mode?"
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `7357611b41a6de00ebcaacd99fa3b3b49cfe7b3a396df2858bb431dd947c6239`
+- VCFI.SETUP.exe: `d632e928aca4fdc418e0e4c07d9f67d2d0a0bee0b9ded27b389300fc4e797dd2`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.257 and VCFI 0.10.257 (messages box, MOVE in character pane, spellbook and talents)
 
 Published 2026-11-18 23:04 US Mountain Standard Time
@@ -47,6 +86,10 @@ To check a download is exactly the file published here: in Windows PowerShell, t
 - VCFI.SETUP.exe: `ffc683ba4e713dbd7d2d12466488f58320729fd58de32bb628da212f5797421e`
 - READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
 - READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+**Virus scans (VirusTotal)**
+- VCF.NET.SETUP.exe: no security vendor flagged it. https://www.virustotal.com/gui/file/b8e7001ce5d338e3440ab4c97e9df39b6befdbbb31aa237e62e2da6404d027fe
+- VCFI.SETUP.exe: no security vendor flagged it. https://www.virustotal.com/gui/file/ffc683ba4e713dbd7d2d12466488f58320729fd58de32bb628da212f5797421e
 
 ---
 
