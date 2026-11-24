@@ -154,6 +154,8 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - RENAME puts your items on free action bar slots, and lists only what you would use from a bar
 - Dedicated slots for eat, drink, potion, bandage, hearthstone and mount, chosen for each character in the Control Panel (built, 0.10.278)
 - FAQ: dedicated slots, shared keys, and the game's Interact with key press for keyboard and mouse
+- Choosing a free key from a list, on every command's key button and in ADD YOUR OWN COMMAND (built, 0.10.283)
+- RENAME: keep an item on a hidden key instead of a bar (built, 0.10.283)
 
 ## Still to come
 
@@ -166,7 +168,3 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Fewer of your own words stopped by the vowel check
 - Talents: spending a point by voice
 - Taking gear off the character pane into your bags
-- Abilities that only work in one stance or form (warriors, druids and others) sharing keys, so a fully levelled character has room for every ability
-- Voice checks (pitch, vowel check, second listen) set once for all your characters
-- Choosing a free key for your own commands
-- RENAME: keeping an item on a hidden key instead of a bar
