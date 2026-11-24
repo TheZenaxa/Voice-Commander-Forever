@@ -49,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "187"
+local VERSION = "202"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCFI's Control Panel (ZENVCI_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -702,6 +702,16 @@ local function collect()
             end
         end
     end)
+    -- v199 the dedicated slots: for each kind switched on, its slot's key and what is in it ("ok", "empty", "wrong")
+    db.dedicated = {}
+    pcall(function()
+        for _, d in ipairs(ZenVCIDed) do
+            local frame = ZenVCIDed.home(d)
+            local f = frame and _G[frame]
+            local key = f and f.commandName and GetBindingKey and GetBindingKey(f.commandName)
+            if frame then db.dedicated[d.kind] = { frame, key or "", ZenVCIDed.state(d, frame) } end
+        end
+    end)
     if #db.actions == 0 then   -- the naming step failed: fall back to the plain names so nothing is lost
         for _, r in ipairs(rawActions) do db.actions[#db.actions + 1] = { r.name, r.kind, r.k1, r.k2 } end
     end
@@ -830,13 +840,25 @@ local function collect()
             if not name or name == "" then return end
             local classID
             pcall(function() local _, _, _, _, _, c = GetItemInfoInstant(id); classID = c end)
-            if classID == 12 then return end   -- quest item
+            local isQuest = classID == 12   -- v194 a quest item is listed when it can be worn or used (a disguise, a torch)
             local equip = false
             pcall(function() equip = (C_Item and C_Item.IsEquippableItem and C_Item.IsEquippableItem(id)) or (IsEquippableItem and IsEquippableItem(id)) or false end)
             local use
             pcall(function() if C_Item and C_Item.GetItemSpell then use = (C_Item.GetItemSpell(id)) elseif GetItemSpell then use = (GetItemSpell(id)) end end)
             local kind = equip and "equip" or (use and "use" or nil)
             if not kind then return end
+            -- v194 (2026-11-23, user): of the things you wear only what is swapped or put on for fun: weapons (ranged, thrown, wands), shields and off hands,
+            -- trinkets, tabards, ammo, clothing with no armour (costumes, holiday outfits, shirts), and quest items you can wear (a disguise).
+            -- Real armour, rings and necklaces are not listed, even with a Use: effect ("Use breastplate of schmongerrog makes no sense").
+            if equip and not isQuest then
+                local loc, cls, sub
+                pcall(function() local _, _, _, l, _, c, sc = GetItemInfoInstant(id); loc, cls, sub = l, c, sc end)
+                local swap = { INVTYPE_WEAPON = true, INVTYPE_2HWEAPON = true, INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPONOFFHAND = true, INVTYPE_SHIELD = true,
+                               INVTYPE_HOLDABLE = true, INVTYPE_TRINKET = true, INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true, INVTYPE_THROWN = true,
+                               INVTYPE_TABARD = true, INVTYPE_AMMO = true, INVTYPE_BODY = true }
+                local clothing = cls == 4 and (sub == 0 or sub == 5) and loc ~= "INVTYPE_FINGER" and loc ~= "INVTYPE_NECK"   -- armour class, Miscellaneous or Cosmetic: no armour
+                if loc and not swap[loc] and not clothing then return end
+            end
             -- v60 (2026-11-06, user: RENAME "failed to find my axe"): grey (junk) quality is left out only for things that are not worn or wielded.
             -- A grey weapon or armour piece (the Rusty Hatchet in his hand) is still gear the player uses.
             if quality == 0 and kind ~= "equip" then return end
@@ -969,10 +991,116 @@ local function collect()
     db.hiddenFailed = {}
     pcall(function()
         local r = ZenVCIExportDB._hiddenResult and ZenVCIExportDB._hiddenResult[charKey()]
-        if r then for mt, v in pairs(r) do if mt:find("^/cast") and (v.ok or 0) == 0 and (v.none or 0) >= 2 then db.hiddenFailed[#db.hiddenFailed + 1] = mt end end end   -- v152 spells only: an item can fail for other reasons (no room for a campfire) and keeps its key
+        if r then for mt, v in pairs(r) do if mt:find("^/cast") and not mt:find("^/cast%s*%[") and (v.ok or 0) == 0 and (v.none or 0) >= 2 then db.hiddenFailed[#db.hiddenFailed + 1] = mt end end end   -- v152 spells only: an item can fail for other reasons (no room for a campfire) and keeps its key
         table.sort(db.hiddenFailed)
     end)
     return db
+end
+
+-- v199 THE DEDICATED SLOTS (2026-11-24, user: "we get to ASSIGN which slots are these dedicated slots. they are set by default to where the game first puts them";
+-- "an hp pot or mana pot or any potion can be in the drink spot, it is a drink"; "each one is a choice"; "there is an option to not have dedicated slots")
+ZenVCIDed = {
+    { kind = "eat",     word = "eat",           r = 1,    g = 0.2,  b = 0.2,  icon = 2287, file = "Interface\\Icons\\INV_Misc_Food_14", start = "ActionButton12" },
+    { kind = "drink",   word = "drink",         r = 0.3,  g = 0.6,  b = 1,    icon = 159,  file = "Interface\\Icons\\INV_Drink_07", start = "ActionButton11" },
+    { kind = "potion",  word = "potion",        r = 0.85, g = 0.85, b = 0.85, icon = 118,  file = "Interface\\Icons\\INV_Potion_50", look = "four" },
+    { kind = "bandage", word = "bandage",       r = 0.88, g = 0.12, b = 0.12, look = "checker" },
+    { kind = "hearth",  word = "hearthstone",   r = 0.18, g = 0.42, b = 1,    look = "stripes" },
+    { kind = "mount",   word = "mount",         r = 0.8,  g = 0.55, b = 0.25, look = "glow" },
+}
+ZenVCIDed.BARS = { "ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", "MultiBarRightButton", "MultiBarLeftButton", "MultiBar5Button", "MultiBar6Button", "MultiBar7Button" }
+-- does what is in a slot fit this kind? (names of spells in the game's own language, so VCFI works too)
+function ZenVCIDed.accepts(kind, akind, id)
+    if not akind or not id then return false end
+    local function sname(sid) local n; pcall(function() n = (C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(sid)) or (GetSpellInfo and GetSpellInfo(sid)) end); return n end
+    if kind == "mount" then
+        if akind == "summonmount" then return true end
+        local m
+        pcall(function()
+            if akind == "spell" then m = C_MountJournal and C_MountJournal.GetMountFromSpell and C_MountJournal.GetMountFromSpell(id)
+            elseif akind == "item" then
+                m = C_MountJournal and C_MountJournal.GetMountFromItem and C_MountJournal.GetMountFromItem(id)
+                if not m then local _, _, _, _, _, c, sc = GetItemInfoInstant(id); m = (c == 15 and sc == 5) or nil end
+            end
+        end)
+        return m and true or false
+    end
+    if akind ~= "item" then return false end
+    if kind == "hearth" then return id == 6948 end
+    local cls, sub, use
+    pcall(function() local _, _, _, _, _, c, sc = GetItemInfoInstant(id); cls, sub = c, sc end)
+    pcall(function() use = (C_Item and C_Item.GetItemSpell and C_Item.GetItemSpell(id)) or (GetItemSpell and GetItemSpell(id)) end)
+    -- v201 this game files many potions as plain consumables: the potion category, a potion's name, or a potion's use
+    local nm; pcall(function() nm = ((C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(id)) or (GetItemInfo and GetItemInfo(id)) or ""):lower() end)
+    local potion = (cls == 0 and sub == 1) or (use ~= nil and (use == sname(439) or use == sname(437) or use == sname(438)))
+    if not potion and nm then for _, w in ipairs({ "potion", "trank", "poción", "pocion", "药水", "藥水", "ポーション" }) do if nm:find(w, 1, true) then potion = true break end end end
+    if kind == "potion" then return potion end
+    if kind == "drink" then return potion or (use ~= nil and (use == sname(430) or use == sname(431) or use == "Refreshment")) end   -- Drink; any potion is a drink too
+    if kind == "eat" then return use ~= nil and (use == sname(433) or use == sname(434) or use == "Refreshment") end                 -- Food
+    if kind == "bandage" then return (cls == 0 and sub == 7) or (use ~= nil and (use == sname(746) or use == sname(7926))) end    -- First Aid
+    return false
+end
+-- the player's choice for a kind: "b:s", "auto", "off" or "" (where the game first put it)
+function ZenVCIDed.choice(kind)
+    if ZENVCI_DEDICATED == false then return "off" end
+    local gid = UnitGUID and UnitGUID("player")
+    local t = ZENVCI_DEDSLOTS and gid and ZENVCI_DEDSLOTS[gid]
+    return (t and t[kind]) or ""
+end
+function ZenVCIDed.mem()
+    ZenVCIExportDB._dedSlot = ZenVCIExportDB._dedSlot or {}
+    local k = charKey()
+    ZenVCIExportDB._dedSlot[k] = ZenVCIExportDB._dedSlot[k] or {}
+    return ZenVCIExportDB._dedSlot[k]
+end
+-- the frame of the slot a kind uses now, or nil
+function ZenVCIDed.home(d)
+    local c = ZenVCIDed.choice(d.kind)
+    if c == "off" then return nil end
+    local b, n = c:match("^(%d+):(%d+)$")
+    if b then local pfx = ZenVCIDed.BARS[tonumber(b)]; return pfx and (pfx .. n) or nil end
+    local m = ZenVCIDed.mem()
+    if c == "auto" then return m["auto:" .. d.kind] or m[d.kind] or d.start end
+    if m[d.kind] then return m[d.kind] end
+    if d.start then return d.start end
+    -- where the game (or the player) first put that kind: found once, then remembered for good
+    for bn, pfx in ipairs(ZenVCIDed.BARS) do
+        for k = 1, 12 do
+            local f = _G[pfx .. k]
+            local a = f and (f.action or (f.GetAttribute and f:GetAttribute("action")))
+            if a then local ak, id = GetActionInfo(a); if ZenVCIDed.accepts(d.kind, ak, id) then m[d.kind] = pfx .. k; return pfx .. k end end
+        end
+    end
+    return nil
+end
+-- "ok" (the right kind is in it), "empty", or "wrong"
+function ZenVCIDed.state(d, frame)
+    local f = frame and _G[frame]
+    local a = f and (f.action or (f.GetAttribute and f:GetAttribute("action")))
+    if not a then return "empty" end
+    local ak, id = GetActionInfo(a)
+    if not ak then return "empty" end
+    return ZenVCIDed.accepts(d.kind, ak, id) and "ok" or "wrong"
+end
+-- "a bar I'm not using": once, out of combat, the kind moves to a free slot on a switched-on bar holding nothing of the player's (bar 8 first), with its key
+function ZenVCIDed.placeAuto()
+    if InCombatLockdown() then return end
+    local m = ZenVCIDed.mem()
+    for _, d in ipairs(ZenVCIDed) do
+        if ZenVCIDed.choice(d.kind) == "auto" and not m["auto:" .. d.kind] then
+            local spots = ZenVCIBars and ZenVCIBars.spots and ZenVCIBars.spots() or {}
+            local sp = spots[1]
+            if sp then
+                local fromFrame = m[d.kind] or d.start
+                local ff = fromFrame and _G[fromFrame]
+                local fa = ff and (ff.action or (ff.GetAttribute and ff:GetAttribute("action")))
+                if fa and GetActionInfo(fa) and ZenVCIDed.accepts(d.kind, GetActionInfo(fa)) then ClearCursor(); PickupAction(fa); PlaceAction(sp.slot); ClearCursor() end
+                if SetBinding(sp.key, sp.cmd) then pcall(SaveBindings, GetCurrentBindingSet and GetCurrentBindingSet() or 1) end
+                local frame
+                for _, pfx in ipairs(ZenVCIDed.BARS) do for k = 1, 12 do local f = _G[pfx .. k]; local a = f and (f.action or (f.GetAttribute and f:GetAttribute("action"))); if a == sp.slot then frame = pfx .. k end end end
+                if frame then m["auto:" .. d.kind] = frame end
+            end
+        end
+    end
 end
 
 local function save()
@@ -1019,7 +1147,7 @@ local function hiddenWorks(name)
     local want = "/cast " .. name:lower()
     local has = false
     for _, b in ipairs(effectiveButtons()) do
-        if b.text and b.text:lower() == want then has = true break end
+        if b.text and (b.text:lower() == want or ZenVCIShare.has(b.text, name)) then has = true break end   -- v188 or inside a shared key
     end
     if not has then return false end
     local r = ZenVCIExportDB._hiddenResult and ZenVCIExportDB._hiddenResult[charKey()]
@@ -1093,6 +1221,66 @@ end
 
 -- Bars I may use: a bar that is entirely empty, OR one whose only contents are spells I placed myself (so my own bar can
 -- grow as you learn more). A bar holding anything of yours is never touched. Free slots are the empty ones.
+-- v194 (2026-11-23, user: "zenvc bars should work from action bar 8 and then 7 then 6 etc, and also place stuff in the furthest back empty slot ... the bars
+-- the player is most likely to have visible, 1 2 and 3 and maybe 5, are left to last"; "only put things on bars ... that need to be there"; a bar switched OFF
+-- in the game's settings is never used, a hidden one is fine). Every free slot VCF may fill, in the order it fills them: bars that hold nothing of yours
+-- first (bar 8, 7, 6, 4, 5, 3, 2), then bars with your own things as a last resort; on each bar the furthest-back slot first. Each spot has its bar-slot key.
+ZenVCIBars = {}
+ZenVCIBars.ORDER = { { "MultiBar7Button", 8 }, { "MultiBar6Button", 7 }, { "MultiBar5Button", 6 }, { "MultiBarRightButton", 4 }, { "MultiBarLeftButton", 5 },
+                    { "MultiBarBottomRightButton", 3 }, { "MultiBarBottomLeftButton", 2 } }
+function ZenVCIBars.barOn(n)
+    local on
+    pcall(function() if Settings and Settings.GetValue then on = Settings.GetValue("PROXY_SHOW_ACTIONBAR_" .. n) end end)
+    if on == nil then pcall(function()
+        if GetActionBarToggles and n >= 2 and n <= 5 then local t = { GetActionBarToggles() }; on = t[n - 1] and true or false end
+    end) end
+    if on == nil then return true end   -- the game does not say: assume it is on
+    return on and true or false
+end
+function ZenVCIBars.spots()
+    local mine = placedSlots()
+    local function map() ZenVCIExportDB._barkeys = ZenVCIExportDB._barkeys or {}; local k = charKey(); ZenVCIExportDB._barkeys[k] = ZenVCIExportDB._barkeys[k] or {}; return ZenVCIExportDB._barkeys[k] end
+    local m = map()
+    local used = 0
+    for _, v in pairs(m) do if v > used then used = v end end
+    local passes = { {}, {} }   -- 1: bars with nothing of yours, 2: bars with your own things
+    for _, bo in ipairs(ZenVCIBars.ORDER) do
+        local prefix, n = bo[1], bo[2]
+        local f1 = _G[prefix .. "1"]
+        if f1 and ZenVCIBars.barOn(n) then
+            local slots, theirs = {}, false
+            for k = 12, 1, -1 do
+                local f = _G[prefix .. k]
+                local action = f and (f.action or (f.GetAttribute and f:GetAttribute("action")))
+                if f and action and f.commandName then
+                    local occupied = GetActionInfo(action)
+                    if occupied and not mine[action] then theirs = true end
+                    if not occupied then slots[#slots + 1] = { slot = action, cmd = f.commandName, n = k } end
+                end
+            end
+            if #slots > 0 then table.insert(passes[theirs and 2 or 1], { prefix = prefix, slots = slots }) end
+        end
+    end
+    local spots = {}
+    for _, pass in ipairs(passes) do
+        for _, bar in ipairs(pass) do
+            local idx = m[bar.prefix]
+            if not idx and used < #KEYSETS then used = used + 1; idx = used end
+            local ks = idx and KEYSETS[idx]
+            if ks then
+                for _, sl in ipairs(bar.slots) do
+                    local key = ks.mods .. ks.keys[sl.n]
+                    local inUse = GetBindingAction(key)
+                    if inUse == nil or inUse == "" or inUse == sl.cmd then
+                        spots[#spots + 1] = { slot = sl.slot, cmd = sl.cmd, key = key, prefix = bar.prefix, idx = idx }
+                    end
+                end
+            end
+        end
+    end
+    return spots
+end
+
 local function emptyBars()
     local mine = placedSlots()
     local bars = {}
@@ -1122,31 +1310,11 @@ local function barKeyMap()
 end
 
 local function makePlan()
-    local spells, bars = spellsNotOnBars(), emptyBars()
-    local map = barKeyMap()
-    local used = 0
-    for _, v in pairs(map) do if v > used then used = v end end
-    for _, bar in ipairs(bars) do
-        if map[bar.prefix] then bar.idx = map[bar.prefix] else used = used + 1; bar.idx = used end
-    end
-    local spots = {}
-    for _, bar in ipairs(bars) do
-        local ks = KEYSETS[bar.idx]
-        if ks then
-            for n = 1, 12 do
-                local s = bar.slots[n]
-                if s and s.free then
-                    local key = ks.mods .. ks.keys[n]
-                    local inUse = GetBindingAction(key)
-                    -- v33 the game's key bindings are shared by every character: a key that is already bound to THIS very bar button (put there when another character was
-                    -- given its spells) is exactly what is wanted, so it counts as free. Before, a second character always found "nothing to place".
-                    if inUse == nil or inUse == "" or inUse == s.cmd then
-                        spots[#spots + 1] = { slot = s.slot, cmd = s.cmd, key = key, prefix = bar.prefix, idx = bar.idx }
-                    end
-                end
-            end
-        end
-    end
+    local spells = spellsNotOnBars()
+    local spots = ZenVCIBars.spots()   -- v194 back to front, switched-on bars only, bars with your things last
+    local nb = {}
+    for _, sp in ipairs(spots) do nb[sp.prefix] = true end
+    local nbars = 0; for _ in pairs(nb) do nbars = nbars + 1 end
     local plan, skipped = {}, {}
     for i, sp in ipairs(spells) do
         local spot = spots[i]
@@ -1157,7 +1325,7 @@ local function makePlan()
             skipped[#skipped + 1] = sp.name
         end
     end
-    return plan, skipped, #bars
+    return plan, skipped, nbars
 end
 
 local function say(msg) ZenVCIChat("VCFI Helper: " .. msg) end
@@ -1165,10 +1333,10 @@ local function say(msg) ZenVCIChat("VCFI Helper: " .. msg) end
 local function showPlan()
     if InCombatLockdown() then say("not in combat, please.") return end
     local plan, skipped, nbars = makePlan()
-    if nbars == 0 then say("I need a completely empty action bar to use and found none, so I will change nothing.") return end
+    if nbars == 0 then say("I found no free slot on a switched-on action bar (bars 2 to 8; a hidden bar is fine), so I will change nothing.") return end
     if #plan == 0 then say("every spell you know is already on a bar. Nothing to place.") return end
     planned = plan
-    say("PLAN (nothing changed yet). Empty slots on an empty bar would get:")
+    say("PLAN (nothing changed yet). Free slots, bar 8 first, would get:")
     for _, p in ipairs(plan) do say("  " .. prettyKey(p.key) .. "  =  " .. p.name) end
     if #skipped > 0 then say("No room or no free key for: " .. table.concat(skipped, ", ")) end
     say("To do it, type:  /zenvci bars yes        To undo later:  /zenvci undo")
@@ -1404,6 +1572,187 @@ StaticPopupDialogs["ZENVCI_PLACE"] = {
     end,
     timeout = 0, whileDead = false, hideOnEscape = true, preferredIndex = 3,
 }
+
+-- v194 (2026-11-23, user: "when using RENAME, put it on a players action bar. these keys get removed easily and sometimes often (like upgrading weapons and
+-- such). this frees up the 37 limited keys"): every renamed item that still has a hidden key ("/use X", "/equip X") and is on no bar goes on a bar slot, out of
+-- combat, with its bar-slot key. VCF then uses that key and gives the hidden one back. An item that finds no slot is NAMED in the messages box, never silent.
+function ZenVCIBars.placeItems()
+    if InCombatLockdown() then ZenVCIBars.pending = true return end
+    ZenVCIBars.pending = nil
+    local want = {}
+    for _, b in ipairs(effectiveButtons()) do
+        local nm = b.text and (b.text:match("^/use%s+(.-)%s*$") or b.text:match("^/equip%s+(.-)%s*$"))
+        if nm and nm ~= "" and not nm:find("[%[%];]") then want[#want + 1] = nm end
+    end
+    -- the commands VCF had no key left for: items go on bar slots too; anything else is named (never a silent fail)
+    local nk = ZENVCI_NOKEY and ((UnitGUID and ZENVCI_NOKEY[UnitGUID("player") or ""]) or ZENVCI_NOKEY[UnitName("player") or ""])
+    local other = {}
+    for _, t in ipairs(nk or {}) do
+        local nm = t:match("^/use%s+(.-)%s*$") or t:match("^/equip%s+(.-)%s*$")
+        if nm and nm ~= "" then want[#want + 1] = nm else other[#other + 1] = (t:gsub("^/cast%s+", "")) end
+    end
+    if #other > 0 then say("no key left for: " .. table.concat(other, ", ") .. ". Put them on one of your action bars, or free keys (remove words you do not use), then /RELOAD twice.") end
+    if #want == 0 then return end
+    local onBar = {}
+    for slot = 1, 180 do
+        local ok, kind, id = pcall(GetActionInfo, slot)
+        if ok and kind == "item" and id then
+            local n; pcall(function() n = (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(id)) or (GetItemInfo and GetItemInfo(id)) end)
+            if n then onBar[n:lower()] = true end
+        end
+    end
+    local function idOf(name)
+        local want2, id = name:lower(), nil
+        pcall(function()
+            for slot = 1, 19 do
+                local iid = GetInventoryItemID and GetInventoryItemID("player", slot)
+                local n = iid and ((C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(iid)) or (GetItemInfo and GetItemInfo(iid)))
+                if n and n:lower() == want2 then id = iid return end
+            end
+            local slots = (C_Container and C_Container.GetContainerNumSlots) or GetContainerNumSlots
+            for bag = 0, 4 do
+                for s2 = 1, (slots(bag) or 0) do
+                    local info = C_Container and C_Container.GetContainerItemInfo and C_Container.GetContainerItemInfo(bag, s2)
+                    local iid = info and info.itemID
+                    local n = iid and ((C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(iid)) or (GetItemInfo and GetItemInfo(iid)))
+                    if n and n:lower() == want2 then id = iid return end
+                end
+            end
+        end)
+        return id
+    end
+    local spots = ZenVCIBars.spots()
+    local key = charKey()
+    ZenVCIExportDB._placed = ZenVCIExportDB._placed or {}
+    local done = ZenVCIExportDB._placed[key] or {}
+    local placed, noRoom, si = {}, {}, 1
+    for _, nm in ipairs(want) do
+        if not onBar[nm:lower()] then
+            local id = idOf(nm)
+            local sp = spots[si]
+            if id and sp then
+                ClearCursor()
+                if C_Item and C_Item.PickupItem then C_Item.PickupItem(id) elseif PickupItem then PickupItem(id) end
+                PlaceAction(sp.slot)
+                ClearCursor()
+                local k2, id2 = GetActionInfo(sp.slot)
+                if k2 == "item" and id2 == id and SetBinding(sp.key, sp.cmd) then
+                    done[#done + 1] = { name = nm, item = true, id = id, slot = sp.slot, key = sp.key }
+                    local bm = ZenVCIExportDB._barkeys and ZenVCIExportDB._barkeys[key]; if bm then bm[sp.prefix] = sp.idx end
+                    placed[#placed + 1] = nm
+                    si = si + 1
+                else
+                    noRoom[#noRoom + 1] = nm
+                end
+            elseif id then
+                noRoom[#noRoom + 1] = nm
+            end
+        end
+    end
+    ZenVCIExportDB._placed[key] = done
+    if #placed > 0 then pcall(SaveBindings, GetCurrentBindingSet and GetCurrentBindingSet() or 1) end
+    ZenVCIExportDB._itemsPlaced = { at = date("%Y-%m-%d %H:%M:%S"), placed = placed, noRoom = noRoom }
+    if #placed > 0 then say("put on your action bars (bar 8 first): " .. table.concat(placed, ", ") .. ". /RELOAD twice so VCF uses their bar keys.") end
+    if #noRoom > 0 then say("no free action bar slot for: " .. table.concat(noRoom, ", ") .. ". They keep their hidden keys for now. Free a slot on a switched-on bar, or switch on another bar in the game's settings, then /RELOAD twice.") end
+end
+
+-- v199 each dedicated slot that is switched on shows, while EMPTY, a bold outline in its colour and a faint picture (the colour just helps find it)
+do
+    local overlays = {}
+    -- v200 each design is drawn from small coloured pieces; one overlay per slot and kind
+    local function piece(o, layer, r, g, b, a)
+        local t = o:CreateTexture(nil, layer or "OVERLAY"); t:SetColorTexture(r, g, b, a or 1); o.parts[#o.parts + 1] = t; return t
+    end
+    local function edgeSolid(o, cols, w)   -- cols: top, right, bottom, left
+        local sides = { { "TOPLEFT", "TOPRIGHT", nil, w }, { "TOPRIGHT", "BOTTOMRIGHT", w, nil }, { "BOTTOMLEFT", "BOTTOMRIGHT", nil, w }, { "TOPLEFT", "BOTTOMLEFT", w, nil } }
+        for k, sd in ipairs(sides) do
+            local c = cols[k]; local t = piece(o, "OVERLAY", c[1], c[2], c[3], 1)
+            t:SetPoint(sd[1], o, sd[1]); t:SetPoint(sd[2], o, sd[2])
+            if sd[3] then t:SetWidth(sd[3]) else t:SetHeight(sd[4]) end
+        end
+    end
+    local function edgeTiles(o, c1, c2, size, slant)   -- squares round the edge, two colours taking turns (slant: turned, for stripes)
+        local W, H = o:GetWidth(), o:GetHeight(); if (W or 0) < 8 then W, H = 36, 36 end
+        local n = math.floor(W / size)
+        local k = 0
+        local function sq(x, y)
+            k = k + 1
+            local c = (k % 2 == 0) and c1 or c2
+            local t = piece(o, "OVERLAY", c[1], c[2], c[3], 1)
+            t:SetSize(size, size); t:SetPoint("TOPLEFT", o, "TOPLEFT", x, -y)
+            if slant and t.SetRotation then pcall(t.SetRotation, t, math.rad(45)) end
+        end
+        for a = 0, n - 1 do sq(a * size, 0) end
+        for a = 1, n - 1 do sq(W - size, a * size) end
+        for a = n - 2, 0, -1 do sq(a * size, H - size) end
+        for a = n - 2, 1, -1 do sq(0, a * size) end
+    end
+    local function bar(o, r, g, b, a, x, y, w, h)   -- a piece of a picture, from the slot's centre (on the picture layer, shown only while empty)
+        local p = o.pic or o
+        local t = piece(p, "ARTWORK", r, g, b, a); t:SetSize(w, h); t:SetPoint("CENTER", p, "CENTER", x, y); return t
+    end
+    local function overlayOn(btn, d)
+        overlays[btn] = overlays[btn] or {}
+        local o = overlays[btn][d.kind]
+        if not o then
+            o = CreateFrame("Frame", nil, btn)
+            o:SetAllPoints(btn); o:SetFrameLevel(btn:GetFrameLevel() + 5); o.parts = {}
+            o.pic = CreateFrame("Frame", nil, o); o.pic:SetAllPoints(o); o.pic.parts = {}   -- v201 the faint picture, only while empty
+            local look = d.look
+            if look == "four" then
+                edgeSolid(o, { { 1, 0, 0 }, { 0.71, 0.49, 1 }, { 0, 0.71, 1 }, { 1, 0.6, 0.24 } }, 4)   -- red, lavender, blue, VCF orange
+            elseif look == "checker" then
+                edgeTiles(o, { 0.88, 0.12, 0.12 }, { 1, 1, 1 }, 4, false)
+                bar(o, 0.88, 0.12, 0.12, 0.35, 0, 0, 18, 18); bar(o, 1, 1, 1, 0.45, 0, 0, 4, 14); bar(o, 1, 1, 1, 0.45, 0, 0, 14, 4)   -- a faint cross
+            elseif look == "stripes" then
+                edgeTiles(o, { 0.18, 0.42, 1 }, { 1, 1, 1 }, 4, true)
+                -- a faint home: a roof (a turned square, half hidden) over a house
+                local roof = bar(o, 0.18, 0.42, 1, 0.35, 0, 4, 12, 12); if roof.SetRotation then pcall(roof.SetRotation, roof, math.rad(45)) end
+                bar(o, 0.18, 0.42, 1, 0.35, 0, -5, 14, 10); bar(o, 0, 0, 0, 0.5, 0, -7, 4, 6)
+            elseif look == "glow" then
+                local g = o:CreateTexture(nil, "OVERLAY")
+                g:SetTexture("Interface\\Buttons\\UI-ActionButton-Border"); g:SetBlendMode("ADD"); g:SetVertexColor(d.r, d.g, d.b, 1)
+                g:SetPoint("CENTER", o, "CENTER"); g:SetSize((btn:GetWidth() or 36) * 1.8, (btn:GetHeight() or 36) * 1.8); o.parts[#o.parts + 1] = g
+                -- a faint U-shaped saddle with stirrups
+                local a = 0.35
+                bar(o, d.r, d.g, d.b, a, -8, 3, 4, 12); bar(o, d.r, d.g, d.b, a, 8, 3, 4, 12); bar(o, d.r, d.g, d.b, a, 0, -3, 20, 4)
+                bar(o, d.r, d.g, d.b, a, -6, -8, 2, 6); bar(o, d.r, d.g, d.b, a, 6, -8, 2, 6)
+                bar(o, d.r, d.g, d.b, a, -6, -12, 6, 2); bar(o, d.r, d.g, d.b, a, 6, -12, 6, 2)
+            else
+                edgeSolid(o, { { d.r, d.g, d.b }, { d.r, d.g, d.b }, { d.r, d.g, d.b }, { d.r, d.g, d.b } }, 3)
+            end
+            if d.icon then   -- the game's own picture, faint (eat, drink, potion)
+                local tex
+                pcall(function() tex = (C_Item and C_Item.GetItemIconByID and C_Item.GetItemIconByID(d.icon)) or (GetItemIcon and GetItemIcon(d.icon)) end)
+                local ic = o.pic:CreateTexture(nil, "ARTWORK"); ic:SetPoint("TOPLEFT", 5, -5); ic:SetPoint("BOTTOMRIGHT", -5, 5)
+                ic:SetTexture(tex or d.file); ic:SetDesaturated(true); ic:SetAlpha(0.35)
+                if d.look ~= "four" then ic:SetVertexColor(d.r, d.g, d.b) end
+                o.parts[#o.parts + 1] = ic
+            end
+            overlays[btn][d.kind] = o
+        end
+        o:Show()
+        return o
+    end
+    local function update()
+        if type(ZenVCIExportDB) ~= "table" then return end
+        pcall(ZenVCIDed.placeAuto)
+        for _, set in pairs(overlays) do for _, o in pairs(set) do o:Hide() end end
+        local used = {}
+        for _, d in ipairs(ZenVCIDed) do
+            local frame = ZenVCIDed.home(d)
+            local btn = frame and _G[frame]
+            if btn and not used[btn] then   -- v201 (user: the outline shows "always"; the picture only when empty)
+                used[btn] = true
+                local o = overlayOn(btn, d)
+                if o and o.pic then o.pic:SetShown(ZenVCIDed.state(d, frame) == "empty") end
+            end
+        end
+    end
+    local ev = CreateFrame("Frame")
+    for _, e in ipairs({ "PLAYER_ENTERING_WORLD", "ACTIONBAR_SLOT_CHANGED", "ACTIONBAR_PAGE_CHANGED", "UPDATE_BONUS_ACTIONBAR", "UPDATE_SHAPESHIFT_FORM", "BAG_UPDATE_DELAYED", "PLAYER_REGEN_ENABLED" }) do pcall(ev.RegisterEvent, ev, e) end
+    ev:SetScript("OnEvent", function() pcall(update) end)
+end
 
 local function offerPlacement()
     if offeredThisSession or not readyToOffer or InCombatLockdown() or ZenVCIExportDB._boxesOff then return end
@@ -1671,8 +2020,69 @@ local function slotOfItem(name)
     return nil
 end
 
+-- v188 (2026-11-23, user: "it is worth the risk of having a spell fire in the wrong stance or form"): KEY SHARING. One hidden key holds abilities the game
+-- never allows at the same moment, as the game's own macro. VCF names the stance or form ([zvform:Cat Form]); the number differs per character (it depends
+-- on the forms learned), so it is looked up here, out of combat, and again when the forms change.
+ZenVCIShare = { list = {} }
+do
+    local S = ZenVCIShare
+    local function formIndex()
+        local t, n = {}, (GetNumShapeshiftForms and GetNumShapeshiftForms()) or 0
+        for i = 1, n do
+            local _, b, _, d = GetShapeshiftFormInfo(i)
+            local name = type(b) == "string" and b or nil
+            if not name and type(d) == "number" then name = (C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(d)) or (GetSpellInfo and GetSpellInfo(d)) end
+            if not name then local _, _, _, sid = GetShapeshiftFormInfo(i); if type(sid) == "number" then name = (C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(sid)) or (GetSpellInfo and GetSpellInfo(sid)) end end
+            if name then t[name:lower()] = i end
+        end
+        return t
+    end
+    function S.resolve(text)
+        -- v194 the shooting key: [zvequip:3] becomes [equipped:Guns] in the game's own language (weapon subclass names from the game)
+        text = text:gsub("%[zvequip:(%d+)%]", function(n)
+            local nm; pcall(function() nm = (C_Item and C_Item.GetItemSubClassInfo and C_Item.GetItemSubClassInfo(2, tonumber(n))) or (GetItemSubClassInfo and GetItemSubClassInfo(2, tonumber(n))) end)
+            return nm and ("[equipped:" .. nm .. "]") or "[equipped:none]"
+        end)
+        if not text:find("zvform:", 1, true) then return text end
+        local idx = formIndex()
+        return (text:gsub("%[zvform:([^%]]+)%]", function(list)
+            local nums = {}
+            for nm in list:gmatch("[^/]+") do local i = idx[nm:lower()]; if i then nums[#nums + 1] = tostring(i) end end
+            return "[form:" .. (#nums > 0 and table.concat(nums, "/") or "99") .. "]"   -- a form not learned yet never matches
+        end))
+    end
+    -- true when this shared key's text holds the spell (its parts with the conditions taken off)
+    function S.has(text, name)
+        if type(text) ~= "string" or not text:find("^/cast%s*%[") then return false end
+        local want = name:lower()
+        for part in text:gsub("^/cast%s*", ""):gmatch("[^;]+") do
+            if part:gsub("%b[]", ""):match("^%s*(.-)%s*$"):lower() == want then return true end
+        end
+        return false
+    end
+    function S.rebuild()
+        if InCombatLockdown() then S.pending = true return end
+        S.pending = nil
+        for _, e in ipairs(S.list) do pcall(e) end
+    end
+    local ev = CreateFrame("Frame")
+    for _, n in ipairs({ "UPDATE_SHAPESHIFT_FORMS", "PLAYER_REGEN_ENABLED", "SPELLS_CHANGED", "PLAYER_ENTERING_WORLD" }) do pcall(ev.RegisterEvent, ev, n) end
+    ev:SetScript("OnEvent", function(_, e) if e == "PLAYER_REGEN_ENABLED" and not S.pending then return end; S.rebuild() end)
+end
+
 local function setButtonAction(f, b)
     f.zvText = b.text
+    -- v188 a shared key: the game's macro with the stance and form numbers of this character
+    if b.text:find("^/cast%s*%[") then
+        f:SetAttribute("type", "macro"); f:SetAttribute("macrotext", ZenVCIShare.resolve(b.text)); f:SetAttribute("action", nil); f:SetAttribute("spell", nil)
+        f.zvSlot = nil
+        if not f.zvShareListed then
+            f.zvShareListed = true
+            local S = ZenVCIShare
+            S.list[#S.list + 1] = function() if not InCombatLockdown() and f.zvText and f.zvText:find("^/cast%s*%[") then f:SetAttribute("macrotext", S.resolve(f.zvText)) end end
+        end
+        return
+    end
     -- TESTING (v25): four different ways to cast one ability, named in the button's text ("/vcfslot Fishing"), so the person can say each one and we learn which
     -- way the game accepts. slot = press the bar slot that holds it; id = cast by its spell number; spell = cast by its name as a spell; macro = "/cast Name".
     local tmode, tname = b.text:match("^/vcf(%a+)%s+(.-)%s*$")
@@ -2814,6 +3224,17 @@ local function rqPieces(text)
 end
 -- what is open, as (title, text, kind)
 local function rqText()
+    -- v195 the quest the outline is on in the quest log list
+    if RQ.forceQuest then
+        local qid = RQ.forceQuest
+        local idx = C_QuestLog and C_QuestLog.GetLogIndexForQuestID and rqCall(C_QuestLog.GetLogIndexForQuestID, qid)
+        if idx and SelectQuestLogEntry then pcall(SelectQuestLogEntry, idx) end
+        if idx and GetQuestLogQuestText then
+            local d, o = rqCall(GetQuestLogQuestText, idx)
+            local title = (C_QuestLog.GetTitleForQuestID and rqCall(C_QuestLog.GetTitleForQuestID, qid)) or ""
+            if (d or "") ~= "" or (o or "") ~= "" then return title, (d or "") .. " " .. (o or ""), "log" end
+        end
+    end
     -- v174 (2026-11-18, user: "can we just add READ TEXT to that same command?"): an open letter: who it is from, its subject, then its text;
     -- an auction house letter has no text, so its invoice is read instead (what sold and what you received)
     if rqUp("OpenMailFrame") and InboxFrame and InboxFrame.openMailID then
@@ -2901,7 +3322,137 @@ local function rqNext()
     end
     if not ok then rqStop(); rqSay("WoW's text-to-speech did not start: " .. tostring(err)) end
 end
+-- v189 the game's voice reads (what RQ.toggle always did)
+function RQ.startRead(text, kind)
+    RQ.pieces, RQ.reading, RQ.kind = rqPieces(text), true, kind
+    rqSay((kind == "talk" and "reading what they say." or kind == "mail" and "reading the letter." or kind == "item" and "reading the page." or "reading the quest.") .. " Say {Read Quest:read quest} again to stop.")
+    rqNext()
+end
+-- v189 (2026-11-23, user: "when I say read quest, if I have [SPOKEN] add-on enabled, then it uses spoken BUT if spoken doesnt read anything, then our
+-- system takes over"): press SPOKEN's own Play button for what is open. SPOKEN's Play buttons carry its play/stop pictures (QuestLogPlayButton) or a
+-- setPlayState of their own; one greyed out has no voice. True when SPOKEN was asked (VCF then waits 1.2 s and reads itself if SPOKEN stayed silent).
+function RQ.trySpoken(kind, text)
+    if ZENVCI_USE_SPOKEN == false or kind == "mail" then return false end
+    local S = _G.Spoken
+    if type(S) ~= "table" or type(S.IsPlaying) ~= "function" then return false end
+    local look = { at = date("%Y-%m-%d %H:%M:%S"), kind = kind, found = {} }
+    -- SPOKEN muted or paused in its own player would take the line and stay silent: the game's voice reads instead
+    if (type(S.IsMuted) == "function" and S:IsMuted()) or (type(S.IsPaused) == "function" and S:IsPaused()) then
+        look.result = "SPOKEN muted or paused: VCF reads"; ZenVCIExportDB._spokenLook = look; return false
+    end
+    -- SPOKEN tells add-ons when a line starts, stops or is dropped (its published callbacks); watched only while VCF waits on it
+    if not RQ.spHooked and type(S.RegisterCallback) == "function" then
+        RQ.spHooked = true
+        pcall(S.RegisterCallback, S, "CLIP_STARTED", function() local w = RQ.spWait; if w then w.started = GetTime() end end)
+        pcall(S.RegisterCallback, S, "CLIP_DROPPED", function() local w = RQ.spWait; if w then w.dropped = true end end)
+        pcall(S.RegisterCallback, S, "CLIP_STOPPED", function(_, finished)
+            local w = RQ.spWait
+            if w and w.started and not finished and not RQ.spStopping and GetTime() - w.started < 2 then w.early = true end
+        end)
+    end
+    ZenVCIExportDB._spokenLook = look
+    if S:IsPlaying() then   -- SPOKEN is already speaking: never talk over it
+        RQ.spokenAt = GetTime(); look.result = "SPOKEN was already speaking"
+        rqSay("SPOKEN is already reading. Say {Read Quest:read quest} to stop it.")
+        return true
+    end
+    local qid
+    pcall(function()
+        if (kind == "quest" or kind == "talk") and GetQuestID then qid = GetQuestID() end
+        if kind == "log" and RQ.forceQuest then qid = RQ.forceQuest return end   -- v195 the outlined quest
+        if kind == "log" then
+            local i = GetQuestLogSelection and GetQuestLogSelection()
+            if type(i) == "number" and i > 0 then qid = select(8, GetQuestLogTitle(i)) end
+            if (not qid or qid == 0) and C_QuestLog and C_QuestLog.GetSelectedQuest then qid = C_QuestLog.GetSelectedQuest() end
+        end
+        if qid == 0 then qid = nil end
+    end)
+    look.quest = qid
+    local pick, other, seen = nil, nil, 0
+    local function isPlay(c)
+        if type(c.setPlayState) == "function" then return true end
+        local ok, tex = pcall(function() local t = c:GetNormalTexture(); return t and t:GetTexture() end)
+        return ok and type(tex) == "string" and (tex:find("QuestLogPlayButton") or tex:find("QuestLogStopButton")) and true or false
+    end
+    local function walk(fr, depth, mayOther)
+        if depth > 8 or seen > 4000 then return end
+        for _, c in ipairs({ fr:GetChildren() }) do
+            seen = seen + 1
+            if not (c.IsForbidden and c:IsForbidden()) and c.IsVisible and c:IsVisible() then
+                if c.Click and c.GetNormalTexture and isPlay(c) then
+                    local en = not c.IsEnabled or c:IsEnabled()
+                    local par = c:GetParent(); local nm = par and par.GetName and par:GetName()
+                    look.found[#look.found + 1] = tostring(nm) .. " quest " .. tostring(c.questID) .. (en and "" or " greyed")
+                    if en then
+                        if qid and c.questID == qid then pick = pick or c
+                        elseif mayOther and c.questID == nil then other = other or c end
+                    end
+                end
+                walk(c, depth + 1, mayOther)
+            end
+        end
+    end
+    local roots = (kind == "log" and { "WorldMapFrame", "QuestMapFrame", "QuestLogFrame", "QuestLogDetailFrame" })
+               or (kind == "item" and { "ItemTextFrame" }) or { "QuestFrame", "GossipFrame" }
+    for _, n in ipairs(roots) do
+        local f = _G[n]; if f and not (f.IsForbidden and f:IsForbidden()) and f.IsVisible and f:IsVisible() then pcall(walk, f, 0, true) end
+    end
+    if qid and not pick then   -- the quest's own Play button in the objective tracker
+        for _, n in ipairs({ "ObjectiveTrackerFrame", "QuestWatchFrame" }) do
+            local f = _G[n]; if f and not (f.IsForbidden and f:IsForbidden()) and f.IsVisible and f:IsVisible() then pcall(walk, f, 0, false) end
+        end
+    end
+    local btn = pick or other
+    if not btn then look.result = "no SPOKEN Play button: VCF reads"; return false end
+    if not pcall(btn.Click, btn) then look.result = "SPOKEN Play button did not click: VCF reads"; return false end
+    look.pressed = pick and "the quest's own Play button" or "the Play button in the window"
+    RQ.spokenAt = GetTime()
+    local w = { t0 = GetTime() }
+    RQ.spWait = w
+    local said = false
+    local function fail(why)
+        if RQ.spWait ~= w then return end
+        RQ.spWait = nil; RQ.spokenAt = nil; look.result = why .. ": VCF reads"
+        -- a line SPOKEN still holds is cleared, so it cannot start later on top of the game's voice
+        if ((type(S.GetQueueSize) == "function" and S:GetQueueSize()) or 0) > 0 or S:IsPlaying() then RQ.spStopping = true; pcall(S.StopAll, S); RQ.spStopping = nil end
+        RQ.startRead(text, kind)
+    end
+    local function check()
+        if RQ.spWait ~= w then return end
+        if w.dropped then fail("SPOKEN dropped the line") return end
+        if w.early then fail("SPOKEN stopped by itself") return end
+        -- v197 (2026-11-23: SPOKEN said "playing" but was silent): a line SPOKEN HOLDS sits first in its queue making no sound and still counts as playing,
+        -- so only a line it is actually speaking counts (GetNowPlaying); why it holds one is kept for the record
+        local now = type(S.GetNowPlaying) == "function" and S:GetNowPlaying() or nil
+        local speaking
+        if type(S.GetNowPlaying) == "function" then speaking = now ~= nil and not (type(S.IsPaused) == "function" and S:IsPaused())
+        else speaking = S:IsPlaying() and not (type(S.IsPaused) == "function" and S:IsPaused()) end
+        if not speaking and type(S.GetHeldReason) == "function" and type(S.GetQueue) == "function" then
+            pcall(function() local q = S:GetQueue(); local head = q and q[1]; if head then look.held = tostring(S:GetHeldReason(head)) end end)
+        end
+        if speaking and not said then said = true; look.result = "SPOKEN reading"; rqSay("SPOKEN is reading it. Say {Read Quest:read quest} again to stop.") end
+        if said and GetTime() - (w.started or w.t0) >= 2 then RQ.spWait = nil return end   -- spoke past the first 2 seconds: SPOKEN has it
+        if not said and GetTime() - w.t0 >= 3 then fail("SPOKEN did not start within 3 seconds") return end
+        -- a very short line that FINISHES in under 2 seconds is fine; only a cut-off (CLIP_STOPPED, not finished) is a failure (w.early)
+        C_Timer.After(0.25, check)
+    end
+    C_Timer.After(0.25, check)
+    return true
+end
 function RQ.toggle()
+    -- v189 said again while SPOKEN reads: SPOKEN stops
+    if RQ.spokenAt and type(_G.Spoken) == "table" and type(Spoken.IsPlaying) == "function" and Spoken:IsPlaying() then
+        RQ.spokenAt = nil; RQ.spWait = nil; RQ.spStopping = true; pcall(Spoken.StopAll, Spoken); RQ.spStopping = nil; rqSay("reading stopped.") return
+    end
+    RQ.spokenAt = nil
+    -- v195 (2026-11-23, user: with the outline on a quest in the quest log list, read THAT quest, through SPOKEN when it has a voice): the outlined quest
+    RQ.forceQuest = nil
+    pcall(function()
+        if mark.kind == "qlog" and QG.qlogOpen and QG.qlogOpen() then
+            local e = QG.qlogLines()[mark.i]
+            if e and e.questID and not e.header then RQ.forceQuest = e.questID end
+        end
+    end)
     if not (C_VoiceChat and C_VoiceChat.SpeakText) then rqSay("this game has no text-to-speech that add-ons can use.") return end
     if RQ.reading then
         rqStop()
@@ -2912,6 +3463,7 @@ function RQ.toggle()
     local title, body, kind = rqText()
     title = rqClean(title); body = rqClean(body)
     local text = (title ~= "" and (title .. ". ") or "") .. body
+    if body == "" and RQ.readOutlineTip() then return end   -- v192 nothing else open: the outline's tooltip
     if body == "" then
         -- v183 which windows were open, so a panel this does not read yet can be found (read only; forbidden windows are never touched)
         pcall(function()
@@ -2925,15 +3477,14 @@ function RQ.toggle()
         end)
         rqSay("nothing to read: open a quest, talk to someone, or pick a quest in your quest log.") return
     end
-    RQ.pieces, RQ.reading, RQ.kind = rqPieces(text), true, kind
-    rqSay((kind == "talk" and "reading what they say." or kind == "mail" and "reading the letter." or kind == "item" and "reading the page." or "reading the quest.") .. " Say {Read Quest:read quest} again to stop.")
-    rqNext()
+    if RQ.trySpoken(kind, text) then return end   -- v189 the SPOKEN add-on's own voice first, when it is there
+    RQ.startRead(text, kind)
 end
 -- v185 the messages box READ button: what it is given, once; if something is being read it stops first, then starts over
 function RQ.speak(text)
     if not (C_VoiceChat and C_VoiceChat.SpeakText) then rqSay("this game has no text-to-speech that add-ons can use.") return end
     text = rqClean(text); if text == "" then return end
-    local function go() RQ.pieces, RQ.reading, RQ.kind = rqPieces(text), true, "msg"; rqNext() end
+    local function go() RQ.pieces, RQ.reading, RQ.kind = rqPieces(text), true, "msg"; rqNext() end   -- v192 also the outline's tooltip
     if RQ.reading then
         rqStop()
         if C_VoiceChat.StopSpeakingText then pcall(C_VoiceChat.StopSpeakingText) end
@@ -2949,6 +3500,129 @@ function RQ.queue(text)
     RQ.pieces, RQ.reading, RQ.kind = { text }, true, "msg"; rqNext()
 end
 ZenVCIMsg.queue = RQ.queue
+-- v190 TOOLTIPS READ ALOUD (a Control Panel choice, no key). The outline's tooltip and/or every other tooltip, once it has stayed for the chosen time,
+-- at the chosen speed; an action bar button reads only its name.
+RQ.tip = { key = nil, since = 0, said = nil, goneAt = nil, speaking = false }
+function RQ.tipLines(tt, titleOnly)
+    local name = tt:GetName(); if not name then return "" end
+    local n = (tt.NumLines and tt:NumLines()) or 0
+    local out = {}
+    for i = 1, (titleOnly and math.min(n, 1) or n) do
+        local l = _G[name .. "TextLeft" .. i]; local r = _G[name .. "TextRight" .. i]
+        local lt = l and l:IsShown() and l:GetText() or ""
+        local rt = r and r:IsShown() and r:GetText() or ""
+        local line = rqClean(lt); local rl = rqClean(rt)
+        if rl ~= "" then line = (line ~= "" and (line .. ", ") or "") .. rl end
+        if line ~= "" then out[#out + 1] = line end
+    end
+    return table.concat(out, ". ")
+end
+-- an action bar button (the player's own bars, the stance and pet bars, and any button that holds an action slot)
+function RQ.tipOnBar(owner)
+    if not owner or (owner.IsForbidden and owner:IsForbidden()) then return false end
+    local nm = owner.GetName and owner:GetName() or ""
+    if nm:find("^ActionButton%d") or nm:find("^MultiBar.-Button%d") or nm:find("^BonusActionButton%d") or nm:find("^PetActionButton%d")
+       or nm:find("^StanceButton%d") or nm:find("^ShapeshiftButton%d") or nm:find("^MultiCastActionButton%d") then return true end
+    if type(owner.action) == "number" then return true end
+    local ok, act = pcall(function() return owner.GetAttribute and owner:GetAttribute("action") end)
+    return ok and act ~= nil
+end
+function RQ.tipCount(bag, slot)
+    if type(bag) ~= "number" or type(slot) ~= "number" then return nil end
+    local n
+    pcall(function()
+        if C_Container and C_Container.GetContainerItemInfo then local i = C_Container.GetContainerItemInfo(bag, slot); n = i and i.stackCount
+        elseif GetContainerItemInfo then local _, c = GetContainerItemInfo(bag, slot); n = c end
+    end)
+    return tonumber(n)
+end
+-- the bag and slot of a bag button the game's tooltip belongs to
+function RQ.tipOwnerSlot(owner)
+    if not owner or (owner.IsForbidden and owner:IsForbidden()) then return nil end
+    local nm = owner.GetName and owner:GetName() or ""
+    local isBag = nm:find("^ContainerFrame%d+Item%d+") or type(owner.GetBagID) == "function"
+    if not isBag then return nil end
+    local ok, bag, slot = pcall(function()
+        local b = (type(owner.GetBagID) == "function" and owner:GetBagID()) or (owner:GetParent() and owner:GetParent():GetID())
+        return b, owner:GetID()
+    end)
+    if ok then return bag, slot end
+end
+-- v192 the outline's tooltip read once, on demand (its READ button, or "read quest" when nothing else is open). True when there was one to read.
+function RQ.readOutlineTip()
+    local own = _G["ZenVCITooltip"]
+    if not (own and own:IsShown() and not own.zvMirror) then return false end
+    local words = RQ.tipLines(own, false)
+    if words == "" then return false end
+    local cnt = RQ.tipCount(own.zvBag, own.zvSlot)
+    if cnt and cnt > 1 then
+        local first, rest = words:match("^(.-)%. (.*)$")
+        words = first and (first .. ", " .. cnt .. ". " .. rest) or (words .. ", " .. cnt)
+    end
+    if RQ.speak then RQ.speak(words) end
+    return true
+end
+function RQ.tipText()
+    local cfg = ZENVCI_TIPREAD
+    if type(cfg) ~= "table" then return nil end
+    local own = _G["ZenVCITooltip"]
+    if cfg.outline and own and own:IsShown() and not own.zvMirror then return "o:" .. RQ.tipLines(own, false), RQ.tipCount(own.zvBag, own.zvSlot) end
+    if cfg.all and GameTooltip and not (GameTooltip.IsForbidden and GameTooltip:IsForbidden()) and GameTooltip:IsShown() then
+        local ok, owner = pcall(GameTooltip.GetOwner, GameTooltip)
+        return "g:" .. RQ.tipLines(GameTooltip, ok and RQ.tipOnBar(owner)), ok and RQ.tipCount(RQ.tipOwnerSlot(owner)) or nil
+    end
+    return nil
+end
+function RQ.tipSay(text)
+    if RQ.reading or not (C_VoiceChat and C_VoiceChat.SpeakText) then return end   -- never over read quest
+    if type(_G.Spoken) == "table" and type(Spoken.IsPlaying) == "function" and Spoken:IsPlaying() then return end   -- nor over SPOKEN
+    local id, _, vol = rqVoice(); if id == nil then return end
+    local rate = tonumber(ZENVCI_TIPREAD and ZENVCI_TIPREAD.rate) or 0
+    rate = math.max(-10, math.min(10, rate))
+    if RQ.tip.speaking and C_VoiceChat.StopSpeakingText then pcall(C_VoiceChat.StopSpeakingText) end   -- a new tooltip stops the last
+    text = text:sub(1, 800):gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
+    local ok = pcall(C_VoiceChat.SpeakText, id, text, rate, vol, false)
+    if not ok then
+        local dest = (Enum and Enum.VoiceTtsDestination and (Enum.VoiceTtsDestination.LocalPlayback or Enum.VoiceTtsDestination.QueuedLocalPlayback)) or 1
+        ok = pcall(C_VoiceChat.SpeakText, id, text, dest, rate, vol)
+    end
+    RQ.tip.speaking = ok and true or false
+end
+function RQ.tipTick()
+    local cfg = ZENVCI_TIPREAD
+    if type(cfg) ~= "table" or not (cfg.outline or cfg.all) then return end
+    local T = RQ.tip
+    local now = GetTime()
+    local ok, key, cnt = pcall(RQ.tipText)
+    if not ok then key, cnt = nil, nil end
+    if not key or key == "o:" or key == "g:" then
+        if T.key then T.key = nil; T.goneAt = now end
+        if T.goneAt and now - T.goneAt > 0.4 then T.said, T.saidCount = nil, nil end   -- gone a moment: the same tooltip may be read again later
+        return
+    end
+    T.goneAt = nil
+    local full = key .. "#" .. tostring(cnt)
+    local delay = math.max(0, math.min(3, tonumber(cfg.delay) or 0.5))
+    -- v202 (user: "in a fight you need the speed"): at "at once" a new tooltip is read on the first look; a longer wait still waits that long
+    if full ~= T.key then T.key = full; T.since = now; if delay > 0 then return end end
+    -- the same words are never read twice in a row, whichever tooltip shows them (the outline's, then the game's for the same thing)
+    if now - T.since < delay then return end
+    local words = key:sub(3)
+    if words == T.said then
+        -- v190 the same item again (the next stack in the bags): only its quantity
+        if cnt and cnt ~= T.saidCount then T.saidCount = cnt; RQ.tipSay(tostring(cnt)) end
+        return
+    end
+    T.said, T.saidCount = words, cnt
+    if cnt and cnt > 1 then   -- the stack size right after the name: "Wool Cloth, 20"
+        local first, rest = words:match("^(.-)%. (.*)$")
+        words = first and (first .. ", " .. cnt .. ". " .. rest) or (words .. ", " .. cnt)
+    end
+    RQ.tipSay(words)
+end
+do local tf = CreateFrame("Frame"); local acc = 0
+    tf:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.05 then return end; acc = 0; pcall(RQ.tipTick) end)   -- v202 every twentieth of a second
+end
 local rqEvents = CreateFrame("Frame")
 for _, ev in ipairs({ "VOICE_CHAT_TTS_PLAYBACK_FINISHED", "VOICE_CHAT_TTS_PLAYBACK_FAILED" }) do pcall(rqEvents.RegisterEvent, rqEvents, ev) end
 pcall(rqEvents.RegisterEvent, rqEvents, "ITEM_TEXT_READY")   -- v183 a new page of the item-text panel
@@ -3003,6 +3677,21 @@ local zvTip, zvCmp
 local function tip()
     if not zvTip then
         zvTip = CreateFrame("GameTooltip", "ZenVCITooltip", UIParent, "GameTooltipTemplate")
+        -- v192 (user: "a READ button on the tooltip ... a paler version of our orange"): beside the box, never above it; only on the outline's own tooltip
+        pcall(function()
+            local b = CreateFrame("Button", nil, zvTip, "BackdropTemplate")
+            b:SetSize(64, 24); b:SetPoint("TOPLEFT", zvTip, "TOPRIGHT", 4, 0)
+            b:SetFrameStrata("TOOLTIP"); b:EnableMouse(true)
+            if b.SetBackdrop then
+                b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+                b:SetBackdropColor(1, 0.769, 0.549, 1); b:SetBackdropBorderColor(0, 0, 0, 1)   -- #FFC48C
+            end
+            local fs = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            fs:SetPoint("CENTER"); fs:SetText(QG.tr("READ")); fs:SetTextColor(0, 0, 0, 1)
+            b:SetScript("OnClick", function() if RQ and RQ.readOutlineTip then RQ.readOutlineTip() end end)
+            zvTip:HookScript("OnUpdate", function(self) local want = not self.zvMirror; if b:IsShown() ~= want then b:SetShown(want) end end)
+            zvTip.zvRead = b
+        end)
         -- 2026-11-11: hints in this box say the player's own words (it is the add-on's OWN tooltip window, never the game's)
         local addLine, setText = zvTip.AddLine, zvTip.SetText
         zvTip.AddLine = function(self, text, ...) return addLine(self, QG.say(QG.tr(text)), ...) end
@@ -3332,10 +4021,10 @@ function TM.tradeTip(t, e)
         t:SetText("Trade with " .. TM.tradeName(), 1, 1, 1)
         t:AddLine("You give: " .. give, 1, 1, 1, true)
         t:AddLine("You get: " .. get, 1, 0.82, 0, true)
-        t:AddLine("Say {Finish Trade:finish trade} twice to accept. {Escape:escape} cancels.", 0.6, 0.6, 0.6, true)
+        t:AddLine("Say {Finish Trade:finish trade} twice to accept. {Escape:escape} cancels.", 1, 0.74, 0.85, true)
     elseif e.tradeBox then
         t:SetText(tostring(e.name), 1, 1, 1)
-        t:AddLine("Say {Select:select} to open the number pad", 0.6, 0.6, 0.6)
+        t:AddLine("Say {Select:select} to open the number pad", 1, 0.74, 0.85)
     else
         t:SetText(tostring(e.name), 1, 1, 1)
     end
@@ -3772,12 +4461,12 @@ end
 function TM.mailTip(t, e)
     if e.empty and TM.mailSendOpen() and tostring(e.name):find("^attachment") then   -- v149 an empty attachment slot: how to fill it
         t:SetText(tostring(e.name), 1, 1, 1)
-        t:AddLine("To put an item in the letter: say {Move My Box:move my box}, move to the item in your bags, then say {Move That:move that} twice", 0.6, 0.6, 0.6, true)
+        t:AddLine("To put an item in the letter: say {Move My Box:move my box}, move to the item in your bags, then say {Move That:move that} twice", 1, 0.74, 0.85, true)
         return true
     end
     if e.empty then t:Hide() return false end
     if e.mailItem then t:SetSendMailItem(e.mailItem) return true end
-    if e.inAtt then t:SetInboxItem(e.inIdx, e.inAtt); t:AddLine("Say {Get That:get that} to take it", 0.6, 0.6, 0.6) return true end
+    if e.inAtt then t:SetInboxItem(e.inIdx, e.inAtt); t:AddLine("Say {Get That:get that} to take it", 1, 0.74, 0.85) return true end
     if e.inRow or e.inHead then
         local idx = e.inRow or e.inHead
         local _, _, sender, subject, money, cod, days, items = GetInboxHeaderInfo(idx)
@@ -3786,34 +4475,34 @@ function TM.mailTip(t, e)
         if coins(money) then t:AddLine("Money: " .. coins(money), 1, 0.82, 0) end
         if coins(cod) then t:AddLine("Cash on delivery: " .. coins(cod), 1, 0.3, 0.3) end
         if (tonumber(items) or 0) > 0 then t:AddLine("Items: " .. items, 1, 1, 1) end
-        if tonumber(days) then t:AddLine("Days left: " .. math.floor(tonumber(days)), 0.6, 0.6, 0.6) end
+        if tonumber(days) then t:AddLine("Days left: " .. math.floor(tonumber(days)), 0.18, 0.9, 0.84) end
         if e.inHead then
             -- v173 (2026-11-18, user: "the hint after select mail needs to be to MOVE DOWN which I had to do to actually get to the item, in this case the coins")
-            if (tonumber(money) or 0) > 0 or (tonumber(items) or 0) > 0 then t:AddLine("Say {Move Down:move down} to reach the money and items", 0.6, 0.6, 0.6, true) end
-            t:AddLine("Say read text to hear it", 0.6, 0.6, 0.6, true)   -- v174 (user's word; also "read quest")
+            if (tonumber(money) or 0) > 0 or (tonumber(items) or 0) > 0 then t:AddLine("Say {Move Down:move down} to reach the money and items", 1, 0.74, 0.85, true) end
+            t:AddLine("Say read text to hear it", 1, 0.74, 0.85, true)   -- v174 (user's word; also "read quest")
             local body = GetInboxText and GetInboxText(idx)
             if body and body ~= "" then t:AddLine(" "); t:AddLine(body, 1, 1, 1, true) end
-        else t:AddLine("Say {Select:select} to open it", 0.6, 0.6, 0.6) end
+        else t:AddLine("Say {Select:select} to open it", 1, 0.74, 0.85) end
         return true
     end
-    if e.inMoney then t:SetText(tostring(e.name), 1, 0.82, 0); t:AddLine("Say {Get That:get that} to take it", 0.6, 0.6, 0.6) return true end
-    if e.mailClose then t:SetText("Close this mail", 1, 1, 1); t:AddLine("Say {Select:select} to close it", 0.6, 0.6, 0.6) return true end
-    if e.mailPage then t:SetText(tostring(e.name), 1, 1, 1); t:AddLine("Say {Select:select} to turn the page", 0.6, 0.6, 0.6) return true end   -- v174
-    if e.mailOpenAll then t:SetText(tostring(e.name), 1, 1, 1); t:AddLine("Say {Select:select} to take the money and items from all your letters", 0.6, 0.6, 0.6, true) return true end   -- v174
+    if e.inMoney then t:SetText(tostring(e.name), 1, 0.82, 0); t:AddLine("Say {Get That:get that} to take it", 1, 0.74, 0.85) return true end
+    if e.mailClose then t:SetText("Close this mail", 1, 1, 1); t:AddLine("Say {Select:select} to close it", 1, 0.74, 0.85) return true end
+    if e.mailPage then t:SetText(tostring(e.name), 1, 1, 1); t:AddLine("Say {Select:select} to turn the page", 1, 0.74, 0.85) return true end   -- v174
+    if e.mailOpenAll then t:SetText(tostring(e.name), 1, 1, 1); t:AddLine("Say {Select:select} to take the money and items from all your letters", 1, 0.74, 0.85, true) return true end   -- v174
     if e.mailHead then
         t:SetText("Send mail", 1, 1, 1)
         for _, l in ipairs(mailTermLines()) do t:AddLine(l, 1, 1, 1, true) end
-        t:AddLine("Say {Send Mail:send mail} twice to send it. {Escape:escape} closes the mailbox.", 0.6, 0.6, 0.6, true)
+        t:AddLine("Say {Send Mail:send mail} twice to send it. {Escape:escape} closes the mailbox.", 1, 0.74, 0.85, true)
     elseif e.mailBox then
         t:SetText(tostring(e.name), 1, 1, 1, 1, true)   -- v172 (2026-11-18 _tipLook: "bad argument #6 to SetText"): alpha 1, then wrap
         if e.mailBox == _G.SendMailNameEditBox then   -- v98
-            t:AddLine("Say {Select:select}, then choose: Type a name, Your characters or Saved names", 0.6, 0.6, 0.6)   -- v143 (v148 saved names)
+            t:AddLine("Say {Select:select}, then choose: Type a name, Your characters or Saved names", 1, 0.74, 0.85)   -- v143 (v148 saved names)
         else
-            t:AddLine("Say {Select:select} to open the keypad", 0.6, 0.6, 0.6)
+            t:AddLine("Say {Select:select} to open the keypad", 1, 0.74, 0.85)
         end
     elseif e.mailTab then
         t:SetText(tostring(e.name), 1, 1, 1)
-        t:AddLine("Say {Select:select} to open it", 0.6, 0.6, 0.6)
+        t:AddLine("Say {Select:select} to open it", 1, 0.74, 0.85)
     else
         t:SetText(tostring(e.name), 1, 1, 1)
     end
@@ -3980,6 +4669,7 @@ local function lightUp(list)
         local okTip, errTip = pcall(function()
             if not e.fr and not e.taxi then return end   -- v88
             local t = tip()
+            t.zvBag, t.zvSlot = e.bag, e.slot   -- v190 for the stack size read with the tooltip
             for _, f in ipairs(zvCmp or {}) do f:Hide() end
             -- v71 (2026-11-07, user): one place for every window, the LOWER MIDDLE of the screen, clear of the game's own controller cursor and tooltip.
             -- Size small / normal / large (half, as is, twice) by the spoken "tooltip small / normal / large"; always kept inside the screen.
@@ -4000,31 +4690,49 @@ local function lightUp(list)
             elseif e.sbSlot then   -- v178 a spell in the spellbook: the game's own tooltip
                 local shown = t.SetSpellBookItem and pcall(t.SetSpellBookItem, t, e.sbSlot, e.sbBank)
                 if not shown then if e.sbSpell and t.SetSpellByID then t:SetSpellByID(e.sbSpell) else t:SetText(tostring(e.name), 1, 1, 1) end end
-                t:AddLine("Say {Move My Box:move my box} for the tabs", 0.6, 0.6, 0.6)
+                t:AddLine("Say {Move My Box:move my box} for the tabs", 1, 0.74, 0.85)
             elseif e.talNode then   -- v179 a talent: its name, rank and what it does
                 -- v180 (2026-11-18, user: "Talents is missing the name of the spell"): the game's talent tooltip has no name line here, so the spell tooltip
                 -- (name first, then what it does) is shown, with the rank under it
                 if e.talSpell and t.SetSpellByID then t:SetSpellByID(e.talSpell) else t:SetText(tostring(e.name), 1, 1, 1) end
                 if e.talCur and e.talMax then t:AddLine(QG.tr("Rank") .. " " .. e.talCur .. "/" .. e.talMax, 1, 1, 1) end
-                t:AddLine("Say {Move My Box:move my box} for the tabs", 0.6, 0.6, 0.6)
+                t:AddLine("Say {Move My Box:move my box} for the tabs", 1, 0.74, 0.85)
             elseif e.talTab then   -- v179
                 t:SetText(tostring(e.name), 1, 1, 1)
-                t:AddLine("Say {Select:select} to open this tab. {Move My Box:move my box} goes back to the talents", 0.6, 0.6, 0.6, true)
+                t:AddLine("Say {Select:select} to open this tab. {Move My Box:move my box} goes back to the talents", 1, 0.74, 0.85, true)
             elseif e.sbTab or e.sbPage then   -- v178
                 t:SetText(tostring(e.name), 1, 1, 1)
-                t:AddLine(e.sbTab and "Say {Select:select} to open this tab. {Move My Box:move my box} goes back to the spells" or "Say {Select:select} to turn the page", 0.6, 0.6, 0.6, true)
+                t:AddLine(e.sbTab and "Say {Select:select} to open this tab. {Move My Box:move my box} goes back to the spells" or "Say {Select:select} to turn the page", 1, 0.74, 0.85, true)
             elseif e.invSlot then   -- v177 a character pane slot
                 if e.empty then t:SetText(tostring(e.name), 1, 1, 1) else t:SetInventoryItem("player", e.invSlot) end
-                t:AddLine("To wear something here: say {Move My Box:move my box}, move to the item in your bags, then say {Use That:use that}", 0.6, 0.6, 0.6, true)
+                t:AddLine("To wear something here: say {Move My Box:move my box}, move to the item in your bags, then say {Use That:use that}", 1, 0.74, 0.85, true)
             elseif e.gslot then   -- v104 a guild bank slot
                 if e.name == "empty" then t:Hide() return end
                 t:SetGuildBankItem(e.gtab, e.gslot)
             elseif e.bag ~= nil and e.slot then
                 if e.name == "empty" then t:Hide() return end
                 t:SetBagItem(e.bag, e.slot)
-                if TM.mailSendOpen() then t:AddLine("Say {Move That:move that} twice to put it in the letter", 0.6, 0.6, 0.6) elseif TM.tradeOpen() then t:AddLine("Say {Move That:move that} twice to put it in the trade", 0.6, 0.6, 0.6) end   -- v149 Send Mail is open (v150 trade too, move that twice)
+                if TM.mailSendOpen() then t:AddLine("Say {Move That:move that} twice to put it in the letter", 1, 0.74, 0.85) elseif TM.tradeOpen() then t:AddLine("Say {Move That:move that} twice to put it in the trade", 1, 0.74, 0.85) end   -- v149 Send Mail is open (v150 trade too, move that twice)
             elseif e.index then
                 t:SetMerchantItem(e.index)
+                -- v191 (user: "in shops when using MOVE, no price is mirrored"): the vendor's price, in the game's own money words, or what it costs in items
+                pcall(function()
+                    local price, qty
+                    if C_MerchantFrame and C_MerchantFrame.GetItemInfo then local i = C_MerchantFrame.GetItemInfo(e.index); if i then price, qty = i.price, i.stackCount end end
+                    if price == nil and GetMerchantItemInfo then local _, _, p, q = GetMerchantItemInfo(e.index); price, qty = p, q end
+                    local parts = {}
+                    if (tonumber(price) or 0) > 0 then parts[#parts + 1] = (GetCoinText and GetCoinText(price, " ")) or (tostring(price) .. " copper") end
+                    local nc = GetMerchantItemCostInfo and GetMerchantItemCostInfo(e.index) or 0
+                    for c = 1, (tonumber(nc) or 0) do
+                        local _, value, link, name = GetMerchantItemCostItem(e.index, c)
+                        local what = name or (link and link:match("%[(.-)%]")) or link
+                        if what then parts[#parts + 1] = tostring(value or 1) .. " " .. what end
+                    end
+                    if #parts > 0 then
+                        t:AddLine(QG.tr("Price: {0}"):gsub("{0}", function() return table.concat(parts, ", ") .. ((tonumber(qty) or 1) > 1 and (" (" .. QG.tr("for {0}"):gsub("{0}", tostring(qty)) .. ")") or "") end), 1, 1, 1)
+                    end
+                end)
+                t:AddLine("Say {Buy That:buy that} twice to buy it", 1, 0.74, 0.85)
             elseif e.spellID then
                 t:SetSpellByID(e.spellID)
             elseif e.padKey and pad.names then   -- v98 the names list of the To box: all of it, the outlined one marked
@@ -4034,28 +4742,28 @@ local function lightUp(list)
                     local on = k.padKey == e.padKey
                     t:AddLine((on and "> " or "    ") .. k.padKey, on and 1 or 0.75, on and 0.82 or 0.75, on and 0 or 0.75)
                 end
-                t:AddLine("Say {Select:select} to choose it", 0.6, 0.6, 0.6)   -- v146
+                t:AddLine("Say {Select:select} to choose it", 1, 0.74, 0.85)   -- v146
             elseif e.padKey then   -- v91 a keypad key
                 t:SetText("Key: " .. tostring(e.padKey), 1, 1, 1)
                 local typed = pad.box and pad.box.GetText and pad.box:GetText() or ""
                 t:AddLine("Typed: " .. (typed ~= "" and typed or "(nothing yet)"), 1, 1, 1)
-                t:AddLine("Say {Keypad Enter:enter} to press it", 0.6, 0.6, 0.6)
+                t:AddLine("Say {Keypad Enter:enter} to press it", 1, 0.74, 0.85)
             elseif e.prof then   -- v130 the professions window
                 if e.book and e.unlearn then   -- v133
                     t:SetText(tostring(e.name), 1, 1, 1)
                     if e.rank then t:AddLine(tostring(e.rank), 1, 1, 1) end
-                    t:AddLine("Say {Destroy That#unlearn:unlearn profession} to unlearn it. VCFI asks first.", 0.6, 0.6, 0.6)
+                    t:AddLine("Say {Destroy That#unlearn:unlearn profession} to unlearn it. VCFI asks first.", 1, 0.74, 0.85)
                 elseif e.book then   -- v132 a profession on the overview page
                     t:SetText(tostring(e.name), 1, 1, 1)
                     if e.pname and e.pname ~= e.name then t:AddLine(tostring(e.pname), 1, 1, 1) end
                     if e.rank then t:AddLine(tostring(e.rank), 1, 1, 1) end
-                    t:AddLine("Say {Select:select} to choose it, or {Move My Box:move my box} for the tabs", 0.6, 0.6, 0.6)
+                    t:AddLine("Say {Select:select} to choose it, or {Move My Box:move my box} for the tabs", 1, 0.74, 0.85)
                 elseif e.tab then
                     t:SetText(tostring(e.name), 1, 1, 1)
-                    t:AddLine("Say {Select:select} to open it, or {Move My Box:move my box} for the recipes", 0.6, 0.6, 0.6)
+                    t:AddLine("Say {Select:select} to open it, or {Move My Box:move my box} for the recipes", 1, 0.74, 0.85)
                 elseif e.header then
                     t:SetText(tostring(e.name), 1, 1, 1)
-                    t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 0.6, 0.6, 0.6)
+                    t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 1, 0.74, 0.85)
                 else
                     local ok = e.recipeID and t.SetRecipeResultItem and pcall(t.SetRecipeResultItem, t, e.recipeID)
                     if not ok and e.recipeID and C_TradeSkillUI and C_TradeSkillUI.GetRecipeItemLink then
@@ -4073,24 +4781,24 @@ local function lightUp(list)
                         end
                     end
                     if e.info and type(e.info.numAvailable) == "number" then t:AddLine("You can make: " .. e.info.numAvailable, 1, 1, 1) end
-                    t:AddLine("Say {Select:select} to choose it, or {Move My Box:move my box} for the tabs", 0.6, 0.6, 0.6)
+                    t:AddLine("Say {Select:select} to choose it, or {Move My Box:move my box} for the tabs", 1, 0.74, 0.85)
                 end
             elseif e.trainer then   -- v129 a trainer's line
                 if e.header then
                     t:SetText(tostring(e.name), 1, 1, 1)
-                    t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 0.6, 0.6, 0.6)
+                    t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 1, 0.74, 0.85)
                 else
                     local shown = t.SetTrainerService and pcall(t.SetTrainerService, t, e.trainer)
                     if not shown then t:SetText(tostring(e.name), 1, 1, 1) end
                     local cost = GetTrainerServiceCost and GetTrainerServiceCost(e.trainer)
                     if cost and cost > 0 and GetMoneyString then t:AddLine("Cost: " .. GetMoneyString(cost, true), 1, 1, 1) end
-                    if e.cat == "available" then t:AddLine("Say {Buy:buy} to train it", 0.6, 0.6, 0.6)
-                    elseif e.cat == "used" then t:AddLine("Already known", 0.6, 0.6, 0.6)
-                    else t:AddLine("Not available yet", 0.6, 0.6, 0.6) end
+                    if e.cat == "available" then t:AddLine("Say {Buy:buy} to train it", 1, 0.74, 0.85)
+                    elseif e.cat == "used" then t:AddLine("Already known", 1, 0.125, 0.125)   -- v191 (user: "make Already Known red"): the game's own red, #FF2020
+                    else t:AddLine("Not available yet", 0.18, 0.9, 0.84) end
                 end
             elseif e.header and mark.kind == "qlog" then   -- v127 a zone line in the quest log
                 t:SetText(tostring(e.name), 1, 1, 1)
-                t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 0.6, 0.6, 0.6)
+                t:AddLine(e.closed and "Closed: say {Select:select} to open it" or "Open: say {Select:select} to close it", 1, 0.74, 0.85)
             elseif e.questID and (mark.kind == "qlog" or mark.kind == "qmap") then   -- v124 a quest in the quest log or on the map
                 t:SetText(tostring(e.name), 1, 1, 1)
                 local obj = C_QuestLog and C_QuestLog.GetQuestObjectives and C_QuestLog.GetQuestObjectives(e.questID)
@@ -4098,13 +4806,13 @@ local function lightUp(list)
                     if o.text and o.text ~= "" then t:AddLine((o.finished and "Done: " or "") .. o.text, o.finished and 0.6 or 1, o.finished and 0.6 or 1, o.finished and 0.6 or 1, true) end
                 end
                 if C_QuestLog and C_QuestLog.IsComplete and C_QuestLog.IsComplete(e.questID) then t:AddLine("Ready to hand in", 1, 1, 1) end
-                t:AddLine(mark.kind == "qlog" and "Say {Select:select} to open it, or {Move My Box:move my box} for the map" or "Say {Select:select} to show this quest, or {Move My Box:move my box} for the quest log", 0.6, 0.6, 0.6)
+                t:AddLine(mark.kind == "qlog" and "Say {Select:select} to open it, or {Move My Box:move my box} for the map" or "Say {Select:select} to show this quest, or {Move My Box:move my box} for the quest log", 1, 0.74, 0.85)
             elseif e.taxi then   -- v88 a flight point
                 t:SetText(tostring(e.name), 1, 1, 1)
                 if e.cost and e.cost > 0 then
                     t:AddLine("Cost: " .. ((GetMoneyString and GetMoneyString(e.cost, true)) or tostring(e.cost)), 1, 1, 1)
                 end
-                t:AddLine("Say {Take Off:take off} to fly here", 0.6, 0.6, 0.6)   -- v90; 2026-11-11 the player's own words
+                t:AddLine("Say {Take Off:take off} to fly here", 1, 0.74, 0.85)   -- v90; 2026-11-11 the player's own words
             elseif e.itemID then
                 t:SetItemByID(e.itemID)   -- v77 an Auction House row
                 local function money(c) return (GetMoneyString and GetMoneyString(c, true)) or (GetCoinTextureString and GetCoinTextureString(c)) or tostring(c) end
@@ -4134,7 +4842,7 @@ local function lightUp(list)
                     if f then
                         f:SetOwner(UIParent, "ANCHOR_NONE")
                         f:SetInventoryItem("player", slot)
-                        if f.CompareHeader then f.CompareHeader:Show() else f:AddLine((type(CURRENTLY_EQUIPPED) == "string" and CURRENTLY_EQUIPPED) or "Equipped", 0.6, 0.6, 0.6) end
+                        if f.CompareHeader then f.CompareHeader:Show() else f:AddLine((type(CURRENTLY_EQUIPPED) == "string" and CURRENTLY_EQUIPPED) or "Equipped", 0.18, 0.9, 0.84) end
                         f:Show()
                         shown[#shown + 1] = f
                     end
@@ -5638,7 +6346,15 @@ local function buyThatStep()
     if armed.kind == "buy" and now - armed.at < 30 then armed.kind = nil; markColor(MARK_ORANGE); buyStep() return end
     armed.kind, armed.at = "buy", now
     markColor(MARK_TEAL)
-    say1("buy " .. tostring(e.name) .. "? say {Buy:buy} again to buy it")
+    local cost   -- v191 the price in the question
+    pcall(function()
+        local price
+        if C_MerchantFrame and C_MerchantFrame.GetItemInfo then local i = C_MerchantFrame.GetItemInfo(e.index); price = i and i.price end
+        if price == nil and GetMerchantItemInfo then local _, _, p = GetMerchantItemInfo(e.index); price = p end
+        if (tonumber(price) or 0) > 0 then cost = (GetCoinText and GetCoinText(price, " ")) or (tostring(price) .. " copper") end
+    end)
+    if cost then say1(QG.tr("buy {0} for {1}? say {Buy:buy} again to buy it"):gsub("{0}", function() return tostring(e.name) end):gsub("{1}", function() return cost end))
+    else say1("buy " .. tostring(e.name) .. "? say {Buy:buy} again to buy it") end
     if C_Timer and C_Timer.After then C_Timer.After(30, function() if armed.kind == "buy" and (GetTime() - armed.at) >= 29 then disarm() end end) end
 end
 
@@ -6591,6 +7307,7 @@ local function zvMainEvent(_, ev)
         C_Timer.After(4, save); C_Timer.After(12, save); C_Timer.After(30, save)
         C_Timer.After(10, refreshRanks)
         C_Timer.After(14, function() readyToOffer = true; offerPlacement() end)
+        C_Timer.After(16, function() pcall(ZenVCIBars.placeItems) end)   -- v194 renamed items onto bar slots
         C_Timer.After(5, reapplyIfWanted)
         C_Timer.After(20, reapplyIfWanted)
         C_Timer.After(6, bindPetBar); C_Timer.After(22, bindPetBar)

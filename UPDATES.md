@@ -5,6 +5,52 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.281 and VCFI 0.10.283 (shared keys, dedicated slots, tooltips read aloud)
+
+Published 2026-11-24 01:37 US Mountain Standard Time
+
+**Shared keys (every class)**
+- Abilities that can never be used at the same moment now share one key: stances, forms and stealth, pet abilities, a friend or enemy target, and abilities for in or out of combat. This frees keys for new words.
+- Shoot Bow, Shoot Gun, Shoot Crossbow and Throw share one key, chosen by the ranged weapon you have on. Each keeps its own words.
+- Each character's sheet has a tick box to switch it off. It starts on.
+
+**Dedicated slots**
+- Eat, drink, potion, bandage, hearthstone and mount each have a slot on your action bars, which you choose in the Control Panel for each character. Each one is its own choice: where the game first puts it, off, a bar you are not using, or any bar and slot.
+- The word presses that slot only when the right thing is in it. If the slot is empty or holds something else, the messages box says so.
+- Each slot has its own outline, always shown, and a faint picture of what goes there while it is empty.
+- One switch turns them all off. It starts on.
+- New FAQ section: DEDICATED SLOTS.
+
+**RENAME**
+- Renamed items now go on a free action bar slot (bar 8 first, from the back), on bars you have switched on, your own bars last.
+- The list shows only things you would use from a bar: weapons, shields and held items, trinkets, tabards, ammo, shirts, quest items. Armour is never listed.
+- If there is no free key, VCF says so instead of staying silent.
+
+**Reading aloud**
+- "read quest" and "read text" use the SPOKEN add-on's voice when it has one for that quest. If SPOKEN cannot read it, the game's own voice reads it.
+- With the outline on a quest log line, "read quest" reads that quest.
+- With nothing open, "read quest" reads the outline's tooltip.
+- New in the Control Panel: TOOLTIPS READ ALOUD. Two boxes (the outline's tooltip, every other tooltip), a speed and a wait. "At once" reads a new tooltip the moment it shows. Action bar tooltips read only their name. Bag items read their stack size. The same words are never read twice in a row.
+- A pale orange READ button beside the outline's tooltip reads it once.
+
+**Tooltips**
+- Shop items show their price, with "Say buy that twice to buy it".
+- Hint lines are pink, info lines teal, "Already known" red.
+
+**FAQ**
+- Keyboard and mouse: turning on "Interact with key press" in the game's Options lets you use mailboxes and fishing bobbers by voice.
+- New: "Can two abilities share one key?"
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `a4ca511d79cb3263b5521576a96c21f6080846e148139abaf5ada2f8cd673313`
+- VCFI.SETUP.exe: `d0f4b04ecb19844eebdb590a49239fd4bbd0eda71f26dbe9d707ac1996f2ab6d`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.267 and VCFI 0.10.269 (characters by ID, reading aloud, quest progress, more keys)
 
 Published 2026-11-23 15:45 US Mountain Standard Time
