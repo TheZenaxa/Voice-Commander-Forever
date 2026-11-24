@@ -49,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "202"
+local VERSION = "203"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCFI's Control Panel (ZENVCI_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -1579,17 +1579,50 @@ StaticPopupDialogs["ZENVCI_PLACE"] = {
 function ZenVCIBars.placeItems()
     if InCombatLockdown() then ZenVCIBars.pending = true return end
     ZenVCIBars.pending = nil
+    -- v203 the items the player keeps on a HIDDEN key (RENAME tick box), by this character's ID
+    local hid, hasKey, noHidden = {}, {}, {}
+    local hl = ZENVCI_HIDDENITEMS and ((UnitGUID and ZENVCI_HIDDENITEMS[UnitGUID("player") or ""]) or ZENVCI_HIDDENITEMS[UnitName("player") or ""])
+    for _, n in ipairs(hl or {}) do hid[n:lower()] = true end
     local want = {}
     for _, b in ipairs(effectiveButtons()) do
         local nm = b.text and (b.text:match("^/use%s+(.-)%s*$") or b.text:match("^/equip%s+(.-)%s*$"))
-        if nm and nm ~= "" and not nm:find("[%[%];]") then want[#want + 1] = nm end
+        if nm and nm ~= "" and not nm:find("[%[%];]") then
+            if hid[nm:lower()] then hasKey[nm:lower()] = true else want[#want + 1] = nm end
+        end
     end
     -- the commands VCF had no key left for: items go on bar slots too; anything else is named (never a silent fail)
     local nk = ZENVCI_NOKEY and ((UnitGUID and ZENVCI_NOKEY[UnitGUID("player") or ""]) or ZENVCI_NOKEY[UnitName("player") or ""])
     local other = {}
     for _, t in ipairs(nk or {}) do
         local nm = t:match("^/use%s+(.-)%s*$") or t:match("^/equip%s+(.-)%s*$")
-        if nm and nm ~= "" then want[#want + 1] = nm else other[#other + 1] = (t:gsub("^/cast%s+", "")) end
+        if nm and nm ~= "" then
+            want[#want + 1] = nm
+            if hid[nm:lower()] then noHidden[#noHidden + 1] = nm end   -- v203 wanted on a hidden key, but none is left: it stays on its bar
+        else other[#other + 1] = (t:gsub("^/cast%s+", "")) end
+    end
+    for _, nm in ipairs(noHidden) do say("No room for " .. nm .. " on a hidden key. Remove a command you don't use to make room.") end
+    -- v203 an item that now has its hidden key leaves the bar slot VCF put it on (only if that slot still holds it; never a slot the player filled)
+    do
+        local key0 = charKey()
+        local done0 = ZenVCIExportDB._placed and ZenVCIExportDB._placed[key0]
+        if done0 then
+            local keep, moved = {}, {}
+            for _, p in ipairs(done0) do
+                local ok2, k2, id2 = pcall(GetActionInfo, p.slot)
+                if p.item and p.name and hasKey[p.name:lower()] and ok2 and k2 == "item" and id2 == p.id then
+                    ClearCursor(); PickupAction(p.slot); ClearCursor()
+                    if p.key then SetBinding(p.key) end
+                    moved[#moved + 1] = p.name
+                elseif not (p.item and p.name and hasKey[p.name:lower()]) then
+                    keep[#keep + 1] = p
+                end
+            end
+            ZenVCIExportDB._placed[key0] = keep
+            if #moved > 0 then
+                pcall(SaveBindings, GetCurrentBindingSet and GetCurrentBindingSet() or 1)
+                say("now on a hidden key, taken off the bar: " .. table.concat(moved, ", ") .. ".")
+            end
+        end
     end
     if #other > 0 then say("no key left for: " .. table.concat(other, ", ") .. ". Put them on one of your action bars, or free keys (remove words you do not use), then /RELOAD twice.") end
     if #want == 0 then return end

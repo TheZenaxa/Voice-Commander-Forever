@@ -2,8 +2,8 @@
 
 These are the two helper add-ons that VCF and VCFI put into World of Warcraft, as plain text, so anyone can read them before installing. Blizzard's add-on policy asks that an add-on's code is never hidden and can be viewed by the public.
 
-- **ZenVCExport**: VCF Helper, the add-on that comes with VCF. Version 202, the one inside VCF 0.10.281.
-- **ZenVCIExport**: VCFI Helper, the add-on that comes with VCFI. Version 202, the one inside VCFI 0.10.283.
+- **ZenVCExport**: VCF Helper, the add-on that comes with VCF. Version 203, the one inside VCF 0.10.283.
+- **ZenVCIExport**: VCFI Helper, the add-on that comes with VCFI. Version 203, the one inside VCFI 0.10.285.
 
 You do not need to download these: VCF and VCFI put the add-on into the game for you. Until the next release, the add-on inside the current download may be an older version than these files.
 

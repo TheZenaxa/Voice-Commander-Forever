@@ -5,6 +5,32 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.283 and VCFI 0.10.285 (choose a free key, RENAME on a hidden key)
+
+Published 2026-11-24 02:15 US Mountain Standard Time
+
+**Choosing a free key**
+- Clicking a command's key button in the Control Panel now opens a list of free keys, simplest first. "Press a key instead" still works the old way, and right-click still lets you type a key's name.
+- ADD YOUR OWN COMMAND has a CHOOSE A FREE KEY button.
+- Free means no VCF command uses it, on any of your characters, and your game's Key Bindings have not set it. The keys of the first three action bars, the pet bar and the stance bar are never offered, used or not. Neither are Alt with an F key, Alt+Z and Alt+R (screen overlays use them).
+- A key you choose leaves the list, and VCF never hands it out as a hidden key.
+- After choosing, set the same key in the game's Key Bindings for what it should do.
+
+**RENAME: keep an item on a hidden key**
+- Each item has a "Keep on a hidden key, not on a bar" tick box. It starts unticked.
+- Ticked, the item gets a hidden key after /RELOAD twice, if there is room, and comes off the bar slot VCF had put it on. A slot you filled yourself is never touched.
+- If there is no room, the messages box says "No room for (the item) on a hidden key. Remove a command you don't use to make room." and the item stays on its bar.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `551fd261f76392d529611329bb927d8c982bb77e3505641d119c09fb251550c3`
+- VCFI.SETUP.exe: `208aa68dabced3139bbc4f73812d8dc777d77d59a7ea54ac2936d59f28c62628`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.281 and VCFI 0.10.283 (shared keys, dedicated slots, tooltips read aloud)
 
 Published 2026-11-24 01:37 US Mountain Standard Time
