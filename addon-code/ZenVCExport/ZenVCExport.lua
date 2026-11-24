@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "203"
+local VERSION = "206"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -245,6 +245,43 @@ do
         pcall(ZenVCMsg.add, "|cff" .. c .. msg .. "|r")
         if type(ZenVCExportDB) == "table" and ZenVCExportDB._progressRead and ZenVCMsg.queue then pcall(ZenVCMsg.queue, msg) end
     end)
+end
+-- v204 (2026-11-25, user: "any cue is better than none inre minimap resource"): RESOURCE CUES. The game's soft interact target (the same one that finds the
+-- fishing bobber) picks up things you can use in front of you; each new one (an ore vein, a herb, a chest ...) goes into the messages box as "<name> ahead",
+-- once per object in two minutes, and is read aloud when that is ticked. Not while fishing (the bobber). Read only: nothing is targeted, clicked or changed.
+do
+    local RC = { seen = {} }
+    ZenVCRes = RC
+    function RC.tick()
+        if ZENVC_RESOURCES == false then return end
+        local g = UnitGUID and UnitGUID("softinteract")
+        if not g then RC.last = nil return end
+        if g == RC.last then return end
+        RC.last = g
+        if not g:find("^GameObject") then return end
+        if type(ZenVCExportDB) == "table" and ZenVCExportDB._softOrig ~= nil then return end   -- fishing: the line is out
+        local now = GetTime()
+        if RC.seen[g] and now - RC.seen[g] < 120 then return end
+        RC.seen[g] = now
+        local n = UnitName and UnitName("softinteract")
+        if type(n) ~= "string" or n == "" then return end
+        if type(ZenVCExportDB) == "table" then
+            ZenVCExportDB._resNames = ZenVCExportDB._resNames or {}; ZenVCExportDB._resNames[n] = true   -- v205 for VCF's tick boxes
+            local ck = UnitGUID and UnitGUID("player") or "?"   -- v206 and this character's own list
+            ZenVCExportDB._resNamesChar = ZenVCExportDB._resNamesChar or {}; ZenVCExportDB._resNamesChar[ck] = ZenVCExportDB._resNamesChar[ck] or {}; ZenVCExportDB._resNamesChar[ck][n] = true
+        end
+        local off = ZENVC_RESOURCES_OFF
+        if ZENVC_RESOURCES_PERCHAR then off = type(ZENVC_RESOURCES_OFFC) == "table" and ZENVC_RESOURCES_OFFC[UnitGUID and UnitGUID("player") or ""] or nil end   -- v206 each character's own
+        if type(off) == "table" and off[n:lower()] then return end   -- v205 unticked by the player
+        local line = n .. " ahead"
+        if ZenVCMsg.tr then line = ZenVCMsg.tr(line) or line end
+        if type(ZenVCExportDB) == "table" then ZenVCExportDB._resLook = { at = date("%H:%M:%S"), guid = g:match("^(GameObject%-%d+%-%d+%-%d+%-%d+%-%d+)") or g, name = n } end   -- for checking it works
+        pcall(ZenVCMsg.add, "|cff2ee6d6" .. line .. "|r")
+        if ZENVC_RESOURCES_READ and ZenVCMsg.queue then pcall(ZenVCMsg.queue, line) end
+    end
+    local acc = 0
+    local rf = CreateFrame("Frame")
+    rf:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.25 then return end; acc = 0; pcall(RC.tick) end)
 end
 -- v187 (2026-11-23, user: "do the non risky changes"): camera up / lower camera use ONE key each way. One press tilts 1.2 seconds; each further press adds 1.2
 -- seconds to the time left (camera 2 = 2 presses = 2.4 s, camera 3 = 4 presses = 4.8 s, exactly as before), so the camera never stops early.
@@ -1106,6 +1143,11 @@ end
 local function save()
     local ok, db = pcall(collect)
     if ok and db and db.name then
+        db.resNames = {}   -- v205 every name the resource cue has said (account-wide), for VCF's tick boxes
+        for rn in pairs(type(ZenVCExportDB._resNames) == "table" and ZenVCExportDB._resNames or {}) do db.resNames[#db.resNames + 1] = rn end
+        db.resNamesOwn = {}   -- v206 this character's own
+        local own = type(ZenVCExportDB._resNamesChar) == "table" and db.guid and ZenVCExportDB._resNamesChar[db.guid]
+        for rn in pairs(type(own) == "table" and own or {}) do db.resNamesOwn[#db.resNamesOwn + 1] = rn end
         local key = charKey()   -- v182 the character's game ID
         local old = ZenVCExportDB[key]
         if not old then for k, v in pairs(ZenVCExportDB) do if type(v) == "table" and v.guid and v.guid == db.guid and k ~= key then old = v end end end   -- v182 its last save under name-realm
@@ -3594,12 +3636,45 @@ function RQ.readOutlineTip()
     if RQ.speak then RQ.speak(words) end
     return true
 end
+-- v206 (2026-11-25, user: "in town it started reading all players names"): who is named. Nothing is stored; each tooltip is checked as it shows.
+-- No ZENVC_TIPNAMES = all names (as before). Otherwise: anyone outside the major cities (notcity), NPCs (npc), yourself, your guild (same guild name),
+-- your friends list (friends); anyone else's tooltip is not read.
+local RQ_CITIES = { [1453] = true, [1454] = true, [1455] = true, [1456] = true, [1457] = true, [1458] = true }   -- Stormwind, Orgrimmar, Ironforge, Thunder Bluff, Darnassus, Undercity
+function RQ.inCity()
+    local id; pcall(function() id = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player") end)
+    return id and RQ_CITIES[id] or false
+end
+function RQ.nameOk(unit)
+    local n = ZENVC_TIPNAMES
+    if type(n) ~= "table" then return true end
+    if n.notcity and not RQ.inCity() then return true end
+    local isPlayer = false; pcall(function() isPlayer = UnitIsPlayer(unit) end)
+    if not isPlayer then return n.npc and true or false end
+    local me = false; pcall(function() me = UnitIsUnit(unit, "player") end)
+    if me then return true end
+    if n.guild then
+        local g, mine; pcall(function() g = GetGuildInfo(unit); mine = GetGuildInfo("player") end)
+        if g and mine and g == mine then return true end
+    end
+    if n.friends then
+        local f = false
+        pcall(function()
+            local guid = UnitGUID(unit)
+            if C_FriendList and C_FriendList.IsFriend and guid then f = C_FriendList.IsFriend(guid) end
+            if not f and C_FriendList and C_FriendList.GetFriendInfo then f = C_FriendList.GetFriendInfo((UnitName(unit))) ~= nil end
+        end)
+        if f then return true end
+    end
+    return false
+end
 function RQ.tipText()
     local cfg = ZENVC_TIPREAD
     if type(cfg) ~= "table" then return nil end
     local own = _G["ZenVCTooltip"]
     if cfg.outline and own and own:IsShown() and not own.zvMirror then return "o:" .. RQ.tipLines(own, false), RQ.tipCount(own.zvBag, own.zvSlot) end
     if cfg.all and GameTooltip and not (GameTooltip.IsForbidden and GameTooltip:IsForbidden()) and GameTooltip:IsShown() then
+        local okU, _, unit = pcall(GameTooltip.GetUnit, GameTooltip)   -- v206 a player's or an NPC's tooltip: is this name wanted?
+        if okU and unit and not RQ.nameOk(unit) then return nil end
         local ok, owner = pcall(GameTooltip.GetOwner, GameTooltip)
         return "g:" .. RQ.tipLines(GameTooltip, ok and RQ.tipOnBar(owner)), ok and RQ.tipCount(RQ.tipOwnerSlot(owner)) or nil
     end

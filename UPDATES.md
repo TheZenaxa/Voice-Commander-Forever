@@ -5,6 +5,29 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.286 and VCFI 0.10.288 (ore and herbs in front of you, names on tooltips)
+
+Published 2026-11-24 09:38 US Mountain Standard Time
+
+**Ore, herbs and other things in front of you**
+- When the game's soft targeting picks up something you can use in front of you, such as an ore vein, a herb or a chest, VCF names it in the messages box ("Copper Vein ahead"), once. It reaches as far as the game's own interact range (about 10 yards) and needs the game's Interact with key press on. Not while fishing.
+- Control Panel, ORE, HERBS AND OTHER THINGS IN FRONT OF YOU: a switch (starts on), and "Read them aloud too" (starts off).
+- Every name it has said is listed there with its own tick box, so you can untick what you do not want named (a mailbox, a herb you no longer gather). New names start ticked.
+- The list can be one for all your characters (the start) or each character's own, so each one discovers its own. Switching gives every character a copy of the shared list.
+
+**Names on tooltips**
+- Under TOOLTIPS READ ALOUD, a choice of whose names are read on the tooltips of players and NPCs: all names, always (the start, as before), or only NPC names, names on your friends list, your guildmates, and all names except in major cities. Anyone else's tooltip is not read. Nothing is stored: each tooltip is checked as it shows.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `21ad84300f8cf0de6ff909aff216049f7494e449ccd0d32b67b46395e1a72898`
+- VCFI.SETUP.exe: `7faade24a0fa46f2a5b81d3615b9a147a1ce5d076826a4a6c3d9d20b0489c171`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.283 and VCFI 0.10.285 (choose a free key, RENAME on a hidden key)
 
 Published 2026-11-24 02:15 US Mountain Standard Time

@@ -312,6 +312,7 @@ ZENVCI_TEXT = {
     ["for {0}"] = "pour {0}",
     ["Say {Buy That:buy that} twice to buy it"] = "Dites {Buy That:buy that} deux fois pour l'acheter",
     ["buy {0} for {1}? say {Buy:buy} again to buy it"] = "acheter {0} pour {1} ? dites {Buy:buy} encore pour l'acheter",
+    ["{0} ahead"] = "{0} devant",
   },
   ["de"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r wähle zuerst eine Belohnung: Sag {Start Move:start move}, geh zu einer, sag {Select:select}, dann {Complete (short):complete}",
@@ -623,6 +624,7 @@ ZENVCI_TEXT = {
     ["for {0}"] = "für {0}",
     ["Say {Buy That:buy that} twice to buy it"] = "Sag zweimal {Buy That:buy that}, um es zu kaufen",
     ["buy {0} for {1}? say {Buy:buy} again to buy it"] = "{0} für {1} kaufen? Sag noch einmal {Buy:buy}, um es zu kaufen",
+    ["{0} ahead"] = "{0} voraus",
   },
   ["es"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r elige primero una recompensa: di {Start Move:start move}, ve a una, di {Select:select} y luego {Complete (short):complete}",
@@ -934,6 +936,7 @@ ZENVCI_TEXT = {
     ["for {0}"] = "por {0}",
     ["Say {Buy That:buy that} twice to buy it"] = "Di {Buy That:buy that} dos veces para comprarlo",
     ["buy {0} for {1}? say {Buy:buy} again to buy it"] = "¿comprar {0} por {1}? di {Buy:buy} otra vez para comprarlo",
+    ["{0} ahead"] = "{0} delante",
   },
   ["zh-CN"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先选择一个奖励：说 {Start Move:start move}，移到其中一个，说 {Select:select}，然后说 {Complete (short):complete}",
@@ -1245,6 +1248,7 @@ ZENVCI_TEXT = {
     ["for {0}"] = "共 {0} 个",
     ["Say {Buy That:buy that} twice to buy it"] = "说两次 {Buy That:buy that} 来购买",
     ["buy {0} for {1}? say {Buy:buy} again to buy it"] = "以 {1} 购买 {0}？再说一次 {Buy:buy} 来购买",
+    ["{0} ahead"] = "前方有 {0}",
   },
   ["ja"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先に報酬を選んでください：{Start Move:start move} と言い、どれかに移動して {Select:select} と言い、それから {Complete (short):complete}",
@@ -1556,6 +1560,7 @@ ZENVCI_TEXT = {
     ["for {0}"] = "{0} 個で",
     ["Say {Buy That:buy that} twice to buy it"] = "購入するには {Buy That:buy that} と2回言ってください",
     ["buy {0} for {1}? say {Buy:buy} again to buy it"] = "{0} を {1} で購入しますか？購入するにはもう一度 {Buy:buy} と言ってください",
+    ["{0} ahead"] = "前方に {0}",
   },
   ["zh-TW"] = {
     ["|cff2ee6d6VCF:|r choose a reward first: say {Start Move:start move}, move to one, say {Select:select}, then {Complete (short):complete}"] = "|cff2ee6d6VCF:|r 先選擇一個獎勵：說 {Start Move:start move}，移到其中一個，說 {Select:select}，然後說 {Complete (short):complete}",
@@ -1867,5 +1872,6 @@ ZENVCI_TEXT = {
     ["for {0}"] = "共 {0} 個",
     ["Say {Buy That:buy that} twice to buy it"] = "說兩次 {Buy That:buy that} 來購買",
     ["buy {0} for {1}? say {Buy:buy} again to buy it"] = "以 {1} 購買 {0}？再說一次 {Buy:buy} 來購買",
+    ["{0} ahead"] = "前方有 {0}",
   },
 }
