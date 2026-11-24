@@ -158,6 +158,7 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - RENAME: keep an item on a hidden key instead of a bar (built, 0.10.283)
 - Ore, herbs and other things in front of you named in the messages box, each name with its own tick box, one list for all characters or each its own (built, 0.10.286)
 - Tooltips: choose whose names are read (NPCs, friends, guildmates, outside major cities, or all) (built, 0.10.286)
+- A sound for each of them: one of the game's own, a Windows sound or your own file (built, 0.10.287; a return point)
 
 ## Still to come
 

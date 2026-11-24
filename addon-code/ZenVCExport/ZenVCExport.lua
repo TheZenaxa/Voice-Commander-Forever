@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "206"
+local VERSION = "207"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -278,7 +278,28 @@ do
         if type(ZenVCExportDB) == "table" then ZenVCExportDB._resLook = { at = date("%H:%M:%S"), guid = g:match("^(GameObject%-%d+%-%d+%-%d+%-%d+%-%d+)") or g, name = n } end   -- for checking it works
         pcall(ZenVCMsg.add, "|cff2ee6d6" .. line .. "|r")
         if ZENVC_RESOURCES_READ and ZenVCMsg.queue then pcall(ZenVCMsg.queue, line) end
+        RC.play(type(ZENVC_RESSOUNDS) == "table" and ZENVC_RESSOUNDS[n:lower()])   -- v207 its sound
     end
+    -- v207 (2026-11-25, user: "a sound per type"; "choice is king"): one of the game's own sounds (by its name in the game's sound list), or a sound file VCF
+    -- put in this add-on's "sounds" folder (a Windows sound or the player's own)
+    function RC.play(token)
+        if type(token) ~= "string" or token == "" then return end
+        pcall(function()
+            local file = token:match("^file:([%w_%-]+%.mp3)$")
+            if file then PlaySoundFile("Interface\\AddOns\\ZenVCExport\\sounds\\" .. file, "Master") return end
+            local id = SOUNDKIT and SOUNDKIT[token]
+            if id then PlaySound(id, "Master") end
+        end)
+    end
+    -- the sound picked last in VCF, played once after the reload so it can be heard in the game (once per pick)
+    local tryF = CreateFrame("Frame"); pcall(tryF.RegisterEvent, tryF, "PLAYER_ENTERING_WORLD")
+    tryF:SetScript("OnEvent", function()
+        local t = ZENVC_RESSOUND_TRY
+        if type(t) ~= "string" or type(ZenVCExportDB) ~= "table" or ZenVCExportDB._resSoundTried == t then return end
+        ZenVCExportDB._resSoundTried = t
+        local tok = t:match("^(.-)|")
+        if C_Timer and C_Timer.After then C_Timer.After(4, function() RC.play(tok) end) else RC.play(tok) end
+    end)
     local acc = 0
     local rf = CreateFrame("Frame")
     rf:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.25 then return end; acc = 0; pcall(RC.tick) end)

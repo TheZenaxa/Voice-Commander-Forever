@@ -5,6 +5,29 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.287 and VCFI 0.10.289 (RETURN POINT; sounds for ore, herbs and more)
+
+Published 2026-11-24 09:45 US Mountain Standard Time
+
+**RETURN POINT: if a later version gives you trouble, come back to this one.** Download the two files below, run the setup, and your settings are kept.
+
+
+**Sounds for ore, herbs and other things in front of you**
+- Control Panel, ORE, HERBS AND OTHER THINGS IN FRONT OF YOU: beside each name, a sound played with its cue. Choose one of the game's own sounds, a Windows sound from your PC, or your own sound file (.wav or .mp3). Every name starts on "No sound".
+- PLAY beside it plays a Windows sound or your own on your PC, so you can hear it before choosing. The game's own sounds play only in the game.
+- After choosing, you hear it once in the game: after /RELOAD twice for a game sound. A Windows sound or your own file is copied into the helper add-on's folder, and the game only finds a new file after you close it and start it again.
+- One set of sounds for all your characters.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `fb35646157d7ce6d742d42ea9f5d29aa1ab69b7e2c7bcda89912f8abd65dc4e5`
+- VCFI.SETUP.exe: `5a4e6ccb5179a0e2c685a2c7c26597750bc599fae0decb786d491b0e80a50f5d`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.286 and VCFI 0.10.288 (ore and herbs in front of you, names on tooltips)
 
 Published 2026-11-24 09:38 US Mountain Standard Time
