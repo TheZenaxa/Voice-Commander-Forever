@@ -49,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "207"
+local VERSION = "215"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCFI's Control Panel (ZENVCI_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -208,6 +208,7 @@ do
         for _, m in ipairs(last) do
             local x = tostring(m):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
             x = x:gsub("^%s*VCFI?:%s*", "")
+            x = x:gsub("^%d+%s+%S+%s+%d+%s*[:\239\188\154]+%s*", "")   -- v212 (user: "3 of 58 ... can be confusing and shouldnt be read"): a MOVE line's position
             t[#t + 1] = x
         end
         B.speak(table.concat(t, " "))
@@ -245,6 +246,79 @@ do
         pcall(ZenVCIMsg.add, "|cff" .. c .. msg .. "|r")
         if type(ZenVCIExportDB) == "table" and ZenVCIExportDB._progressRead and ZenVCIMsg.queue then pcall(ZenVCIMsg.queue, msg) end
     end)
+end
+-- v216 (2026-11-25, user: "make the players little triangle arrow thing able to be color picked? or maybe put a highlight color on it? on minimap, on quest log map,
+-- and on expanded map?"; "option to make the color pulse like 3x a second?"): a soft glow in the picked colour at the player's arrow: on the minimap (always its
+-- centre) and on the world map (the quest log map is the same map), at the player's position. Optional soft pulse (a fade, never a hard flash). Drawing only:
+-- the game's own arrow is not touched. What could be drawn is written down (DB._arrowLook).
+do
+    local AR = {}
+    ZenVCIArrow = AR
+    local function disc(parent, size)
+        local f = CreateFrame("Frame", nil, parent)
+        f:SetSize(size, size); f:EnableMouse(false)
+        local t = f:CreateTexture(nil, "OVERLAY"); t:SetAllPoints(f); t:SetColorTexture(1, 1, 1, 1)
+        local okMask = pcall(function()
+            local m = f:CreateMaskTexture(); m:SetAllPoints(t)
+            m:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+            t:AddMaskTexture(m)
+        end)
+        f.tex = t; f.round = okMask
+        return f
+    end
+    function AR.color()
+        local c = type(ZENVCI_ARROW) == "table" and type(ZENVCI_ARROW.color) == "string" and ZENVCI_ARROW.color:match("^%x%x%x%x%x%x$")
+        if not c then return nil end
+        return tonumber(c:sub(1, 2), 16) / 255, tonumber(c:sub(3, 4), 16) / 255, tonumber(c:sub(5, 6), 16) / 255
+    end
+    function AR.alpha(now)
+        local a = ZENVCI_ARROW
+        if not (a and a.pulse) then return 0.45 end
+        local hz = math.max(0.2, math.min(3, tonumber(a.hz) or 1.5))   -- never more than 3 a second
+        return 0.2 + 0.4 * (0.5 + 0.5 * math.sin(now * 2 * math.pi * hz))   -- a soft fade between 20% and 60%
+    end
+    function AR.tick()
+        local r, g, b = AR.color()
+        if not r then
+            if AR.mini then AR.mini:Hide() end
+            if AR.map then AR.map:Hide() end
+            return
+        end
+        local now = GetTime()
+        local al = AR.alpha(now)
+        -- the minimap: the arrow is always at its centre
+        if Minimap and Minimap:IsVisible() then
+            if not AR.mini then AR.mini = disc(Minimap, 30); AR.mini:SetPoint("CENTER", Minimap, "CENTER", 0, 0); AR.mini:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 5) end
+            AR.mini.tex:SetVertexColor(r, g, b, al); AR.mini:Show()
+        elseif AR.mini then AR.mini:Hide() end
+        -- the world map (and the quest log map): at the player's position on the map shown
+        local shown = false
+        pcall(function()
+            local wm = WorldMapFrame
+            if not (wm and wm:IsVisible() and wm.GetMapID and C_Map and C_Map.GetPlayerMapPosition) then return end
+            local child = wm.ScrollContainer and wm.ScrollContainer.Child
+            if not child then return end
+            local pos = C_Map.GetPlayerMapPosition(wm:GetMapID(), "player")
+            if not pos then return end
+            local x, y = pos:GetXY()
+            if not x or x <= 0 or y <= 0 then return end
+            if not AR.map then AR.map = disc(child, 40) end
+            if AR.map:GetParent() ~= child then AR.map:SetParent(child) end
+            local sc = (child.GetScale and child:GetScale()) or 1
+            AR.map:SetSize(40 / sc, 40 / sc)
+            AR.map:ClearAllPoints(); AR.map:SetPoint("CENTER", child, "TOPLEFT", x * child:GetWidth(), -y * child:GetHeight())
+            AR.map:SetFrameLevel((child:GetFrameLevel() or 1) + 50)
+            AR.map.tex:SetVertexColor(r, g, b, al); AR.map:Show(); shown = true
+        end)
+        if not shown and AR.map then AR.map:Hide() end
+        if not AR.looked and type(ZenVCIExportDB) == "table" then
+            AR.looked = true
+            ZenVCIExportDB._arrowLook = { at = date("%H:%M:%S"), minimap = AR.mini and true or false, round = AR.mini and AR.mini.round or false, pulse = (ZENVCI_ARROW and ZENVCI_ARROW.pulse) and true or false }
+        end
+    end
+    local acc = 0
+    local af = CreateFrame("Frame")
+    af:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.03 then return end; acc = 0; pcall(AR.tick) end)
 end
 -- v204 (2026-11-25, user: "any cue is better than none inre minimap resource"): RESOURCE CUES. The game's soft interact target (the same one that finds the
 -- fishing bobber) picks up things you can use in front of you; each new one (an ore vein, a herb, a chest ...) goes into the messages box as "<name> ahead",
@@ -286,9 +360,13 @@ do
         if type(token) ~= "string" or token == "" then return end
         pcall(function()
             local file = token:match("^file:([%w_%-]+%.mp3)$")
-            if file then PlaySoundFile("Interface\\AddOns\\ZenVCIExport\\sounds\\" .. file, "Master") return end
+            -- v211 (2026-11-25, user: "please do be careful of the volume"): on the game's Sound Effects channel, so the player's own effects volume sets it
+            if file then PlaySoundFile("Interface\\AddOns\\ZenVCIExport\\sounds\\" .. file, "SFX") return end
+            local fid = tonumber(token:match("^fid:(%d+)$"))   -- v214 a game sound file by its number (the murloc call)
+            if fid then PlaySoundFile(fid, "SFX") return end
             local id = SOUNDKIT and SOUNDKIT[token]
-            if id then PlaySound(id, "Master") end
+            if id then PlaySound(id, "SFX")
+            elseif ZenVCIMsg and ZenVCIMsg.add then pcall(ZenVCIMsg.add, "This game has no sound called " .. token .. ". Choose another in the Control Panel.") end   -- v211 never silent
         end)
     end
     -- the sound picked last in VCF, played once after the reload so it can be heard in the game (once per pick)
@@ -300,6 +378,19 @@ do
         local tok = t:match("^(.-)|")
         if C_Timer and C_Timer.After then C_Timer.After(4, function() RC.play(tok) end) else RC.play(tok) end
     end)
+    -- v209 (2026-11-25, user: "a sound audio preview when assigning sounds"): VCF's PLAY types /zvisound TOKEN; the sound plays at once. Private, plays only.
+    SLASH_ZENVCISOUND1 = "/zvisound"
+    SlashCmdList["ZENVCISOUND"] = function(msg)
+        local t = (msg or ""):match("^%s*([%w_:%.%-]+)%s*$")
+        -- v213 (user: "you dont record that in the log??"): every preview that arrives is written down, so a test shows whether it got in
+        if type(ZenVCIExportDB) == "table" then
+            local known = t and (t:find("^file:") or t:find("^fid:%d+$") or (SOUNDKIT and SOUNDKIT[t])) and true or false
+            local r = ZenVCIExportDB._soundPreview or {}; ZenVCIExportDB._soundPreview = r
+            r[#r + 1] = date("%H:%M:%S") .. " " .. tostring(t) .. (known and " played" or " no such sound in this game")
+            while #r > 30 do table.remove(r, 1) end
+        end
+        if t then RC.play(t) end
+    end
     local acc = 0
     local rf = CreateFrame("Frame")
     rf:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.25 then return end; acc = 0; pcall(RC.tick) end)
@@ -1166,6 +1257,10 @@ local function save()
     if ok and db and db.name then
         db.resNames = {}   -- v205 every name the resource cue has said (account-wide), for VCF's tick boxes
         for rn in pairs(type(ZenVCIExportDB._resNames) == "table" and ZenVCIExportDB._resNames or {}) do db.resNames[#db.resNames + 1] = rn end
+        db.soundKits = {}   -- v215 (user: only sounds that play on an alert list): which of VCF's game sound names this game has
+        for _, sk in ipairs({ "MAP_PING", "RAID_WARNING", "READY_CHECK", "TELL_MESSAGE", "IG_QUEST_LIST_COMPLETE", "ALARM_CLOCK_WARNING_3", "LOOT_WINDOW_COIN_SOUND", "IG_PLAYER_INVITE", "AUCTION_WINDOW_OPEN", "IG_MAINMENU_OPEN" }) do
+            if SOUNDKIT and SOUNDKIT[sk] then db.soundKits[#db.soundKits + 1] = sk end
+        end
         db.resNamesOwn = {}   -- v206 this character's own
         local own = type(ZenVCIExportDB._resNamesChar) == "table" and db.guid and ZenVCIExportDB._resNamesChar[db.guid]
         for rn in pairs(type(own) == "table" and own or {}) do db.resNamesOwn[#db.resNamesOwn + 1] = rn end
@@ -3536,8 +3631,9 @@ function RQ.trySpoken(kind, text)
     return true
 end
 function RQ.toggle()
-    -- v189 said again while SPOKEN reads: SPOKEN stops
-    if RQ.spokenAt and type(_G.Spoken) == "table" and type(Spoken.IsPlaying) == "function" and Spoken:IsPlaying() then
+    -- v189 said again while SPOKEN reads: SPOKEN stops. v208 (2026-11-25, user: SPOKEN's zone introduction "i was not able to stop it with command because
+    -- i didnt initiate it"): whenever SPOKEN is talking, whoever started it, "read quest" stops it at once
+    if type(_G.Spoken) == "table" and type(Spoken.IsPlaying) == "function" and Spoken:IsPlaying() then
         RQ.spokenAt = nil; RQ.spWait = nil; RQ.spStopping = true; pcall(Spoken.StopAll, Spoken); RQ.spStopping = nil; rqSay("reading stopped.") return
     end
     RQ.spokenAt = nil
@@ -3808,15 +3904,19 @@ local function tip()
         zvTip = CreateFrame("GameTooltip", "ZenVCITooltip", UIParent, "GameTooltipTemplate")
         -- v192 (user: "a READ button on the tooltip ... a paler version of our orange"): beside the box, never above it; only on the outline's own tooltip
         pcall(function()
+            -- v212 (2026-11-25, user: "too big ... covers buttons", "sticks out like a sore thumb being white block", "read tooltip. it needs to be specific"):
+            -- a dark fill like the tooltip, the pale orange as outline and lettering, a third smaller, never scaled up with the tooltip, the words to say on it
             local b = CreateFrame("Button", nil, zvTip, "BackdropTemplate")
-            b:SetSize(64, 24); b:SetPoint("TOPLEFT", zvTip, "TOPRIGHT", 4, 0)
+            b:SetPoint("TOPLEFT", zvTip, "TOPRIGHT", 4, 0)
             b:SetFrameStrata("TOOLTIP"); b:EnableMouse(true)
+            pcall(function() b:SetIgnoreParentScale(true); b:SetScale(UIParent:GetEffectiveScale()) end)
             if b.SetBackdrop then
                 b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-                b:SetBackdropColor(1, 0.769, 0.549, 1); b:SetBackdropBorderColor(0, 0, 0, 1)   -- #FFC48C
+                b:SetBackdropColor(0, 0, 0, 0.9); b:SetBackdropBorderColor(1, 0.769, 0.549, 1)   -- #FFC48C outline
             end
-            local fs = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-            fs:SetPoint("CENTER"); fs:SetText(QG.tr("READ")); fs:SetTextColor(0, 0, 0, 1)
+            local fs = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            fs:SetPoint("CENTER"); fs:SetText(QG.tr("READ")); fs:SetTextColor(1, 0.769, 0.549, 1)   -- #FFC48C lettering
+            b:SetSize(math.max(40, (fs:GetStringWidth() or 30) + 12), 16)
             b:SetScript("OnClick", function() if RQ and RQ.readOutlineTip then RQ.readOutlineTip() end end)
             zvTip:HookScript("OnUpdate", function(self) local want = not self.zvMirror; if b:IsShown() ~= want then b:SetShown(want) end end)
             zvTip.zvRead = b

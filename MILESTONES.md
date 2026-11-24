@@ -160,6 +160,14 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Tooltips: choose whose names are read (NPCs, friends, guildmates, outside major cities, or all) (built, 0.10.286)
 - A sound for each of them: one of the game's own, a Windows sound or your own file (built, 0.10.287; a return point)
 
+## Milestone 12: Arrow glow, a reorganised Control Panel, sounds for ore and herbs (25 November 2026)
+
+- A glow on your arrow on the minimap and the map, in a colour you pick, with an optional soft pulse (off to start; seizure warning in the installer, the panel and the FAQ) (built, 0.10.301)
+- The Control Panel reorganised: main groups with smaller tabs, ARRANGE, a path line, settings in tabs (VCF, built, 0.10.290 to 0.10.301)
+- Sounds for ore, herbs and other things: game sounds (a murloc too), Windows sounds or your own, each with its own volume (built)
+- "minimap in" and "minimap out", one to three steps (VCF, built)
+- "read quest" stops SPOKEN at once; "read tooltip" (VCF); Shift+F4 allowed as a key
+
 ## Still to come
 
 - VCFI: RENAME AN ITEM and the preset keys tested in the game

@@ -5,6 +5,56 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.301 and VCFI 0.10.301 (arrow glow, reorganised Control Panel, sounds for ore and herbs)
+
+Published 2026-11-24 16:07 US Mountain Standard Time
+
+**Health and safety**
+- The installer agreement now has a photosensitive seizure warning: the glow on your arrow can pulse, the pulse is off unless you switch it on, and you can switch it off at any time. The same warning sits beside the setting and in the FAQ.
+
+**Your arrow on the maps (new)**
+- A glow in a colour you pick on your arrow on the minimap and on the map (the quest log map too), so it is easy to find. Optional soft pulse: slow, medium or fast (about 3 times a second at most, a fade, never a hard flash). Off and colourless until you choose.
+
+**The Control Panel, reorganised (VCF; VCFI next)**
+- It opens with the middle empty. Pick a group on the left to see its commands; click it again to clear.
+- Main groups open into smaller tabs (Professions, Emotes, your character's groups, and Interaction, now split into nine). Each main tab and each smaller tab has its own Check all / Uncheck all.
+- ARRANGE moves the groups and the smaller tabs UP and DOWN (one order for all your characters).
+- A path line ("Commands > Interaction > Buying and selling") shows where you are; click a part to go back.
+- Settings sit in tabs: Listening, Audio, In the game, Colours, My commands, Characters, Help. What was heard stays in front.
+- A command whose name also appears in another group says where.
+- The /RELOAD and Open the control panel buttons on the MIC IS box have a bold outline that pulses gently; their colour can be picked (white on dark to start).
+- The character list's Update and Bring in buttons are gone: VCF reads every save by itself.
+- Drop-downs no longer change their choice when you scroll the page over them.
+
+**Ore, herbs and other things in front of you**
+- Each name can have a sound: a game sound (including a murloc), a Windows sound, or your own file. "Do Not Play Sound Cues Here" for silence on one name.
+- Game sounds play on your game's Sound Effects volume; Windows and your own sounds are made at a safe level and each has its own volume slider.
+- PLAY previews Windows and your own sounds on your PC. Game sounds cannot be previewed, but they work in the game after a /reload (FAQ).
+- The list only offers game sounds your game has.
+
+**Reading aloud**
+- The READ button beside the outline's tooltip is dark with a pale orange outline, smaller, and shows the words "read tooltip" (VCF), now also a spoken word.
+- "messages read" no longer reads the outline's position ("1 of 58").
+- "read quest" stops SPOKEN at once, whatever started it (a zone introduction too).
+
+**Keys and voice**
+- "minimap in" and "minimap out" (VCF), with one, two and three for a little, halfway and all the way.
+- Shift+F4 is now allowed as a key (F4 with Alt or Ctrl stays blocked).
+- SCAN AND REPAIR knows the newer parts: a key you chose that VCF also uses, two dedicated slots on one bar slot, a missing sound file, a stale "keep on a hidden key" tick.
+
+**FAQ**
+- When did this project begin? The Voice Commander project began on 6 March 2026.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `b10fc906370ab9a36b47c449948ffa3336cef63d2644c7084812aa451b841891`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.287 and VCFI 0.10.289 (RETURN POINT; sounds for ore, herbs and more)
 
 Published 2026-11-24 09:45 US Mountain Standard Time
