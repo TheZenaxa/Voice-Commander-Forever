@@ -5,6 +5,25 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.339 and VCFI 0.10.339 (GO TO in VCFI too, EXPERIMENTAL; numbers match again)
+
+Published 2026-11-25 16:09 US Mountain Standard Time
+
+- VCFI 0.10.329 to 0.10.338: NUMBER SKIPPED WITH INTENTION, so VCF and VCFI carry the same number again.
+- VCFI now has GO TO and the lighted path (EXPERIMENTAL), in every language, with everything VCF has: the World, Place, Person and Search list, learning as you play, the per-character choice of your own map or the one that comes with VCF, and the drop warnings. **If it causes any trouble, turn it off in the Control Panel: untick "Go to and the lighted path".**
+- Credits: with thanks to MapWise (version 3.0.11) by MaeX78, whose lighted routes on the minimap inspired our own version with a twist. No MapWise code or data is used.
+- VCFI's helper add-on is now 218, VCF's is 246. After installing, /RELOAD twice.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `7e49d3b1aacf154f1210277bdc5f8612c2606967f7c2a04480edaaee5ee4cc2f`
+- VCFI.SETUP.exe: `5fc6eff7b5064ebdbc38e8deecb05d63fb81131444154227ded8db4ec0d69273`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.338 and VCFI 0.10.328 (GO TO and the lighted path, EXPERIMENTAL)
 
 Published 2026-11-25 15:55 US Mountain Standard Time
