@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "246"
+local VERSION = "247"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -7537,7 +7537,7 @@ do
         for i = 1, #pts - 1 do left = left + math.sqrt(((pts[i + 1][1] - pts[i][1]) * w) ^ 2 + ((pts[i + 1][2] - pts[i][2]) * h) ^ 2) end
         local face = GetPlayerFacing and GetPlayerFacing() or 0
         if math.sqrt(((t.x - px) * w) ^ 2 + ((t.y - py) * h) ^ 2) < 6 then
-            say1("you are at the " .. t.name .. ". The path is off"); GT.target = nil; return
+            local line = "Destination reached: " .. t.name; say1(line); if ZenVCMsg and ZenVCMsg.queue then pcall(ZenVCMsg.queue, line) end; GT.target = nil; return   -- v247 (user: "a DESTINATION REACHED needs to be said when one reaches their location"), read aloud too
         end
         if now - (t.said or 0) > 12 then
             t.said = now

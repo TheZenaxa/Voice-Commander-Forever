@@ -5,6 +5,24 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.340 and VCFI 0.10.340 (GO TO says Destination reached)
+
+Published 2026-11-25 16:29 US Mountain Standard Time
+
+- GO TO (EXPERIMENTAL): when you reach the place, it says "Destination reached" with the place's name in the VCF messages box and reads it aloud, then turns the path off. In VCFI it is in your language.
+- If GO TO causes any trouble, turn it off in the Control Panel: untick "Go to and the lighted path".
+- Helper add-ons: VCF 247, VCFI 219. After installing, /RELOAD twice.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `89daa577c08994649cc134c1896f6225c3c56ddadce683f6e660b80faf114bea`
+- VCFI.SETUP.exe: `4eda934e5c76b0390ddda71bb307e6c6476193c448b652f5f375021591d2c411`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.339 and VCFI 0.10.339 (GO TO in VCFI too, EXPERIMENTAL; numbers match again)
 
 Published 2026-11-25 16:09 US Mountain Standard Time
