@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "218"
+local VERSION = "222"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -5000,7 +5000,7 @@ local function lightUp(list)
             else say1("this flight point has no button to press on this map") end
         end) end
         if mark.kind == "ah" then pcall(function()   -- v83
-            if e.noClick then aimKey("/click zenvcselect"); ahSelTarget = nil; say1(e.edit and "say {Select:select} to open the keypad for this box" or "to buy, say {Buy:buy}")   -- v84, v91, v94
+            if e.noClick then aimKey("/click zenvcselect"); ahSelTarget = nil; say1(e.edit and "say {Select:select} to open the keypad for this box" or e.hint or "to buy, say {Buy:buy}")   -- v84, v91, v94 (v219 own hint)
             else ahSelTarget = e.fr; aimKey("/click zenvcselect", "ZenVCAHSelect", e.fr) end
             -- v85 (2026-11-09, user): "accept" works as select while the outline is in the Auction House
             if e.noClick then aimKey("/click questframeacceptbutton") else aimKey("/click questframeacceptbutton", "ZenVCAHAccept", e.fr) end
@@ -5023,6 +5023,20 @@ local function lightUp(list)
         if mark.kind == "sbook" or mark.kind == "sbooktab" then pcall(function()   -- v178 a spellbook tab or page button: select is the game's own click on it
             if e.sbTab or e.sbPage then mailSelTarget = e.fr; aimKey("/click zenvcselect", "ZenVCMailSelect", e.fr)
             elseif mailSelTarget then aimKey("/click zenvcselect"); mailSelTarget = nil end
+        end) end
+        if mark.kind == "char" then pcall(function()   -- v222 a tab in the column at the character window's right edge: select is the game's own click
+            if e.charSide then
+                aimKey("/click zenvcselect", "ZenVCCharSide", e.fr); QG.charSideAim = true; QG.charSideFr = e.fr
+                -- after the click the panel changes and the gear slots leave the list: find the same tab again and keep the outline on it
+                local sc = _G.ZenVCCharSide
+                if sc and not sc.zvCharHook then sc.zvCharHook = true; sc:HookScript("OnClick", function()
+                    if C_Timer and C_Timer.After then C_Timer.After(0.15, function() pcall(function()
+                        if mark.kind ~= "char" or not QG.charOpen() then return end
+                        local l2 = QG.charSlots()
+                        for k, e2 in ipairs(l2) do if e2.fr == QG.charSideFr then mark.i = k; lightUp(l2) return end end
+                    end) end) end
+                end) end
+            elseif QG.charSideAim then aimKey("/click zenvcselect"); QG.charSideAim = nil end
         end) end
         if mark.kind == "mail" then pcall(function()   -- v95 a mailbox tab: select is the game's own click on it
             if e.mailTab or e.inRow or e.mailClose or e.mailOpenAll or e.mailPage then mailSelTarget = e.fr; aimKey("/click zenvcselect", "ZenVCMailSelect", e.fr)
@@ -5072,9 +5086,15 @@ local function lightUp(list)
             elseif e.sbTab or e.sbPage then   -- v178
                 t:SetText(tostring(e.name), 1, 1, 1)
                 t:AddLine(e.sbTab and "Say {Select:select} to open this tab. {Move My Box:move my box} goes back to the spells" or "Say {Select:select} to turn the page", 1, 0.74, 0.85, true)
+            elseif e.charSide then   -- v222 a tab at the window's right edge
+                t:SetText(tostring(e.name), 1, 1, 1)
+                t:AddLine("Say {Select:select} to open this panel", 1, 0.74, 0.85, true)
+            elseif e.charTab then   -- v220 a character pane side tab
+                t:SetText(tostring(e.name), 1, 1, 1)
+                t:AddLine("Say {Select:select} to open this tab", 1, 0.74, 0.85, true)
             elseif e.invSlot then   -- v177 a character pane slot
                 if e.empty then t:SetText(tostring(e.name), 1, 1, 1) else t:SetInventoryItem("player", e.invSlot) end
-                t:AddLine("To wear something here: say {Move My Box:move my box}, move to the item in your bags, then say {Use That:use that}", 1, 0.74, 0.85, true)
+                t:AddLine(e.empty and "To wear something here: say {Move My Box:move my box}, move to the item in your bags, then say {Use That:use that}" or "Say {Select:select} to take it off into your bags", 1, 0.74, 0.85, true)   -- v221, v222 (putting on stays use that)
             elseif e.gslot then   -- v104 a guild bank slot
                 if e.name == "empty" then t:Hide() return end
                 t:SetGuildBankItem(e.gtab, e.gslot)
@@ -5205,7 +5225,7 @@ local function lightUp(list)
             -- v72: our own "Equipped" boxes, then everything placed clear of the bags, the vendor and the screen edge
             local shown = {}
             local okCmp, errCmp = pcall(function()
-                if e.spellID or e.invSlot or e.sbSlot or e.sbTab or e.sbPage or e.talNode or e.talTab or e.name == "empty" or e.empty or (e.tradeLine and not (e.tradeP or e.tradeT)) or (e.mailLine and not (e.mailItem or e.inAtt)) then return end   -- v95
+                if e.spellID or e.charTab or e.charSide or e.invSlot or e.sbSlot or e.sbTab or e.sbPage or e.talNode or e.talTab or e.name == "empty" or e.empty or (e.tradeLine and not (e.tradeP or e.tradeT)) or (e.mailLine and not (e.mailItem or e.inAtt)) then return end   -- v95
                 for k, slot in ipairs(equippedFor(outlinedLink(e))) do
                     local f = zvCmp and zvCmp[k]
                     if f then
@@ -5275,7 +5295,7 @@ local function bagsOpen() return #bagSlots() > 0 end
 local CHAR_SLOTS = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot", "WristSlot",
     "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
     "MainHandSlot", "SecondaryHandSlot", "RangedSlot" }
-function QG.charOpen() return isUp("CharacterFrame") and isUp("PaperDollFrame") end
+function QG.charOpen() return isUp("CharacterFrame") end   -- v222: the whole window (the gear slots show only on its Character panel)
 function QG.charSlots()
     local list = {}
     if not QG.charOpen() then return list end
@@ -5294,6 +5314,65 @@ function QG.charSlots()
             end
         end
     end)
+    -- v220 (2026-11-24, user: "I couldn't use the right side vertical choices"): the side tabs on the right (Character Stats, Titles, Equipment
+    -- Manager), placed where they sit on screen, so "move right" from the right-hand slots reaches them. Select opens the tab.
+    pcall(function()
+        local fallback = { "Character Stats", "Titles", "Equipment Manager" }
+        for k = 1, 3 do
+            local tb = _G["PaperDollSidebarTab" .. k]
+            if tb and not (tb.IsForbidden and tb:IsForbidden()) and tb.IsVisible and tb:IsVisible() and tb:GetLeft() then
+                local nm
+                pcall(function()
+                    local sb = PAPERDOLL_SIDEBARS and PAPERDOLL_SIDEBARS[k]
+                    local n = sb and sb.name
+                    if type(n) == "function" then n = n() end
+                    if type(n) == "string" and n ~= "" then nm = n end
+                end)
+                list[#list + 1] = { fr = tb, charTab = true, tabID = (tb.GetID and tb:GetID()) or k, name = (nm or fallback[k]) .. " tab",
+                                    x = tb:GetLeft() or 0, y = tb:GetTop() or 0 }
+            end
+        end
+    end)
+    -- v222 (user: "the next one down is reputation ... skills ... statistics ... six of those"): the column of tabs outside the window's right edge.
+    -- Found by name (CharacterFrameTab1..10) and by place (any button of the window sitting past its right edge); each named by the game's own text.
+    pcall(function()
+        local cf = _G.CharacterFrame
+        local right = cf and cf.GetRight and cf:GetRight()
+        if not right then return end
+        local seen, found = {}, {}
+        local function nameOf(b)
+            local tx
+            for _, f in ipairs({ function() return b.GetText and b:GetText() end, function() return b.Text and b.Text.GetText and b.Text:GetText() end,
+                                 function() return b.tooltipText end, function() return b.tooltip end, function() return b.newbieText end,
+                                 function() local n = b.GetName and b:GetName(); return n and _G[n .. "Text"] and _G[n .. "Text"]:GetText() end }) do
+                local ok, v = pcall(f)
+                if ok and type(v) == "string" and v:find("%a") then tx = v break end
+            end
+            return tx
+        end
+        local function add(b)
+            if not b or seen[b] or (b.IsForbidden and b:IsForbidden()) or not (b.IsVisible and b:IsVisible()) or not b:GetLeft() then return end
+            if b:GetLeft() < right - 4 then return end
+            seen[b] = true; found[#found + 1] = b
+        end
+        for k = 1, 10 do add(_G["CharacterFrameTab" .. k]) end
+        local function scan(f, depth)
+            if depth > 2 then return end
+            for _, c in ipairs({ f:GetChildren() }) do
+                if c.GetObjectType and (c:GetObjectType() == "Button" or c:GetObjectType() == "CheckButton") then add(c) end
+                scan(c, depth + 1)
+            end
+        end
+        scan(cf, 0)
+        table.sort(found, function(a, b2) return (a:GetTop() or 0) > (b2:GetTop() or 0) end)
+        local rec = {}
+        for k, b in ipairs(found) do
+            local nm = nameOf(b)
+            list[#list + 1] = { fr = b, charSide = true, name = (nm or ("tab " .. k)) .. " tab", x = b:GetLeft() or 0, y = b:GetTop() or 0 }
+            rec[#rec + 1] = tostring(b.GetName and b:GetName() or "?") .. " = " .. tostring(nm)
+        end
+        if type(ZenVCExportDB) == "table" and #rec > 0 and not QG.charSideLooked then QG.charSideLooked = true; ZenVCExportDB._charSide = { at = date("%Y-%m-%d %H:%M:%S"), tabs = rec } end
+    end)
     return list
 end
 -- v177 left and right go to the slot beside it on screen (the other column), up and down to the one above or below, like the bags
@@ -5303,7 +5382,7 @@ function QG.charNeighbour(list, i, dir)
     if dir == "up" or dir == "down" then   -- the same as the bags: the nearest row above or below, then the nearest in that row
         local best, bestRowY, bestDx
         for k, e in ipairs(list) do
-            if (dir == "down" and cur.y - e.y > 6) or (dir == "up" and e.y - cur.y > 6) then
+            if ((dir == "down" and cur.y - e.y > 6) or (dir == "up" and e.y - cur.y > 6)) and (not e.charTab) == (not cur.charTab) and (not e.charSide) == (not cur.charSide) then   -- v220 tabs and slots keep to their own column (v222 the right-edge column too)
                 local rowDist, dx = math.abs(cur.y - e.y), math.abs(e.x - cur.x)
                 if not best or rowDist < bestRowY - 6 or (math.abs(rowDist - bestRowY) <= 6 and dx < bestDx) then best, bestRowY, bestDx = k, rowDist, dx end
             end
@@ -5319,6 +5398,35 @@ function QG.charNeighbour(list, i, dir)
         end
     end
     return best or i
+end
+-- v221 (2026-11-24, user: "select them move to bags"; "and move from bags to worn"): gear both ways while the character window is open.
+function QG.gearRec(t) t.at = date("%Y-%m-%d %H:%M:%S"); ZenVCExportDB._gearMove = t end
+-- a worn slot: take it off into the first bag with room (backpack first). Never in combat.
+function QG.gearOff(e)
+    local r = { from = tostring(e.name), acted = "nothing" }
+    pcall(function()
+        if InCombatLockdown() then say1("not in combat") r.acted = "in combat" return end
+        if e.empty then say1("that slot is empty") r.acted = "empty" return end
+        local free = (C_Container and C_Container.GetContainerNumFreeSlots) or GetContainerNumFreeSlots
+        local bag
+        for b = 0, 4 do
+            local n, kind = free(b)
+            if (n or 0) > 0 and (kind == nil or kind == 0) then bag = b break end
+        end
+        if not bag then say1("your bags are full: nothing was taken off") r.acted = "bags full" return end
+        local link = GetInventoryItemLink and GetInventoryItemLink("player", e.invSlot)
+        local item = (link and link:match("%[(.-)%]")) or "it"
+        PickupInventoryItem(e.invSlot)
+        if bag == 0 then PutItemInBackpack()
+        else
+            local inv = (C_Container and C_Container.ContainerIDToInventoryID and C_Container.ContainerIDToInventoryID(bag)) or (ContainerIDToInventoryID and ContainerIDToInventoryID(bag))
+            PutItemInBag(inv)
+        end
+        if CursorHasItem and CursorHasItem() then ClearCursor(); say1("it could not go in your bags") r.acted = "cursor cleared" return end
+        say1(item .. " is in your bags")
+        r.acted = "taken off into bag " .. bag; r.item = item
+    end)
+    QG.gearRec(r)
 end
 -- v178 the SPELLBOOK as an outline list: the category tabs (left to right), the spells on the page (each an entry with its spellbook number), Prev and Next page.
 -- Read only: names from the game's spellbook functions; nothing forbidden is touched.
@@ -5499,6 +5607,23 @@ local function taxiSlots()
     return list
 end
 local ahLowest = {}   -- v82: item ID -> lowest price seen in the first results list (read only)
+-- v219 the line of tabs (Buy, Sell, Auctions) under the lists, and the Sell screen shown now
+ZenVCAHS = { TABS = 1000 }
+function ZenVCAHS.sellFrame()
+    for _, k in ipairs({ "CommoditiesSellFrame", "ItemSellFrame" }) do
+        local f = _G.AuctionHouseFrame and AuctionHouseFrame[k]
+        if f and f.IsVisible and f:IsVisible() then return f, k end
+    end
+end
+function ZenVCAHS.inside(c, f)
+    local q = c
+    for _ = 1, 12 do
+        if not q then return false end
+        if q == f then return true end
+        q = q.GetParent and q:GetParent()
+    end
+    return false
+end
 local function ahSlots()
     local list = {}
     pcall(function()
@@ -5512,6 +5637,8 @@ local function ahSlots()
             end
         end
         walk(_G.AuctionHouseFrame, 0)
+        local sf = ZenVCAHS.sellFrame()   -- v219: the Sell screen is line 1 (left of the lists), so the lists move one along
+        local off = sf and 1 or 0
         -- v84 (2026-11-09, user: "cant get to search to click search"): the search row (favourites, search box, Search, Filter) is line 0, above the lists
         pcall(function()
             local bar = AuctionHouseFrame.SearchBar
@@ -5532,7 +5659,7 @@ local function ahSlots()
                 if depth > 9 then return end
                 for _, c in ipairs({ f:GetChildren() }) do
                     if c.IsVisible and c:IsVisible() then
-                        if c:GetObjectType() == "EditBox" and not seen[c] and c:GetLeft() then
+                        if c:GetObjectType() == "EditBox" and not seen[c] and c:GetLeft() and not (sf and ZenVCAHS.inside(c, sf)) then
                             seen[c] = true
                             local numeric = c.IsNumeric and c:IsNumeric()
                             list[#list + 1] = { fr = c, group = 0, name = numeric and "Quantity box" or "Text box", noClick = true, edit = c, x = c:GetLeft(), y = c:GetTop() or 0 }
@@ -5601,7 +5728,7 @@ local function ahSlots()
                         end
                     end)
                     if itemID and minPrice then ahLowest[itemID] = minPrice end
-                    list[#list + 1] = { fr = row, group = g, itemID = itemID, name = name or "a row", x = row:GetLeft() or 0, y = row:GetTop() or 0,
+                    list[#list + 1] = { fr = row, group = g + off, itemID = itemID, name = name or "a row", x = row:GetLeft() or 0, y = row:GetTop() or 0,
                         minPrice = minPrice, qty = qty,   -- v81
                         buyout = buyout, bid = bid, unit = unit, aqty = aqty,   -- v82
                         dataKeys = table.concat(keys, ","):sub(1, 300) }   -- v79 note only
@@ -5628,7 +5755,7 @@ local function ahSlots()
         -- v94 (2026-11-09, user: "the move function will not go to the BUY spot ... it should at least let me highlight the button"): the buttons of the
         -- buying screen (Buy Now, Buyout, Bid, Cancel ...) are one more line, to the right of the lists. Read only; pressing Buy is "buy that".
         pcall(function()
-            local g = #boxes + 1
+            local g = #boxes + off + 1
             for _, k in ipairs({ "CommoditiesBuyFrame", "ItemBuyFrame" }) do
                 local f = AuctionHouseFrame[k]
                 if f and f:IsVisible() then
@@ -5648,9 +5775,64 @@ local function ahSlots()
                 end
             end
         end)
+        -- v219 B: the Sell screen's own parts, line 1, top to bottom
+        if sf then pcall(function()
+            local seen = {}
+            local function put(f, name, kind)
+                if not (f and f.IsVisible and f:IsVisible() and f:GetLeft()) or seen[f] then return end
+                seen[f] = true
+                local e = { fr = f, group = 1, name = name, x = f:GetLeft(), y = f:GetTop() or 0, sell = true }
+                if kind == "edit" then e.noClick = true; e.edit = f
+                elseif kind == "read" then e.noClick = true; e.hint = "to put an item here, move to it in your bags and say {Select:select}"
+                else local off2 = f.IsEnabled and not f:IsEnabled(); if off2 then e.name = name .. " (not available now)" end end
+                list[#list + 1] = e
+            end
+            local item = "empty"
+            pcall(function()
+                local loc = sf.GetItem and sf:GetItem()
+                if loc and C_Item and C_Item.GetItemName then item = C_Item.GetItemName(loc) or item end
+            end)
+            local disp = sf.ItemDisplay
+            put(disp and (disp.ItemButton or disp), "Item to sell: " .. tostring(item), "read")
+            put(sf.QuantityInput and sf.QuantityInput.InputBox, "Quantity box", "edit")
+            local function money(m, what)
+                local mf = m and (m.MoneyInputFrame or m)
+                if not mf then return end
+                put(mf.GoldBox, what .. ", gold", "edit"); put(mf.SilverBox, what .. ", silver", "edit"); put(mf.CopperBox, what .. ", copper", "edit")
+            end
+            money(sf.PriceInput, "Price"); money(sf.SecondaryPriceInput, "Bid")
+            put(sf.PostButton, "Post", "button")
+            -- anything else on the Sell screen with words or a box (the game may differ from the names above)
+            local function scan(fr, depth)
+                if depth > 7 then return end
+                for _, c in ipairs({ fr:GetChildren() }) do
+                    if c.IsVisible and c:IsVisible() and not seen[c] then
+                        local ty = c.GetObjectType and c:GetObjectType()
+                        local tx = ty == "Button" and c.GetText and c:GetText()
+                        if ty == "EditBox" then put(c, (c.IsNumeric and c:IsNumeric()) and "Number box" or "Text box", "edit")
+                        elseif type(tx) == "string" and tx:find("%a") then put(c, tx, "button")
+                        else scan(c, depth + 1) end
+                    end
+                end
+            end
+            scan(sf, 0)
+        end) end
+        -- v219 A: the tabs at the bottom, their own line, left to right; select presses the tab
+        pcall(function()
+            local tabs = AuctionHouseFrame.Tabs or { _G.AuctionHouseFrameBuyTab, _G.AuctionHouseFrameSellTab, _G.AuctionHouseFrameAuctionsTab }
+            local fallback = { "Buy", "Sell", "Auctions" }
+            for k, t in ipairs(tabs) do
+                if t and t.IsVisible and t:IsVisible() and t:GetLeft() then
+                    local tx = t.GetText and t:GetText()
+                    if type(tx) ~= "string" or not tx:find("%a") then tx = fallback[k] or ("tab " .. k) end
+                    list[#list + 1] = { fr = t, group = ZenVCAHS.TABS, name = tx .. " tab", ahTab = true, x = t:GetLeft(), y = t:GetTop() or 0 }
+                end
+            end
+        end)
         table.sort(list, function(a, b)
             if a.group ~= b.group then return a.group < b.group end
-            if a.group == 0 then return a.x < b.x end   -- v84 the search row: left to right
+            if a.group == 0 or a.group == ZenVCAHS.TABS then return a.x < b.x end   -- v84 the search row: left to right (v219 the tabs too)
+            if a.y == b.y then return a.x < b.x end   -- v219 side by side (gold before silver): left to right
             return a.y > b.y
         end)
     end)
@@ -5680,6 +5862,26 @@ local function ahNeighbour(list, i, dir)
         if dir == "down" then return nearestIn(1, true) or i end
         return i
     end
+    -- v219 the tabs line: left / right along it, up back to the nearest row above, down stays
+    if cur.group == ZenVCAHS.TABS then
+        if dir == "left" or dir == "right" then
+            local k = i + (dir == "right" and 1 or -1)
+            if list[k] and list[k].group == ZenVCAHS.TABS then return k end
+            return i
+        end
+        if dir == "up" then
+            local best, bd
+            for k, e in ipairs(list) do
+                if e.group ~= ZenVCAHS.TABS and e.group ~= 0 then
+                    local d = math.abs(e.x - cur.x) + math.abs(e.y - cur.y)
+                    if not best or d < bd then best, bd = k, d end
+                end
+            end
+            return best or nearestIn(0) or i
+        end
+        say1("these are the tabs: move left or right")
+        return i
+    end
     if dir == "up" and not (list[i - 1] and list[i - 1].group == cur.group) then
         local k = nearestIn(0)
         if k then return k end
@@ -5687,6 +5889,16 @@ local function ahNeighbour(list, i, dir)
     if dir == "up" or dir == "down" then
         local k = i + (dir == "down" and 1 or -1)
         if list[k] and list[k].group == cur.group then return k end
+        if dir == "down" then   -- v219: past the end of a list, the tabs line
+            local best, bd
+            for k2, e in ipairs(list) do
+                if e.group == ZenVCAHS.TABS then
+                    local d = e.x   -- always the first tab (leftmost), the same place every time
+                    if not best or d < bd then best, bd = k2, d end
+                end
+            end
+            if best then return best end
+        end
         say1(dir == "down" and "end of this list" or "top of this list")   -- v85: scrolling is done by the list's own arrows (aimed keys)
         return i
     end
@@ -6409,6 +6621,7 @@ C_Timer.NewTicker(0.5, function()
         -- follows a change of tab
         if QG.profSel and not ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) then aimKey("/click zenvcselect"); QG.profSel = nil end   -- v130
         if QG.mapSel and not ((mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen())) then aimKey("/click zenvcselect"); QG.mapSel = nil end   -- v124
+        if QG.charSideAim and not (mark.kind == "char" and QG.charOpen()) then aimKey("/click zenvcselect"); QG.charSideAim = nil end   -- v222
         if mailSelTarget and not ((mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or ((mark.kind == "sbook" or mark.kind == "sbooktab") and QG.sbookOpen()) or (mark.kind == "taltab" and QG.talOpen())) then aimKey("/click zenvcselect"); mailSelTarget = nil end
         -- v98 (user: "it should only do that once MOVE START or START MOVE is initiated")
         if (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "pad" and (pad.from == "mail" or pad.from == "trade")) then
@@ -6834,6 +7047,33 @@ local function switchSideStep()
 end
 
 -- v48 "sell that": the outlined bag item, only at a vendor
+-- v219 C (user: option C): with the Auction House open, SELECT on a bag item puts it on the Sell screen, what the game's right-click does
+-- (AuctionHouseFrame:SetPostItem). Nothing is posted: Post is its own button on the Sell screen.
+function ZenVCAHS.post()
+    local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing" }
+    pcall(function()
+        local e = mark.kind == "bags" and bagSlots()[mark.i]
+        if not e then say1("move to the item in your bags first") rec.acted = "nothing outlined" return end
+        if e.name == "empty" then say1("that slot is empty") rec.acted = "empty slot" return end
+        local loc = ItemLocation and ItemLocation.CreateFromBagAndSlot and ItemLocation:CreateFromBagAndSlot(e.bag, e.slot)
+        rec.item = tostring(e.name); rec.hasLoc = loc and true or false
+        rec.setPostItem = type(AuctionHouseFrame and AuctionHouseFrame.SetPostItem)
+        if loc and C_AuctionHouse and C_AuctionHouse.IsSellItemValid then
+            local ok = C_AuctionHouse.IsSellItemValid(loc, false)
+            rec.valid = ok and true or false
+            if not ok then say1(tostring(e.name) .. " cannot be sold at the auction house") rec.acted = "not sellable" return end
+        end
+        if loc and AuctionHouseFrame and AuctionHouseFrame.SetPostItem then
+            AuctionHouseFrame:SetPostItem(loc)
+            say1(tostring(e.name) .. " is on the Sell screen. Set the price, then move to Post and say {Select:select}")
+            rec.acted = "put on the Sell screen"
+        else
+            say1("this game does not let VCF put an item on the Sell screen: right-click the item with the mouse")
+            rec.acted = "SetPostItem missing"
+        end
+    end)
+    ZenVCExportDB._ahSell = rec
+end
 local function sellThatStep()
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing" }
     pcall(function()
@@ -7238,16 +7478,34 @@ local function selectStep()
         else say1("say {Select:select} on your gold, silver or copper to open the number pad. To put in an item, say {Move My Box:move my box} and {Use That:use that}. {Finish Trade:finish trade} twice accepts") end
         return
     end
+    if mark.kind == "char" and QG.charOpen() then   -- v220 select on a side tab of the character pane opens it
+        local e = QG.charSlots()[mark.i]
+        if e and e.invSlot then QG.gearOff(e) return end   -- v221 a worn slot: take it off into the bags
+        if e and e.charTab then
+            local r2 = { at = date("%Y-%m-%d %H:%M:%S"), tab = tostring(e.name), id = e.tabID, how = "none" }
+            pcall(function()
+                if PaperDollFrame_SetSidebar then PaperDollFrame_SetSidebar(e.fr, e.tabID); r2.how = "PaperDollFrame_SetSidebar"
+                elseif e.fr.Click then e.fr:Click(); r2.how = "Click" end
+            end)
+            say1(tostring(e.name) .. " open")
+            ZenVCExportDB._charTab = r2
+            return
+        end
+    end
     if mark.kind == "ah" and ahOpen() then   -- v91: select on a search or quantity box opens the keypad
         local e = ahSlots()[mark.i]
         if e and e.edit then padOpen(e.edit, mark.i); lightUp(padSlots()) return end
-        if e and e.noClick then say1("to buy, say {Buy:buy}") return end   -- v94
+        if e and e.noClick then say1(e.hint or "to buy, say {Buy:buy}") return end   -- v94 (v219 own hint)
     end
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing", lines = {} }
     local function up(n) local fr = _G[n]; return fr and fr.IsVisible and fr:IsVisible() end
     pcall(function()
         if mark.kind == "bags" and isUp("MerchantFrame") then
             sellThatStep(); rec.acted = "vendor: sold the outlined bag item"
+            return
+        end
+        if mark.kind == "bags" and ahOpen() then   -- v219 C
+            ZenVCAHS.post(); rec.acted = "auction house: put the outlined bag item on the Sell screen"
             return
         end
         if merchantOpen() and mark.kind == "merchant" then

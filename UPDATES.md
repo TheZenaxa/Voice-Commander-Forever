@@ -5,6 +5,38 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.308 and VCFI 0.10.301 (Auction House selling, character window tabs, gear off by select, vowel check learns)
+
+Published 2026-11-24 18:42 US Mountain Standard Time
+
+This release changes VCF only. VCFI stays at 0.10.301.
+
+**Selling at the Auction House by voice (VCF)**
+- MOVE now reaches the Buy, Sell and Auctions tabs: "move down" past the end of a list lands on the first tab, "move left / right" goes along them, "select" opens one.
+- The Sell screen is its own line: the item to sell, the quantity, the price (gold, then silver) and Post. "select" on a box opens the number pad.
+- With the Auction House open, move to an item in your bags and say "select": it goes on the Sell screen, as a right-click does. Nothing is posted until you move to Post and say "select".
+
+**The character window (VCF)**
+- "select" on a worn slot takes it off into your bags (the backpack first). Not in combat; nothing is taken off when your bags are full. Putting gear on stays "use that" and your yes.
+- MOVE now reaches the small tabs at the top (Character Stats, Titles, Equipment Manager) and the column of tabs outside the window's right edge (Reputation and the others). "select" opens one, and the outline stays on that column.
+
+**The vowel check (VCF)**
+- It stops fewer of your own words: when it stops a command and you say it again within 8 seconds and it goes through, it learns the stopped one too. It also remembers your last 10 ways of saying each command instead of 5. Its limit is unchanged, so the talk it rightly stops stays stopped.
+
+**FAQ**
+- Can I sell at the Auction House by voice?
+- Can I take gear off and put it on by voice?
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `d4f42a1116e2bb42550abf4fdeb13bf2f8277505417fafa818ad0e742a10f6b4`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.303 and VCFI 0.10.301 (facing line, one-key minimap, arrow glow on the maps fixed)
 
 Published 2026-11-24 17:43 US Mountain Standard Time
