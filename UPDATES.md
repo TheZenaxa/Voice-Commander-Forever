@@ -5,6 +5,33 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.338 and VCFI 0.10.328 (GO TO and the lighted path, EXPERIMENTAL)
+
+Published 2026-11-25 15:55 US Mountain Standard Time
+
+**GO TO and the lighted path (EXPERIMENTAL)**
+- Say "go to" for a list: World, Place, Person, Search. Move and select as usual. Search takes the letter pad or dictation, and part of a name is enough.
+- Choosing a place lights a path on the minimap (and the big map) from your arrow to it, in the six capitals. The messages box says how far, which way next, and warns of a drop ahead.
+- It learns as you play: the places you use, the NPCs near you, the areas and the walkways you walk. Where nothing is learned yet the path is a straight line, replaced as you walk.
+- Each character chooses: learn its own map ("Learn paths from my own exploration"), or use the map that comes with VCF.
+- **If it causes any trouble, turn it off in the Control Panel: untick "Go to and the lighted path".** Then the helper does nothing at all for it.
+
+**Also in this release**
+- After "no" on the game's yes/no box, the outline goes back where it was.
+- Auction rows say: select to highlight it, then buy that.
+- "Say ..." lines are not read aloud unless you tick "Also read the Say lines aloud".
+- Quiet places for names read aloud, and the names choices are no longer indented ("Read every name, everywhere" is last and overrides the rest).
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `cdc22715487a00cd1897dc29f4b7b852f9e6b8eef34681f21051ece3e5d4d7da`
+- VCFI.SETUP.exe: `dc9fe61b0a21a6c82f7a7881678285be376983a30c33d57dc54ef7c19d5ddd7c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.328 and VCFI 0.10.328 (VCFI catches up, numbers match again)
 
 Published 2026-11-25 14:35 US Mountain Standard Time

@@ -180,6 +180,8 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 
 - VCFI caught up with VCF again: both are 0.10.328 (VCFI 0.10.320 to 0.10.327: number skipped with intention)
 
+- GO TO and a lighted path in the six capitals that learns as you play (VCF, EXPERIMENTAL, 0.10.329 to 0.10.338)
+
 ## Still to come
 
 - VCFI: RENAME AN ITEM and the preset keys tested in the game

@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "237"
+local VERSION = "246"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -5288,6 +5288,7 @@ local function lightUp(list)
             else
                 t:SetText(tostring(e.name))
                 if e.isBuy then t:AddLine("Say {Buy:buy that} on an auction row to buy it", 1, 0.74, 0.85, true) end   -- v234
+                if e.gotoHint then t:AddLine(e.gotoHint, 1, 0.74, 0.85, true) end   -- v238 the go to list
                 if e.ahRow then   -- v236 an auction row with no item number (the item's own auctions): the same shortcut
                     local ahf = _G.AuctionHouseFrame
                     if ahf and ((ahf.ItemBuyFrame and ahf.ItemBuyFrame:IsVisible()) or (ahf.CommoditiesBuyFrame and ahf.CommoditiesBuyFrame:IsVisible())) then
@@ -6266,6 +6267,13 @@ local function padClose(toBox)
     local box0 = pad.box
     pad.box = nil
     -- v118 (2026-11-11, user: "TARGETTED IF THERE IS A TARGET OTHERWISE OUR KEYBOARD FROM MAIL AND AH"): the name spelled on the keypad opens the whisper
+    if pad.from == "goto" then   -- v242 the go to search: Done runs it; an empty box waits (dictation is coming)
+        local q = box0 and box0.GetText and box0:GetText() or ""
+        mark.kind, mark.i = nil, 0
+        markerOff()
+        if toBox and q ~= "" then pcall(ZenVCGoto.searchRun, q) end
+        return
+    end
     if pad.from == "whisper" then
         local name = box0 and box0.GetText and (box0:GetText() or ""):gsub("%s+", "") or ""
         if box0 and box0.Hide then box0:Hide() end
@@ -6949,7 +6957,7 @@ C_Timer.NewTicker(0.5, function()
             end
         end
         if not mark.kind then lastPage = nil return end
-        local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "char" and QG.charOpen()) or ((mark.kind == "sbook" or mark.kind == "sbooktab") and QG.sbookOpen()) or ((mark.kind == "tal" or mark.kind == "taltab") and QG.talOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
+        local open = (mark.kind == "goto" and ZenVCGoto.isOpen()) or (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "char" and QG.charOpen()) or ((mark.kind == "sbook" or mark.kind == "sbooktab") and QG.sbookOpen()) or ((mark.kind == "tal" or mark.kind == "taltab") and QG.talOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
         if not open then mark.kind, mark.i = nil, 0; markerOff(); lastPage = nil return end
         if mark.kind == "sbook" or mark.kind == "sbooktab" then   -- v178 a new tab or page: the outline is drawn again on what is there now
             local l = QG.sbookSlots(); local sig = #l .. ":" .. tostring(l[QG.sbookFirst(l)] and l[QG.sbookFirst(l)].sbSlot)
@@ -6975,11 +6983,627 @@ function QG.rewardStart()
     lightUp(list)
     return true
 end
+-- v238 (2026-11-25, user: "a lighted path ... do all three horde major cities", "put Alliance major cities in here too", "it learns just as I play? rough idea
+-- will over time correct itself?", "a drop down list because it needs fewer keys ... GO TO spoken might put up the list", "the game should just recognize what
+-- city you are in and put her city locations in"): GO TO. "go to" opens a list (move up / down, select): World, Place, Person, Search ("Turn off the path" last, only while one is lit), then the places of the city
+-- you are in (or, with the Control Panel's tick, World > Continent > Zone > City > Place). Choosing a place lights a path on the minimap (and the world map)
+-- from your arrow to it. The path follows walkways the helper has LEARNED from where you walked in that city (your own positions, kept in this add-on's saved
+-- data); where nothing is learned yet it is a straight line, so it gets better as you play. A place's spot: a built-in one (marked rough) or the one you set
+-- with "Mark where I stand as ...". Drawing and reading only: nothing is clicked, moved or pressed for you.
+do
+    local GT = { lines = {}, rows = {} }
+    ZenVCGoto = GT
+    local CELL = 4   -- yards per learned cell
+    local CITIES = {
+        { id = 1456, name = "Thunder Bluff", zone = "Mulgore", cont = "Kalimdor", side = "Horde" },
+        { id = 1454, name = "Orgrimmar", zone = "Durotar", cont = "Kalimdor", side = "Horde" },
+        { id = 1458, name = "Undercity", zone = "Tirisfal Glades", cont = "Eastern Kingdoms", side = "Horde" },
+        { id = 1453, name = "Stormwind City", zone = "Elwynn Forest", cont = "Eastern Kingdoms", side = "Alliance" },
+        { id = 1455, name = "Ironforge", zone = "Dun Morogh", cont = "Eastern Kingdoms", side = "Alliance" },
+        { id = 1457, name = "Darnassus", zone = "Teldrassil", cont = "Kalimdor", side = "Alliance" },
+    }
+    local PLACES = { "Bank", "Auction House", "Flight Master", "Inn", "Mailbox", "Warrior Trainer", "Hunter Trainer", "Shaman Trainer", "Druid Trainer",
+        "Mage Trainer", "Priest Trainer", "Rogue Trainer", "Warlock Trainer", "Paladin Trainer", "Weapon Master", "First Aid Trainer", "Cooking Trainer",
+        "Fishing Trainer", "Blacksmithing Trainer", "Leatherworking Trainer", "Tailoring Trainer", "Mining Trainer", "Herbalism Trainer", "Alchemy Trainer",
+        "Enchanting Trainer", "Engineering Trainer", "Skinning Trainer", "Riding Trainer", "Stable Master", "Battlemasters", "Guild Master" }
+    -- built-in spots (map x, y from 0 to 1) are ROUGH until the player marks the real one; only a few are known
+    local ROUGH = {
+        [1456] = { ["Auction House"] = { 0.403, 0.520 }, ["Mailbox"] = { 0.450, 0.595 }, ["Inn"] = { 0.458, 0.646 }, ["Flight Master"] = { 0.470, 0.498 } },
+    }
+    -- v245 (user: "yes each release but having them checking to make their own, they are NOT using my pathing"): learning on = the player's own map only;
+    -- learning off = the shared map that comes with VCF (ZenVCGotoBase.lua), read only
+    local function db()
+        if GT.noLearn() and type(ZENVC_GOTO_BASE) == "table" then
+            ZENVC_GOTO_BASE.walk = ZENVC_GOTO_BASE.walk or {}; ZENVC_GOTO_BASE.spots = ZENVC_GOTO_BASE.spots or {}
+            return ZENVC_GOTO_BASE
+        end
+        ZenVCExportDB._goto = ZenVCExportDB._goto or { walk = {}, spots = {} }; return ZenVCExportDB._goto
+    end
+    local function cityOf(id) for _, c in ipairs(CITIES) do if c.id == id then return c end end end
+    function GT.here()
+        local id; pcall(function() id = C_Map.GetBestMapForUnit("player") end)
+        local c = id and cityOf(id)
+        if not c then return nil end
+        local pos; pcall(function() pos = C_Map.GetPlayerMapPosition(id, "player") end)
+        local x, y; if pos then x, y = pos:GetXY() end
+        if not x or x <= 0 then return c, nil end
+        return c, x, y
+    end
+    function GT.size(id)
+        local w, h; pcall(function() w, h = C_Map.GetMapWorldSize(id) end)
+        if not w or w <= 0 then w, h = 1000, 1000 end
+        return w, h
+    end
+    function GT.spot(id, name, px, py)
+        local s = db().spots[id] and db().spots[id][name]
+        if type(s) == "table" and type(s[1]) == "number" then return s[1], s[2], false end   -- an older single spot
+        if type(s) == "table" and s[1] then   -- v239 several (mailboxes, banks): the nearest to you
+            local best, bd
+            for _, q in ipairs(s) do local d = ((q[1] - (px or q[1])) ^ 2) + ((q[2] - (py or q[2])) ^ 2); if not bd or d < bd then best, bd = q, d end end
+            return best[1], best[2], false
+        end
+        local r = ROUGH[id] and ROUGH[id][name]
+        if r then return r[1], r[2], true end
+    end
+    -- learning: every walked cell, and the steps actually taken between cells (no jumps, so no cliff is ever crossed by the path)
+    local function key(ix, iy) return ix .. ":" .. iy end
+    function GT.learn()
+        local c, x, y = GT.here()
+        if not (c and x) then GT.lastCell = nil return end
+        local w, h = GT.size(c.id)
+        local ix, iy = math.floor(x * w / CELL), math.floor(y * h / CELL)
+        local k = key(ix, iy)
+        local wk = db().walk[c.id] or { cells = {}, steps = {}, n = 0 }; db().walk[c.id] = wk
+        if not wk.cells[k] then
+            if wk.n >= 8000 then return end
+            wk.cells[k] = true; wk.n = wk.n + 1
+        end
+        -- v241 (user: "can we detect elevation changes ... I have very bad depth perception", "if it is a ramp, the line hue color changes"): the height,
+        -- if this game gives it to add-ons (DB._goto.zLook says), and drops: a step taken while falling
+        local z
+        pcall(function() local _, _, zz = UnitPosition("player"); z = zz end)
+        local zl = db().zLook or { seen = 0, real = 0 }; db().zLook = zl
+        zl.seen = zl.seen + 1
+        if type(z) == "number" and z ~= 0 then
+            zl.real = zl.real + 1; zl.min = math.min(zl.min or z, z); zl.max = math.max(zl.max or z, z)
+            wk.z = wk.z or {}; local q = wk.z[k] or { 0, 0 }; if q[2] < 50 then q[1], q[2] = q[1] + z, q[2] + 1 end; wk.z[k] = q
+        end
+        local falling = IsFalling and IsFalling()
+        local last = GT.lastCell
+        if last and last.id == c.id and last.k ~= k and math.abs(last.ix - ix) <= 3 and math.abs(last.iy - iy) <= 3 then
+            local a, b = last.k, k
+            wk.steps[a] = wk.steps[a] or {}; wk.steps[a][b] = true
+            wk.steps[b] = wk.steps[b] or {}; wk.steps[b][a] = true
+            if falling or last.falling then wk.drop = wk.drop or {}; wk.drop[a .. ">" .. b] = true end
+        end
+        GT.lastCell = { id = c.id, k = k, ix = ix, iy = iy, falling = falling }
+    end
+    -- v239 (user: "can the helper ... note the locations ... as I get to them? ... I dont want to have to micro manage this map learning thing"): a place is
+    -- learned when you use it (mailbox, bank, Auction House, flight master, stable, or talking to an NPC with a title such as Warrior Trainer or Innkeeper),
+    -- at the spot you stand on then; an area (Hunter Rise ...) is learned at the middle of where you walked in it
+    local TITLE = { ["Innkeeper"] = "Inn", ["Banker"] = "Bank", ["Auctioneer"] = "Auction House", ["Flight Master"] = "Flight Master", ["Wind Rider Master"] = "Flight Master",
+        ["Gryphon Master"] = "Flight Master", ["Hippogryph Master"] = "Flight Master", ["Bat Handler"] = "Flight Master", ["Stable Master"] = "Stable Master",
+        ["Battlemaster"] = "Battlemasters", ["Guild Master"] = "Guild Master", ["Weapon Master"] = "Weapon Master" }
+    function GT.learnPlace(name, quiet)
+        local c, x, y = GT.here()
+        if not (c and x and type(name) == "string" and name ~= "") then return end
+        local s = db().spots; s[c.id] = s[c.id] or {}
+        local l = s[c.id][name]
+        if type(l) ~= "table" or type(l[1]) == "number" then l = {} end
+        for _, q in ipairs(l) do
+            local w, h = GT.size(c.id)
+            if math.sqrt(((q[1] - x) * w) ^ 2 + ((q[2] - y) * h) ^ 2) < 15 then q[1], q[2] = x, y; s[c.id][name] = l; return end   -- the same one: the newest spot
+        end
+        if #l >= 5 then table.remove(l, 1) end
+        l[#l + 1] = { x, y }; s[c.id][name] = l
+        if not GT.toldNew then GT.toldNew = {} end
+        if not quiet and not GT.toldNew[c.id .. name] then GT.toldNew[c.id .. name] = true; pcall(say1, "go to learned: the " .. name .. " of " .. c.name) end
+    end
+    function GT.npcTitle()
+        local title
+        pcall(function()
+            if not GT.scan then GT.scan = CreateFrame("GameTooltip", "ZenVCGotoScan", nil, "GameTooltipTemplate"); GT.scan:SetOwner(WorldFrame, "ANCHOR_NONE") end
+            GT.scan:ClearLines(); GT.scan:SetUnit("npc")
+            for i = 2, math.min(3, GT.scan:NumLines()) do
+                local t2 = _G["ZenVCGotoScanTextLeft" .. i]; local tx = t2 and t2:GetText()
+                if type(tx) == "string" and tx ~= "" and not tx:find("^Level") then title = tx:gsub("^<", ""):gsub(">$", ""); break end
+            end
+        end)
+        return title
+    end
+    local EVT = { MAIL_SHOW = "Mailbox", BANKFRAME_OPENED = "Bank", AUCTION_HOUSE_SHOW = "Auction House", TAXIMAP_OPENED = "Flight Master", PET_STABLE_SHOW = "Stable Master" }
+    local ev = CreateFrame("Frame")
+    for e in pairs(EVT) do pcall(ev.RegisterEvent, ev, e) end
+    for _, e in ipairs({ "GOSSIP_SHOW", "TRAINER_SHOW", "MERCHANT_SHOW" }) do pcall(ev.RegisterEvent, ev, e) end
+    ev:SetScript("OnEvent", function(_, e)
+        if GT.off() or GT.noLearn() then return end
+        pcall(function()
+            if EVT[e] then GT.learnPlace(EVT[e]) return end
+            local t2 = GT.npcTitle()
+            if not t2 then return end
+            GT.learnPlace(TITLE[t2] or t2)
+        end)
+    end)
+    -- v240 (user: "cant this actually learn EVERYTHING? ... Why not learn everything?"): every NPC you come within about 10 yards of (target, mouse-over or
+    -- soft target), by name and by title, and every thing the soft target picks up near you (forge, anvil, mailbox ...); the newest spot wins
+    function GT.learnKind(kind, name)
+        local c, x, y = GT.here()
+        if not (c and x and type(name) == "string" and name ~= "") then return end
+        local k = db()[kind] or {}; db()[kind] = k
+        k[c.id] = k[c.id] or {}
+        local old = k[c.id][name]
+        k[c.id][name] = { x, y }
+        if not old and kind == "people" and GT.peopleNew then GT.peopleNew = GT.peopleNew + 1 end
+    end
+    function GT.learnNear()
+        local c = GT.here()
+        if not c then return end
+        for _, u in ipairs({ "target", "mouseover", "softinteract", "softfriend" }) do
+            pcall(function()
+                if not UnitExists(u) or UnitIsPlayer(u) then return end
+                local near = CheckInteractDistance and CheckInteractDistance(u, 3)
+                local g = UnitGUID(u) or ""
+                if g:find("^GameObject") then
+                    if u == "softinteract" then GT.learnKind("things", UnitName(u)) end   -- the soft target only reaches things close by
+                    return
+                end
+                if not near then return end
+                GT.learnKind("people", UnitName(u))
+                if not GT.scan then GT.scan = CreateFrame("GameTooltip", "ZenVCGotoScan", nil, "GameTooltipTemplate"); GT.scan:SetOwner(WorldFrame, "ANCHOR_NONE") end
+                GT.scan:ClearLines(); GT.scan:SetUnit(u)
+                local t2 = _G["ZenVCGotoScanTextLeft2"]; local tx = t2 and t2:GetText()
+                if type(tx) == "string" and tx ~= "" and not tx:find("^Level") then local tl = tx:gsub("^<", ""):gsub(">$", ""); GT.learnPlace(TITLE[tl] or tl, true) end
+            end)
+        end
+    end
+    function GT.learnArea()
+        local c, x, y = GT.here()
+        if not (c and x) then return end
+        local sub; pcall(function() sub = GetSubZoneText() end)
+        if type(sub) ~= "string" or sub == "" or sub == c.name then return end
+        local a = db().areas or {}; db().areas = a
+        a[c.id] = a[c.id] or {}
+        local r = a[c.id][sub] or { 0, 0, 0 }
+        if r[3] < 400 then r[1], r[2], r[3] = r[1] + x, r[2] + y, r[3] + 1 end
+        a[c.id][sub] = r
+    end
+    local function cellXY(k) local a, b = k:match("^(%-?%d+):(%-?%d+)$"); return tonumber(a), tonumber(b) end
+    local function nearest(wk, ix, iy, maxCells)
+        local best, bd
+        for k in pairs(wk.steps) do
+            local a, b = cellXY(k)
+            local d = (a - ix) ^ 2 + (b - iy) ^ 2
+            if d <= maxCells * maxCells and (not bd or d < bd) then best, bd = k, d end
+        end
+        return best
+    end
+    -- the route: learned steps from the cell nearest you to the cell nearest the place (A*), else a straight line; points in map x, y
+    function GT.route(id, px, py, tx, ty)
+        local w, h = GT.size(id)
+        local wk = db().walk[id]
+        local pts = { { px, py } }
+        local rough = true
+        if wk and next(wk.steps) then
+            local s = nearest(wk, math.floor(px * w / CELL), math.floor(py * h / CELL), 4)
+            local g = nearest(wk, math.floor(tx * w / CELL), math.floor(ty * h / CELL), 6)
+            if s and g then
+                local gx, gy = cellXY(g)
+                local open, came, cost, seen = { [s] = true }, {}, { [s] = 0 }, 0
+                local function est(k) local a, b = cellXY(k); return math.sqrt((a - gx) ^ 2 + (b - gy) ^ 2) end
+                while next(open) and seen < 20000 do
+                    local cur, cf
+                    for k in pairs(open) do local f = cost[k] + est(k); if not cf or f < cf then cur, cf = k, f end end
+                    if cur == g then break end
+                    open[cur] = nil; seen = seen + 1
+                    local ca, cb = cellXY(cur)
+                    for n in pairs(wk.steps[cur] or {}) do
+                        local na, nb = cellXY(n)
+                        local nc = cost[cur] + math.sqrt((na - ca) ^ 2 + (nb - cb) ^ 2)
+                        if not cost[n] or nc < cost[n] then cost[n] = nc; came[n] = cur; open[n] = true end
+                    end
+                end
+                if cost[g] then
+                    local chain, k = {}, g
+                    while k do table.insert(chain, 1, k); k = came[k] end
+                    local step = math.max(1, math.floor(#chain / 60))   -- at most about 60 corners drawn
+                    for i = 1, #chain, step do
+                        local a, b = cellXY(chain[i]); local q = { (a + 0.5) * CELL / w, (b + 0.5) * CELL / h }
+                        local zq = wk.z and wk.z[chain[i]]; if zq and zq[2] > 0 then q.z = zq[1] / zq[2] end
+                        local nk = chain[math.min(#chain, i + step)]
+                        if wk.drop then for j = i, math.min(#chain - 1, i + step - 1) do if wk.drop[chain[j] .. ">" .. chain[j + 1]] then q.drop = true end end end
+                        q.k = chain[i]; pts[#pts + 1] = q
+                    end
+                    rough = false
+                end
+            end
+        end
+        pts[#pts + 1] = { tx, ty }
+        return pts, rough
+    end
+    -- the list
+    function GT.isOpen() return GT.frame and GT.frame:IsShown() or false end
+    local function build(entries)
+        if not GT.frame then
+            GT.frame = CreateFrame("Frame", "ZenVCGotoList", UIParent)
+            GT.frame:SetFrameStrata("DIALOG")
+            local bg = GT.frame:CreateTexture(nil, "BACKGROUND"); bg:SetAllPoints(); bg:SetColorTexture(0, 0, 0, 0.85)
+        end
+        for _, r in ipairs(GT.rows) do r:Hide() end
+        local per = 14
+        GT.page = math.max(1, math.min(GT.page or 1, math.ceil(#entries / per)))
+        local first = (GT.page - 1) * per + 1
+        GT.lines = {}
+        local y = -6
+        for n = first, math.min(#entries, first + per - 1) do
+            local e = entries[n]
+            local r = GT.rows[n - first + 1]
+            if not r then
+                r = CreateFrame("Frame", nil, GT.frame); r:SetSize(360, 30)
+                r.t = r:CreateTexture(nil, "ARTWORK"); r.t:SetAllPoints(); r.t:SetColorTexture(0.18, 0.18, 0.18, 1)
+                r.fs = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge"); r.fs:SetPoint("LEFT", 8, 0)
+                GT.rows[n - first + 1] = r
+            end
+            r:ClearAllPoints(); r:SetPoint("TOPLEFT", GT.frame, "TOPLEFT", 6, y); r.fs:SetText(e.name); r:Show()
+            y = y - 34
+            GT.lines[#GT.lines + 1] = { fr = r, name = e.name, gotoHint = e.hint, go = e, x = 0, y = 0 }
+        end
+        GT.frame:SetSize(372, -y + 2)
+        GT.frame:ClearAllPoints(); GT.frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 300)
+        GT.frame:Show()
+        GT.all = entries
+    end
+    local function hintPlace(rough, known)
+        if not known then return "Not known yet: it is learned the first time you use it or talk to it" end
+        return "Say {Select:select} to light the path" .. (rough and " (a rough spot until you mark it)" or "")
+    end
+    function GT.placesFor(c)
+        local out = { { name = "Back", act = "first", hint = "Say {Select:select} to go back" } }
+        local names, seen = {}, {}
+        for n in pairs(db().spots[c.id] or {}) do if not seen[n] then seen[n] = true; names[#names + 1] = n end end
+        for n in pairs(ROUGH[c.id] or {}) do if not seen[n] then seen[n] = true; names[#names + 1] = n end end
+        table.sort(names)
+        for _, p in ipairs(names) do
+            local x, _, rough = GT.spot(c.id, p)
+            out[#out + 1] = { name = p, act = "place", city = c, place = p, hint = hintPlace(rough, x ~= nil) }
+        end
+        local function count(kind) local n = 0; for _ in pairs((db()[kind] or {})[c.id] or {}) do n = n + 1 end; return n end
+        local na = 0; for _, r in pairs((db().areas or {})[c.id] or {}) do if r[3] >= 5 then na = na + 1 end end
+        if count("people") > 0 then out[#out + 1] = { name = "People (" .. count("people") .. ")", act = "group", kind = "people", city = c, hint = "Say {Select:select} for everyone you have met here" } end
+        if na > 0 then out[#out + 1] = { name = "Areas (" .. na .. ")", act = "group", kind = "areas", city = c, hint = "Say {Select:select} for the areas you have walked" } end
+        if count("things") > 0 then out[#out + 1] = { name = "Things (" .. count("things") .. ")", act = "group", kind = "things", city = c, hint = "Say {Select:select} for forges, anvils and the like" } end
+        for _, p in ipairs(PLACES) do
+            if not seen[p] then out[#out + 1] = { name = p .. " (not known yet)", act = "place", city = c, place = p, hint = hintPlace(true, false) } end
+        end
+        out[#out + 1] = { name = "Mark where I stand as ...", act = "markmenu", city = c, hint = "Say {Select:select}, then choose which place you are standing at" }
+        return out
+    end
+    function GT.levels(level, val)
+        local out = { { name = "Back", act = "first", hint = "Say {Select:select} to go back" } }
+        local seen = {}
+        for _, c in ipairs(CITIES) do
+            local k = (level == "world" and c.cont) or (level == "cont" and c.cont == val and c.zone) or (level == "zone" and c.zone == val and c.name)
+            if k and not seen[k] then
+                seen[k] = true
+                out[#out + 1] = { name = k, act = (level == "world" and "cont") or (level == "cont" and "zone") or "city", val = k, city = c, hint = "Say {Select:select} to open it" }
+            end
+        end
+        return out
+    end
+    function GT.first(c)
+        local out = {
+            { name = "World", act = "worldtop", hint = "Say {Select:select} for World, Continent, Zone, City, Place" },
+            { name = c and ("Place: in " .. c.name) or "Place (you are not in a capital)", act = "here", city = c, hint = "Say {Select:select} for the places of the city you are in" },
+            { name = "Person", act = "persons", hint = "Say {Select:select} for everyone go to has learned, in any city" },
+            { name = "Search", act = "search", hint = "Say {Select:select} to open the letter pad, or then say {Dictation:dictation} and speak a name" },
+        }
+        if GT.target then out[#out + 1] = { name = "Turn off the path to " .. GT.target.name, act = "stop", hint = "Say {Select:select} to turn the path off" } end
+        return out
+    end
+    -- everything learned, in every city: { name, city, x, y, kind }
+    function GT.everything(kinds)
+        local out = {}
+        for _, c in ipairs(CITIES) do
+            if kinds.places then
+                for n in pairs((db().spots or {})[c.id] or {}) do local x, y = GT.spot(c.id, n); if x then out[#out + 1] = { name = n, city = c, x = x, y = y } end end
+                for n, r in pairs(ROUGH[c.id] or {}) do if not ((db().spots or {})[c.id] or {})[n] then out[#out + 1] = { name = n, city = c, x = r[1], y = r[2], rough = true } end end
+            end
+            for _, kind in ipairs({ "people", "things" }) do
+                if kinds[kind] then for n, s in pairs((db()[kind] or {})[c.id] or {}) do out[#out + 1] = { name = n, city = c, x = s[1], y = s[2] } end end
+            end
+            if kinds.areas then for n, r in pairs((db().areas or {})[c.id] or {}) do if r[3] >= 5 then out[#out + 1] = { name = n, city = c, x = r[1] / r[3], y = r[2] / r[3] } end end end
+        end
+        table.sort(out, function(a, b) if a.name == b.name then return a.city.name < b.city.name end return a.name < b.name end)
+        return out
+    end
+    function GT.listOf(items, empty)
+        local here = GT.here()
+        local out = { { name = "Back", act = "first", hint = "Say {Select:select} to go back" } }
+        for _, it in ipairs(items) do
+            out[#out + 1] = { name = it.name .. ((here and here.id == it.city.id) and "" or (" (" .. it.city.name .. ")")), act = "to", item = it,
+                hint = "Say {Select:select} to light the path" .. ((here and here.id == it.city.id) and "" or (": it shows when you are in " .. it.city.name)) }
+        end
+        if #items == 0 then out[#out + 1] = { name = empty, act = "first", hint = "Say {Select:select} to go back" } end
+        return out
+    end
+    function GT.searchBox()
+        if not GT.sbox then
+            GT.sbox = CreateFrame("EditBox", "ZenVCGotoSearchBox", UIParent, "InputBoxTemplate")
+            GT.sbox:SetSize(300, 32); GT.sbox:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 620); GT.sbox:SetAutoFocus(false)
+            GT.sbox:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+            GT.sbox:SetScript("OnEditFocusLost", function(self) local q = self:GetText() or ""; if q ~= "" then pcall(GT.searchRun, q) end end)   -- after dictation
+        end
+        return GT.sbox
+    end
+    -- the pad's Done (or the end of dictation): the matches in every city
+    function GT.searchRun(q)
+        if GT.sbox then GT.sbox:Hide(); GT.sbox:SetText("") end
+        q = (q or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+        if q == "" then return end
+        local hits = {}
+        for _, it in ipairs(GT.everything({ places = true, people = true, things = true, areas = true })) do if it.name:lower():find(q, 1, true) then hits[#hits + 1] = it end end
+        GT.page = 1; build(GT.listOf(hits, "nothing found for " .. q)); mark.kind, mark.i = "goto", (#hits > 0 and 2 or 1); lightUp(GT.lines)
+        say1(#hits .. " found for " .. q .. ". {Move Down:move down} and say {Select:select}")
+    end
+    function GT.openList()
+        if GT.off() then say1("go to is switched off. Tick Go to and the lighted path in the Control Panel to use it") return end
+        if InCombatLockdown() then say1("not in combat, please.") return end
+        -- v242 (user: "in the GOTO command, it goes to list of WORLD, PLACE, PERSON, SEARCH BAR ... if world then it follows the PATH I SAID EARLIER, otherwise
+        -- it is location you are in, and if search it can be anywhere, and if person it can be anywhere"; "like mailbox")
+        local c = GT.here()
+        GT.page = 1
+        build(GT.first(c))
+        mark.kind, mark.i = "goto", 1
+        lightUp(GT.lines)
+        say1("go to: World, Place, Person or Search" .. (GT.target and ", and Turn off the path at the end" or "") .. ". {Move Down:move down} and say {Select:select}")
+    end
+    function GT.close() if GT.frame then GT.frame:Hide() end; if mark.kind == "goto" then mark.kind, mark.i = nil, 0; markerOff() end end
+    function GT.move(dir)
+        local step = (dir == "up" or dir == "left") and -1 or 1
+        local want = mark.i + step
+        if want > #GT.lines then
+            if (GT.page * 14) < #GT.all then GT.page = GT.page + 1; build(GT.all); mark.i = 1; lightUp(GT.lines) return end
+            say1("end of the list") want = #GT.lines
+        elseif want < 1 then
+            if GT.page > 1 then GT.page = GT.page - 1; build(GT.all); mark.i = #GT.lines; lightUp(GT.lines) return end
+            say1("top of the list") want = 1
+        end
+        mark.i = want
+        lightUp(GT.lines)
+    end
+    function GT.pick()
+        local l = GT.lines[mark.i]; local e = l and l.go
+        if not e then return end
+        if e.act == "stop" then GT.target = nil; GT.close(); say1("the path is off") return end
+        if e.act == "first" then GT.page = 1; build(GT.first(GT.here())); mark.i = 1; lightUp(GT.lines) return end
+        if e.act == "worldtop" then GT.page = 1; build(GT.levels("world")); mark.i = 1; lightUp(GT.lines) return end
+        if e.act == "here" then
+            if not e.city then say1("you are not in one of the six capitals: choose World, Person or Search") return end
+            GT.page = 1; build(GT.placesFor(e.city)); mark.i = 1; lightUp(GT.lines) return
+        end
+        if e.act == "persons" then GT.page = 1; build(GT.listOf(GT.everything({ people = true }), "nobody learned yet")); mark.i = 1; lightUp(GT.lines) return end
+        if e.act == "search" then
+            local box = GT.searchBox(); box:SetText(""); box:Show(); box:ClearFocus()
+            GT.close()
+            padOpen(box, nil, "goto")
+            lightUp(padSlots())
+            say1("search: spell it on the letter pad and say Done, or say {Dictation:dictation} and speak it, then {Stop Dictation:stop dictation}")
+            return
+        end
+        if e.act == "to" then
+            local it = e.item
+            GT.target = { id = it.city.id, name = it.name, city = it.city.name, x = it.x, y = it.y, rough = it.rough, said = 0 }
+            GT.close()
+            local here = GT.here()
+            say1("path to " .. it.name .. ((here and here.id == it.city.id) and "" or (": it is in " .. it.city.name .. ", the path shows when you are there")))
+            return
+        end
+        if e.act == "cont" then GT.page = 1; build(GT.levels("cont", e.val)); mark.i = 1; lightUp(GT.lines) return end
+        if e.act == "zone" then GT.page = 1; build(GT.levels("zone", e.val)); mark.i = 1; lightUp(GT.lines) return end
+        if e.act == "city" then GT.page = 1; build(GT.placesFor(e.city)); mark.i = 1; lightUp(GT.lines) return end
+        if e.act == "markmenu" then
+            local out = { { name = "Back", act = "city", city = e.city, hint = "Say {Select:select} to go back" } }
+            for _, p in ipairs(PLACES) do out[#out + 1] = { name = p, act = "mark", city = e.city, place = p, hint = "Say {Select:select} to save where you stand as the " .. p } end
+            GT.page = 1; build(out); mark.i = 1; lightUp(GT.lines) return
+        end
+        if e.act == "mark" then
+            local c, x, y = GT.here()
+            if not (c and x and c.id == e.city.id) then say1("stand in " .. e.city.name .. " to mark a spot there") return end
+            GT.learnPlace(e.place)
+            GT.close(); say1("saved: the " .. e.place .. " of " .. c.name .. " is where you stand") return
+        end
+        if e.act == "group" then
+            local out = { { name = "Back", act = "city", city = e.city, hint = "Say {Select:select} to go back" } }
+            local names = {}
+            for n, r in pairs((db()[e.kind] or {})[e.city.id] or {}) do if e.kind ~= "areas" or r[3] >= 5 then names[#names + 1] = n end end
+            table.sort(names)
+            for _, n in ipairs(names) do
+                out[#out + 1] = (e.kind == "areas") and { name = n, act = "area", city = e.city, area = n, hint = "Say {Select:select} to light the path to the middle of " .. n }
+                    or { name = n, act = "spot", kind = e.kind, city = e.city, place = n, hint = "Say {Select:select} to light the path" }
+            end
+            GT.page = 1; build(out); mark.i = 1; lightUp(GT.lines) return
+        end
+        if e.act == "spot" then
+            local s = ((db()[e.kind] or {})[e.city.id] or {})[e.place]
+            if not s then return end
+            GT.target = { id = e.city.id, name = e.place, city = e.city.name, x = s[1], y = s[2], rough = false, said = 0 }
+            GT.close(); say1("path to " .. e.place .. ". It turns off when you get there") return
+        end
+        if e.act == "area" then
+            local r = ((db().areas or {})[e.city.id] or {})[e.area]
+            if not (r and r[3] > 0) then return end
+            GT.target = { id = e.city.id, name = e.area, city = e.city.name, x = r[1] / r[3], y = r[2] / r[3], rough = false, said = 0 }
+            GT.close(); say1("path to " .. e.area .. ". It turns off when you get there") return
+        end
+        if e.act == "place" then
+            local _, hx, hy = GT.here()
+            local x, y, rough = GT.spot(e.city.id, e.place, hx, hy)
+            if not x then say1("the " .. e.place .. "'s spot is not known yet: stand at it, say {Go To:go to} and choose Mark where I stand") return end
+            GT.target = { id = e.city.id, name = e.place, city = e.city.name, x = x, y = y, rough = rough, said = 0 }
+            GT.close()
+            say1("path to the " .. e.place .. (rough and " (rough spot)" or "") .. ". It turns off when you get there")
+        end
+    end
+    -- the lighted path on the minimap and the world map
+    local DIAM = { outdoor = { 466 + 2 / 3, 400, 333 + 1 / 3, 266 + 2 / 3, 200, 133 + 1 / 3 }, indoor = { 300, 240, 180, 120, 80, 50 } }
+    local function holder(parent) local f = CreateFrame("Frame", nil, parent); f:SetSize(1, 1); f:EnableMouse(false); f.l = {}; return f end
+    local function hex(v, d) v = type(v) == "string" and v:match("^%x%x%x%x%x%x$") or d; return { tonumber(v:sub(1, 2), 16) / 255, tonumber(v:sub(3, 4), 16) / 255, tonumber(v:sub(5, 6), 16) / 255 } end
+    local function drawPath(f, pts, now, u, r, g, b, al)
+        local cfg = type(ZENVC_GOTO) == "table" and ZENVC_GOTO or {}
+        local HUE = { up = hex(cfg.up, "ff993d"), down = hex(cfg.down, "b48cff"), drop = hex(cfg.drop, "ff4d4d") }
+        local segs, total = {}, 0
+        for i = 1, #pts - 1 do
+            local a, c = pts[i], pts[i + 1]
+            local len = math.sqrt((c[1] - a[1]) ^ 2 + (c[2] - a[2]) ^ 2)
+            if len > 0 then segs[#segs + 1] = { a = a, c = c, s = total, len = len, hue = a.hue and HUE[a.hue] }; total = total + len end
+        end
+        local dash, period = 7 * u, 13 * u
+        local n = 0
+        local d = -period + (now * 24 * u) % period
+        while d < total and n < 120 do
+            local d0, d1 = math.max(d, 0), math.min(d + dash, total)
+            for _, sg in ipairs(segs) do
+                local s0, s1 = math.max(d0, sg.s), math.min(d1, sg.s + sg.len)
+                if s1 > s0 then
+                    n = n + 1
+                    local ln = f.l[n]; if not ln then ln = f:CreateLine(nil, "OVERLAY"); ln:SetColorTexture(1, 1, 1, 1); f.l[n] = ln end
+                    local t0, t1 = (s0 - sg.s) / sg.len, (s1 - sg.s) / sg.len
+                    ln:SetStartPoint("CENTER", f, sg.a[1] + (sg.c[1] - sg.a[1]) * t0, sg.a[2] + (sg.c[2] - sg.a[2]) * t0)
+                    ln:SetEndPoint("CENTER", f, sg.a[1] + (sg.c[1] - sg.a[1]) * t1, sg.a[2] + (sg.c[2] - sg.a[2]) * t1)
+                    local hc = sg.hue
+                    ln:SetThickness((hc and 5 or 4) * u); ln:SetVertexColor(hc and hc[1] or r, hc and hc[2] or g, hc and hc[3] or b, al); ln:Show()
+                end
+            end
+            d = d + period
+        end
+        for k = n + 1, #f.l do f.l[k]:Hide() end
+        f:Show()
+    end
+    local function color()
+        local c = type(ZENVC_GOTO) == "table" and type(ZENVC_GOTO.color) == "string" and ZENVC_GOTO.color:match("^%x%x%x%x%x%x$") or "2ee6d6"
+        return tonumber(c:sub(1, 2), 16) / 255, tonumber(c:sub(3, 4), 16) / 255, tonumber(c:sub(5, 6), 16) / 255
+    end
+    local function where(face, ex, ny)   -- a direction in words from yards east / north
+        local fwdE, fwdN = -math.sin(face), math.cos(face)
+        local rightE, rightN = math.cos(face), math.sin(face)
+        local f, rt = ex * fwdE + ny * fwdN, ex * rightE + ny * rightN
+        local ang = math.deg(math.atan2(rt, f))
+        if math.abs(ang) <= 25 then return "ahead" elseif math.abs(ang) >= 150 then return "behind you"
+        elseif ang > 0 then return ang < 70 and "ahead and to the right" or "to your right" else return ang > -70 and "ahead and to the left" or "to your left" end
+    end
+    function GT.off() return type(ZENVC_GOTO) == "table" and ZENVC_GOTO.off end
+    -- v244 (user: "LEARN PATHS FROM MY OWN EXPLORATION and use pathing even for unknown areas ... folks can choose which way their map learns")
+    function GT.noLearn()   -- v246 each character's own choice (by its ID), else the default
+        local g = type(ZENVC_GOTO) == "table" and ZENVC_GOTO or nil
+        if not g then return false end
+        local c = type(g.nolearnc) == "table" and UnitGUID and g.nolearnc[UnitGUID("player") or ""]
+        if c ~= nil then return c end
+        return g.nolearn and true or false
+    end
+    function GT.noRough() return type(ZENVC_GOTO) == "table" and ZENVC_GOTO.norough end
+    function GT.tick()
+        if GT.off() then GT.target = nil; if GT.mini then GT.mini:Hide() end; if GT.map then GT.map:Hide() end; return end   -- v241 switched off in the Control Panel
+        if not GT.noLearn() then
+            pcall(GT.learn)
+            GT.areaAcc = (GT.areaAcc or 0) + 1
+            if GT.areaAcc >= 20 then GT.areaAcc = 0; pcall(GT.learnArea); pcall(GT.learnNear) end   -- about once a second
+        end
+        local t = GT.target
+        if not t then if GT.mini then GT.mini:Hide() end; if GT.map then GT.map:Hide() end; return end
+        local c, px, py = GT.here()
+        if not (c and px and c.id == t.id) then if GT.mini then GT.mini:Hide() end; if GT.map then GT.map:Hide() end; return end
+        local w, h = GT.size(t.id)
+        local now = GetTime()
+        if not GT.routeAt or now - GT.routeAt > 1.5 then GT.pts, GT.rough = GT.route(t.id, px, py, t.x, t.y); GT.routeAt = now end
+        if GT.rough and GT.noRough() then   -- v244 only known walkways: nothing drawn where none is known
+            if GT.mini then GT.mini:Hide() end; if GT.map then GT.map:Hide() end
+            if not t.toldRough then t.toldRough = true; say1("no known path to " .. t.name .. " yet. Tick Use pathing even for unknown areas in the Control Panel for a straight line") end
+            return
+        end
+        local pts = GT.pts or { { px, py }, { t.x, t.y } }
+        pts[1] = { px, py }
+        for i = 1, #pts - 1 do
+            local a, c2 = pts[i], pts[i + 1]
+            a.hue = nil
+            if a.drop then a.hue = "drop"
+            elseif a.z then
+                local far = pts[math.min(#pts, i + 3)]
+                if far and far.z and far ~= a then
+                    local run = math.sqrt(((far[1] - a[1]) * w) ^ 2 + ((far[2] - a[2]) * h) ^ 2)
+                    if run > 3 and math.abs(far.z - a.z) / run > 0.15 then a.hue = (far.z > a.z) and "up" or "down" end
+                end
+            end
+        end
+        local left = 0
+        for i = 1, #pts - 1 do left = left + math.sqrt(((pts[i + 1][1] - pts[i][1]) * w) ^ 2 + ((pts[i + 1][2] - pts[i][2]) * h) ^ 2) end
+        local face = GetPlayerFacing and GetPlayerFacing() or 0
+        if math.sqrt(((t.x - px) * w) ^ 2 + ((t.y - py) * h) ^ 2) < 6 then
+            say1("you are at the " .. t.name .. ". The path is off"); GT.target = nil; return
+        end
+        if now - (t.said or 0) > 12 then
+            t.said = now
+            local nx, ny = pts[2] and pts[2][1] or t.x, pts[2] and pts[2][2] or t.y
+            local msg = t.name .. ": " .. math.floor(left + 0.5) .. " yards. Next: " .. where(face, (nx - px) * w, -(ny - py) * h)
+            for i = 1, math.min(#pts - 1, 6) do   -- a slope or a drop in the next stretch
+                local hu = pts[i].hue
+                if hu then msg = msg .. ((hu == "drop" and ". A drop ahead") or (hu == "up" and ". The way goes up ahead") or ". The way goes down ahead"); break end
+            end
+            say1(msg)
+        end
+        local r, g, b = color()
+        if Minimap and Minimap:IsVisible() then
+            if not GT.mini then GT.mini = holder(Minimap); GT.mini:SetPoint("CENTER", Minimap, "CENTER", 0, 0); GT.mini:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 5) end
+            local zoom = (Minimap:GetZoom() or 0) + 1
+            local diam = (IsIndoors and IsIndoors() and DIAM.indoor or DIAM.outdoor)[zoom] or 300
+            local rad = Minimap:GetWidth() / 2
+            local s = rad / (diam / 2)   -- pixels per yard
+            local rot = GetCVar and GetCVar("rotateMinimap") == "1"
+            local mp = {}
+            for i, p in ipairs(pts) do
+                local ex, ny = (p[1] - px) * w, -(p[2] - py) * h
+                local sx, sy = ex, ny
+                if rot then sx, sy = ex * math.cos(face) + ny * math.sin(face), -ex * math.sin(face) + ny * math.cos(face) end
+                sx, sy = sx * s, sy * s
+                local dd = math.sqrt(sx * sx + sy * sy)
+                local lim = rad - 6
+                if dd > lim and i > 1 then
+                    local prev = mp[#mp]
+                    local ax, ay = prev[1], prev[2]
+                    local t0 = 1
+                    for k = 1, 20 do local tt = k / 20; local qx, qy = ax + (sx - ax) * tt, ay + (sy - ay) * tt; if qx * qx + qy * qy > lim * lim then t0 = (k - 1) / 20 break end end
+                    mp[#mp + 1] = { ax + (sx - ax) * t0, ay + (sy - ay) * t0 }
+                    break
+                end
+                mp[#mp + 1] = { sx, sy, hue = p.hue }
+            end
+            drawPath(GT.mini, mp, now, 1, r, g, b, 1)
+        elseif GT.mini then GT.mini:Hide() end
+        local shown = false
+        pcall(function()
+            local wm = WorldMapFrame
+            if not (wm and wm:IsVisible() and wm.GetMapID and wm:GetMapID() == t.id) then return end
+            local child = wm.ScrollContainer and wm.ScrollContainer.Child
+            if not child then return end
+            if not GT.map then GT.map = holder(child) end
+            if GT.map:GetParent() ~= child then GT.map:SetParent(child) end
+            GT.map:ClearAllPoints(); GT.map:SetPoint("CENTER", child, "TOPLEFT", px * child:GetWidth(), -py * child:GetHeight())
+            GT.map:SetFrameLevel((child:GetFrameLevel() or 1) + 60)
+            local u = 1 / ((child.GetScale and child:GetScale()) or 1)
+            local mp = {}
+            for _, p in ipairs(pts) do mp[#mp + 1] = { (p[1] - px) * child:GetWidth(), -(p[2] - py) * child:GetHeight(), hue = p.hue } end
+            drawPath(GT.map, mp, now, u, r, g, b, 1); shown = true
+        end)
+        if not shown and GT.map then GT.map:Hide() end
+    end
+    local acc = 0
+    local gf = CreateFrame("Frame")
+    gf:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.05 then return end; acc = 0; pcall(GT.tick) end)
+end
 local function moveStep(dir)
     if EM.on then EM.nudge(dir) return end   -- v120 edit layout
     ZenVCExportDB._lastAct = date("%H:%M:%S") .. " move " .. tostring(dir) .. " (" .. tostring(mark.kind) .. ")"
     local rec = { at = date("%Y-%m-%d %H:%M:%S"), dir = dir, acted = "nothing" }
     pcall(function()
+        if mark.kind == "goto" and ZenVCGoto.isOpen() then ZenVCGoto.move(dir); rec.acted = "goto " .. mark.i return end   -- v238
         if mark.kind == "pad" and pad.frame and pad.frame:IsShown() then   -- v91
             local list = padSlots()
             mark.i = (mark.i == 0) and 1 or bagNeighbour(list, math.min(mark.i, #list), dir)
@@ -7707,6 +8331,7 @@ local function tipSizeStep(scale, word)
 end
 
 local function selectStep()
+    if mark.kind == "goto" and ZenVCGoto.isOpen() then ZenVCGoto.pick() return end   -- v238 the go to list
     if mark.kind == "proftab" and QG.profAny() then   -- v158 (2026-11-17, user: "Yes, try that"): the professions window itself shows the outlined tab
         local e = QG.profTabs()[mark.i]
         if not e then return end
@@ -8088,6 +8713,7 @@ local function ensureButton(b)
         ["/click zenvcmsgtextbig"] = function() ZenVCMsg.text(1) end,   -- v185
         ["/click zenvcmsgtextsmall"] = function() ZenVCMsg.text(-1) end,   -- v185
         -- v210 (2026-11-25, user: "and minimap zoom?"): one zoom step on the minimap, the same as its own + and - buttons
+        ["/click zenvcgoto"] = function() pcall(ZenVCGoto.openList) end,   -- v238 GO TO
         ["/click zenvcminimapzoom"] = function() pcall(function() local z, n = Minimap:GetZoom(), Minimap:GetZoomLevels(); Minimap:SetZoom(z > 0 and 0 or n - 1); if Minimap_UpdateZoomButtons then pcall(Minimap_UpdateZoomButtons) end end) end,   -- v217 one key: zoomed in at all = all the way out, else all the way in
         ["/click zenvcprogress"] = function() ZenVCExportDB._progressRead = (not ZenVCExportDB._progressRead) or nil; ZenVCMsg.progressSync(); say1(ZenVCExportDB._progressRead and "quest progress will be read aloud. Say {Progress Read:progress read} again to stop." or "quest progress will not be read aloud.") end,   -- v186 one word switches it
 
