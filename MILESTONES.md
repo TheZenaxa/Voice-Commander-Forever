@@ -168,6 +168,7 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Selling at the Auction House by voice: the tabs, the Sell screen, and select on a bag item (VCF, built, 0.10.304)
 - Taking gear off the character pane into your bags by select (VCF, built, 0.10.307)
 - The character window's tabs by voice: the small top tabs and the six tabs at its right (Character, Reputation, Skills, Player vs. Player, Currency, Statistics), opened by select (VCF, working, 0.10.306 to 0.10.314)
+- Tooltips brief mode (a tick box on the MIC IS box) and your own words under spell and item titles, in a colour you pick (VCF, built, 0.10.315)
 - The Control Panel reorganised: main groups with smaller tabs, ARRANGE, a path line, settings in tabs (VCF, built, 0.10.290 to 0.10.301)
 - Sounds for ore, herbs and other things: game sounds (a murloc too), Windows sounds or your own, each with its own volume (built)
 - "minimap": one key, all the way in or all the way out (VCF, built, 0.10.302)

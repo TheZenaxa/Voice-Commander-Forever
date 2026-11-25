@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "228"
+local VERSION = "229"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -2508,6 +2508,22 @@ function QG.word(name, fallback)
     local v = w and w[tostring(name):lower()]
     return (type(v) == "string" and v ~= "") and v or fallback
 end
+-- v229 (2026-11-24, user: "the activation word is below it NOT spoken and in high contrast color font of player choosing"): under a tooltip's title,
+-- the player's own words for the command of that name (a spell, an item ...), in their colour. Never read aloud (RQ.tipLines skips it).
+function QG.sayLine(t, add)
+    pcall(function()
+        local nm = t.GetName and t:GetName(); if not nm then return end
+        local l1 = _G[nm .. "TextLeft1"]
+        local title = l1 and l1.GetText and l1:GetText()
+        if type(title) ~= "string" or title == "" then return end
+        title = title:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
+        local w = QG.word(title, nil)
+        if not w then return end
+        local hex = type(ZENVC_TIP) == "table" and type(ZENVC_TIP.say) == "string" and ZENVC_TIP.say:match("^%x%x%x%x%x%x$") or "2ee6d6"
+        local r, g, b = tonumber(hex:sub(1, 2), 16) / 255, tonumber(hex:sub(3, 4), 16) / 255, tonumber(hex:sub(5, 6), 16) / 255
+        ;(add or t.AddLine)(t, 'Say "' .. w .. '"', r, g, b, true)
+    end)
+end
 -- 2026-11-11 (user: "IT NEEDS TO BE AGILE, PLAYERS CHANGE WORDING ALL THE TIME"): every hint writes a command as {Command Name:usual words}
 -- 2026-11-11: the game's language for the helper's own lines ("fr", "de", "es", "zh-CN", "zh-TW"), or false for English
 function QG.lang()
@@ -3847,7 +3863,7 @@ function RQ.tipLines(tt, titleOnly)
         local rt = r and r:IsShown() and r:GetText() or ""
         local line = rqClean(lt); local rl = rqClean(rt)
         if rl ~= "" then line = (line ~= "" and (line .. ", ") or "") .. rl end
-        if line ~= "" then out[#out + 1] = line end
+        if line ~= "" and not line:find('^Say "') then out[#out + 1] = line end   -- v229 the player's own words are shown, never read
     end
     return table.concat(out, ". ")
 end
@@ -3931,12 +3947,14 @@ function RQ.tipText()
     local cfg = ZENVC_TIPREAD
     if type(cfg) ~= "table" then return nil end
     local own = _G["ZenVCTooltip"]
-    if cfg.outline and own and own:IsShown() and not own.zvMirror then return "o:" .. RQ.tipLines(own, false), RQ.tipCount(own.zvBag, own.zvSlot) end
+    -- v229 (user: "if brief mode is not on, then full tooltip reading aloud, except the players chosen activation words; if brief mode ON then only title")
+    local brief = type(ZENVC_TIP) == "table" and ZENVC_TIP.brief and true or false
+    if cfg.outline and own and own:IsShown() and not own.zvMirror then return "o:" .. RQ.tipLines(own, brief), RQ.tipCount(own.zvBag, own.zvSlot) end
     if cfg.all and GameTooltip and not (GameTooltip.IsForbidden and GameTooltip:IsForbidden()) and GameTooltip:IsShown() then
         local okU, _, unit = pcall(GameTooltip.GetUnit, GameTooltip)   -- v206 a player's or an NPC's tooltip: is this name wanted?
         if okU and unit and not RQ.nameOk(unit) then return nil end
         local ok, owner = pcall(GameTooltip.GetOwner, GameTooltip)
-        return "g:" .. RQ.tipLines(GameTooltip, ok and RQ.tipOnBar(owner)), ok and RQ.tipCount(RQ.tipOwnerSlot(owner)) or nil
+        return "g:" .. RQ.tipLines(GameTooltip, brief), ok and RQ.tipCount(RQ.tipOwnerSlot(owner)) or nil   -- v229 brief: the title only; off: all of it
     end
     return nil
 end
@@ -4089,9 +4107,19 @@ do
         pcall(function()
             if not gt or not gt:IsShown() then return end
             local t = tip()
-            if t:IsShown() and not t.zvMirror then return end   -- the outline's own tooltip is showing: it wins
+            if not t.zvAlphaHook then   -- v229 when our copy goes, the game's tooltip is seen again
+                t.zvAlphaHook = true
+                t:HookScript("OnHide", function() pcall(function() if QG.tipHid then QG.tipHid = nil; gt:SetAlpha(1) end end) end)
+            end
+            if t:IsShown() and not t.zvMirror then   -- the outline's own tooltip is showing: it wins (and the game's stays seen)
+                if QG.tipHid then QG.tipHid = nil; gt:SetAlpha(1) end
+                return
+            end
             local n = gt:NumLines() or 0
             if n == 0 then return end
+            -- v229 TOOLTIPS: BRIEF MODE: on an action bar button only the title (and the player's words under it)
+            local okO, owner = pcall(gt.GetOwner, gt)
+            if type(ZENVC_TIP) == "table" and ZENVC_TIP.brief and okO and RQ.tipOnBar(owner) then n = 1 end
             local scale = tonumber(ZenVCExportDB._tipScale) or 1
             t:SetOwner(UIParent, "ANCHOR_NONE")
             base.ClearLines(t)
@@ -4114,38 +4142,21 @@ do
                     else base.AddLine(t, lt, lr, lg, lb, true) end
                 end
             end
+            QG.sayLine(t, base.AddLine)   -- v229 the player's words, under the title
             t.zvMirror = true
             t:Show()
-            -- v162 (user: it "runs into the games tooltips when icons are near bottom area"). v163 (user): NEVER UP ("UP is a problem for vision (myopia)";
-            -- "I DONT WANT A BIG BOX I CANT READ SITTING UP HIGHER"): with the small or average box the copy is not shown in the bottom zone; the big box moves
-            -- SIDEWAYS (left, else right) at its usual height, only when it would really overlap. Only the mouse-over copy; the outline's box never changes.
-            pcall(function()
-                local ge, te = gt:GetEffectiveScale(), t:GetEffectiveScale()
-                local gl, gr, gb, gtop = gt:GetLeft(), gt:GetRight(), gt:GetBottom(), gt:GetTop()
-                local tl, tr, tb, ttop = t:GetLeft(), t:GetRight(), t:GetBottom(), t:GetTop()
-                if not (gl and gr and gb and gtop and tl and tr and tb and ttop) then return end
-                gl, gr, gb, gtop = gl * ge, gr * ge, gb * ge, gtop * ge
-                tl, tr, tb, ttop = tl * te, tr * te, tb * te, ttop * te
-                -- v163 (user: "if the mouse is at the bottom, on action bars down there, the tooltips are right down there too ... we dont need side by side
-                -- tooltips in that zone for people who can see the small or average well enough"): the game's tooltip in our box's height band = the bottom zone
-                if gb < ttop and gtop > tb and scale < 2 then t.zvMirror = nil; t:Hide() return end   -- small or average box: not shown in the bottom zone
-                if gl < tr and gr > tl and gb < ttop and gtop > tb then   -- big box, really overlapping: to the SIDE, never up (user: "NOT MOVE" = not up)
-                    local w = tr - tl
-                    local screenW = UIParent:GetWidth() * UIParent:GetEffectiveScale()
-                    local left = gl - 10 * te - w            -- where our box's left edge would be, to the LEFT of the game's tooltip
-                    local x
-                    if left >= 0 then x = left else x = gr + 10 * te end   -- no room on the left: to the right
-                    if x + w > screenW then x = math.max(0, screenW - w) end
-                    t:ClearAllPoints()
-                    t:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", x / te, tb / te)
-                end
-            end)
+            -- v229 (user: "add our mirror back in even at small and ave size and simply HIDE the game's tooltip if ours is active"): shown at every size,
+            -- in its own place (never moved up); the game's tooltip is made see-through (not closed) while ours shows, and seen again when ours goes.
+            pcall(function() gt:SetAlpha(0); QG.tipHid = true end)
         end)
     end
     local function later() if C_Timer and C_Timer.After then C_Timer.After(0, copy) else copy() end end   -- after the game has filled its tooltip
     if gt then
         gt:HookScript("OnShow", later)
-        gt:HookScript("OnHide", function() pcall(function() if zvTip and zvTip.zvMirror then zvTip.zvMirror = nil; zvTip:Hide() end end) end)
+        gt:HookScript("OnHide", function() pcall(function()
+            if QG.tipHid then QG.tipHid = nil; gt:SetAlpha(1) end   -- v229 the game's tooltip is never left see-through
+            if zvTip and zvTip.zvMirror then zvTip.zvMirror = nil; zvTip:Hide() end
+        end) end)
         if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall and TooltipDataProcessor.AllTypes then
             TooltipDataProcessor.AddTooltipPostCall(TooltipDataProcessor.AllTypes, function(tt) if tt == gt then later() end end)   -- the tooltip changed while shown
         end
@@ -5247,6 +5258,16 @@ local function lightUp(list)
             else
                 t:SetText(tostring(e.name))
             end
+            -- v229 (user: "since they share the same tooltip box, they should match"): Brief Mode shows the outline's box as its title only, too
+            if type(ZENVC_TIP) == "table" and ZENVC_TIP.brief then pcall(function()
+                local l1 = _G[t:GetName() .. "TextLeft1"]
+                local title = l1 and l1:GetText()
+                if type(title) == "string" and title ~= "" then
+                    local r, g, b = l1:GetTextColor()
+                    t:ClearLines(); t:SetText(title, r, g, b)
+                end
+            end) end
+            QG.sayLine(t)   -- v229 the player's words for this spell or item, under its title
             t:Show()
             -- v72: our own "Equipped" boxes, then everything placed clear of the bags, the vendor and the screen edge
             local shown = {}

@@ -5,6 +5,38 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.316 and VCFI 0.10.301 (tooltips brief mode, your words in tooltips)
+
+Published 2026-11-24 21:57 US Mountain Standard Time
+
+This release changes VCF only. VCFI stays at 0.10.301.
+
+**TOOLTIPS: BRIEF MODE (new, VCF)**
+- A tick box on the MIC IS box. The same switch is in the Control Panel (Settings > Audio > TOOLTIPS: BRIEF MODE); ticking one ticks the other.
+- On: every tooltip is read aloud by its title only, and the outline's box and an action bar button's tooltip show only the title, with your words for it underneath.
+- Off: tooltips are shown and read in full.
+- The Control Panel section TOOLTIPS READ ALOUD is now called TOOLTIPS: BRIEF MODE; reading aloud is described inside it.
+
+**Your words in tooltips (new, VCF)**
+- Under the title of any spell or item you have a voice command for, your own words for it, for example Say "stone claw". Never read aloud.
+- Pick their colour in Settings > Colours > YOUR WORDS IN TOOLTIPS.
+
+**The mouse tooltip copy (VCF)**
+- VCF's own copy of the tooltip now shows at every tooltip size, also near the action bars. While it shows, the game's own tooltip is made see-through, and it comes back as soon as VCF's copy goes.
+
+**Docs**
+- FAQ and glossary brought up to date: Select, Start move, Move my box (move focus), Minimap, Tooltips: brief mode.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `c3abcd33089b93e67ef02f52988d702f7a8016d8d86c5ea1a9e6a1e49c73f40c`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.314 and VCFI 0.10.301 (the character window's six tabs by voice)
 
 Published 2026-11-24 21:23 US Mountain Standard Time
