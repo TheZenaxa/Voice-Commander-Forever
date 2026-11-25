@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "247"
+local VERSION = "248"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.

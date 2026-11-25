@@ -5,6 +5,24 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.341 and VCFI 0.10.341 (GO TO map: first Thunder Bluff walkways)
+
+Published 2026-11-25 16:32 US Mountain Standard Time
+
+- GO TO (EXPERIMENTAL): the map that comes with VCF and VCFI now has its first walkways: Thunder Bluff, including the spiral tower up to the flight master. Players who untick "Learn paths from my own exploration" use it. It grows with each release.
+- If GO TO causes any trouble, turn it off in the Control Panel: untick "Go to and the lighted path".
+- Helper add-ons: VCF 248, VCFI 220. After installing, /RELOAD twice.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `4ec6a0fdd2dae836df076460bcc08ee2c23479884bb27a4a6bba4d1e868cf82d`
+- VCFI.SETUP.exe: `d46da45f957130fc5583fc3589d04a24709e0eec347348d213f3e46eb9d367ea`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.340 and VCFI 0.10.340 (GO TO says Destination reached)
 
 Published 2026-11-25 16:29 US Mountain Standard Time
