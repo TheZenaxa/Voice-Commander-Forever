@@ -5,7 +5,23 @@ Download the newest setup from the front page.
 
 ---
 
-## VCF 0.10.318 and VCFI 0.10.301 (tidier MIC IS box, cleanup)
+## VCF 0.10.319 and VCFI 0.10.301 (reload reminder for brief mode)
+
+Published 2026-11-24 22:28 US Mountain Standard Time
+
+VCF only. The return point stays VCF 0.10.318 and VCFI 0.10.301.
+
+- After you tick or untick TOOLTIPS: BRIEF MODE, the MIC IS box reminds you, in bold, to /RELOAD once.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `c400a6529ea14b1657b442c1780e25376e2b36bf62f085e2ade4aaa8ba8bdbcb`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
+## VCF 0.10.318 and VCFI 0.10.301 (RETURN POINT: tidier MIC IS box, cleanup)
 
 Published 2026-11-24 22:08 US Mountain Standard Time
 
@@ -25,6 +41,11 @@ To check a download is exactly the file published here: in Windows PowerShell, t
 - VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
 - READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
 - READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+**Virus scans (VirusTotal)**
+No security vendor flagged either installer.
+- VCF: https://www.virustotal.com/gui/file/9a7995c2e66b34f62bbaaafddaacd31fac612dfce6c4c1e045cac60f66d85497
+- VCFI: https://www.virustotal.com/gui/file/54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c
 
 ---
 
