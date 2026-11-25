@@ -5,6 +5,24 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.328 and VCFI 0.10.319 (clearer names choices)
+
+Published 2026-11-25 14:10 US Mountain Standard Time
+
+VCF only. VCFI stays 0.10.319.
+
+- The Control Panel's names choices are no longer indented under one box. "Read every name, everywhere" is now last, on its own, and says it ignores all the choices above (quiet places too). Untick it to use the quiet places.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `692d299b51bc095c14ff0936054fa08713a724ed89a57e2ed8b104cddeec12cb`
+- VCFI.SETUP.exe: `3f18ee77ea12031bdfa15894c86ec417a992f9d0dd2251f1b5555409175c1699`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.327 and VCFI 0.10.319 (dictation into boxes, Say lines, quiet places)
 
 Published 2026-11-25 14:00 US Mountain Standard Time
