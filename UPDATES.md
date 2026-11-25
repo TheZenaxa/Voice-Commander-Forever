@@ -5,6 +5,29 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.327 and VCFI 0.10.319 (dictation into boxes, Say lines, quiet places)
+
+Published 2026-11-25 14:00 US Mountain Standard Time
+
+- Dictation into mail and Auction House boxes now works, and the tooltip box shows the words as they are typed.
+- While dictating: a letter said by itself spells; letters said at a steady pace join into one word, a long pause starts a new word, and "space" types a space. "erase" takes off the last thing said, "clear" empties the box. In a box, number words become numbers and punctuation is left out.
+- A dictation key you choose in the Control Panel starts and stops dictation. It is only for dictation and never changes push to talk.
+- The letter pads have a 123 key for numbers and a Letters key back.
+- Tooltips: the "Say ..." lines now show in Brief Mode too. They are not read aloud unless you tick "Also read the Say lines aloud".
+- Mail: an opened mail puts the outline on its item; "select" or "get that" takes it.
+- Auction House: an auction row says "select to highlight it, then buy that". "move right" from a row goes to Buyout. After "no" on the game's box, the outline goes back where it was.
+- Quiet places: a list of cities and hubs (ticked to start: the six capitals, The Crossroads, Booty Bay, Gadgetzan, Ratchet) where other players' names are not read aloud. NPCs, friends and guildmates still are. "All names, always" now starts off.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `765faeab49200cf7ac8a8a410853914740e819bfcdeb1b81ae19c51be16c16e5`
+- VCFI.SETUP.exe: `3f18ee77ea12031bdfa15894c86ec417a992f9d0dd2251f1b5555409175c1699`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.319 and VCFI 0.10.319 (VCFI catches up, numbers match again)
 
 Published 2026-11-25 01:04 US Mountain Standard Time
