@@ -167,7 +167,7 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - The glow on your arrow now shows on the map and the quest log map (VCF, fixed, 0.10.303)
 - Selling at the Auction House by voice: the tabs, the Sell screen, and select on a bag item (VCF, built, 0.10.304)
 - Taking gear off the character pane into your bags by select (VCF, built, 0.10.307)
-- The character window's tabs reached by move (VCF, built, 0.10.306 to 0.10.308)
+- The character window's tabs by voice: the small top tabs and the six tabs at its right (Character, Reputation, Skills, Player vs. Player, Currency, Statistics), opened by select (VCF, working, 0.10.306 to 0.10.314)
 - The Control Panel reorganised: main groups with smaller tabs, ARRANGE, a path line, settings in tabs (VCF, built, 0.10.290 to 0.10.301)
 - Sounds for ore, herbs and other things: game sounds (a murloc too), Windows sounds or your own, each with its own volume (built)
 - "minimap": one key, all the way in or all the way out (VCF, built, 0.10.302)
@@ -185,3 +185,4 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Talents: spending a point by voice (built, pending testing, 0.10.309)
 - Gear sets (the Equipment Manager) by voice
 - The Legacy panel by voice
+- Moving inside the character window's panels (the currency list and the others)

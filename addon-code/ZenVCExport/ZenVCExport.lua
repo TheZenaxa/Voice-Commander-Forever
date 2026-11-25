@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "223"
+local VERSION = "228"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -5044,7 +5044,11 @@ local function lightUp(list)
             elseif mailSelTarget then aimKey("/click zenvcselect"); mailSelTarget = nil end
         end) end
         if mark.kind == "char" then pcall(function()   -- v222 a tab in the column at the character window's right edge: select is the game's own click
-            if e.charSide then
+            if e.charSide and not (e.fr.GetObjectType and (e.fr:GetObjectType() == "Button" or e.fr:GetObjectType() == "CheckButton")) then
+                -- v225 a Frame tab (like the profession tabs): select runs the helper's own select, which presses it the tab's own way
+                if QG.charSideAim then aimKey("/click zenvcselect"); QG.charSideAim = nil end
+                QG.charSideFr = e.fr
+            elseif e.charSide then
                 aimKey("/click zenvcselect", "ZenVCCharSide", e.fr); QG.charSideAim = true; QG.charSideFr = e.fr
                 -- after the click the panel changes and the gear slots leave the list: find the same tab again and keep the outline on it
                 local sc = _G.ZenVCCharSide
@@ -5317,7 +5321,61 @@ local function bagsOpen() return #bagSlots() > 0 end
 local CHAR_SLOTS = { "HeadSlot", "NeckSlot", "ShoulderSlot", "BackSlot", "ChestSlot", "ShirtSlot", "TabardSlot", "WristSlot",
     "HandsSlot", "WaistSlot", "LegsSlot", "FeetSlot", "Finger0Slot", "Finger1Slot", "Trinket0Slot", "Trinket1Slot",
     "MainHandSlot", "SecondaryHandSlot", "RangedSlot" }
-function QG.charOpen() return isUp("CharacterFrame") end   -- v222: the whole window (the gear slots show only on its Character panel)
+function QG.charOpen() return isUp("CharacterFrame") end
+-- v225 the six tabs beside the character window, found the professions way (named parts ending in "Tab", any frame type) and by place (a frame in the
+-- column just right of the window that reacts to a mouse press). Looked up once while the window stays open.
+function QG.charSideFind(cf)
+    if QG.charSideCache then
+        local okAll = true
+        for _, f in ipairs(QG.charSideCache) do if not (f.IsVisible and f:IsVisible()) then okAll = false end end
+        if okAll and #QG.charSideCache > 0 then return QG.charSideCache end
+    end
+    local found, seen = {}, {}
+    -- v226 the game's own names (log 20:50: CharacterFrameModeTab1-6): when they exist they are the tabs, and nothing else is taken
+    local named = {}
+    for k = 1, 10 do
+        local t = _G["CharacterFrameModeTab" .. k]
+        if t and t.IsVisible and t:IsVisible() and not (t.IsForbidden and t:IsForbidden()) and t.GetLeft and t:GetLeft() then t.zvId = k; named[#named + 1] = t end
+    end
+    if #named > 0 then QG.charSideCache = named; return named end
+    local right, top, bottom = cf:GetRight() or 0, cf:GetTop() or 0, cf:GetBottom() or 0
+    local function reacts(f)
+        local ok, r = pcall(function()
+            return (f.GetScript and (f:GetScript("OnMouseDown") or f:GetScript("OnMouseUp") or f:GetScript("OnClick"))) and true or false
+        end)
+        return ok and r
+    end
+    local function usable(f) return f and type(f) == "table" and f.IsVisible and not (f.IsForbidden and f:IsForbidden()) and f:IsVisible() and f.GetLeft and f:GetLeft() end
+    local function add(f, key) if usable(f) and not seen[f] then seen[f] = true; found[#found + 1] = { f = f, key = key } end end
+    -- (a) the window's named parts ending in "Tab" (ProfessionsFrame keeps its tabs this way)
+    pcall(function()
+        for k, v in pairs(cf) do
+            if type(k) == "string" and k:find("Tab%d*$") and not k:find("^PaperDollSidebar") and type(v) == "table" and v.GetObjectType then add(v, k) end
+        end
+    end)
+    -- (b) by place: frames in the column just right of the window that react to a mouse press (under the window, then anywhere under UIParent)
+    local n = 0
+    local function walk(f, depth)
+        if depth > 5 or n > 4000 then return end
+        local ok, kids = pcall(function() return { f:GetChildren() } end)
+        if not ok then return end
+        for _, c in ipairs(kids) do
+            n = n + 1
+            if usable(c) then
+                local l, t, w = c:GetLeft(), c:GetTop() or 0, c.GetWidth and c:GetWidth() or 0
+                if l >= right - 30 and l <= right + 160 and t <= top + 20 and t >= bottom - 20 and w >= 16 and w <= 90 and reacts(c) then add(c, nil)
+                else walk(c, depth + 1) end
+            end
+        end
+    end
+    pcall(walk, cf, 0)
+    if #found == 0 then pcall(walk, UIParent, 0) end
+    table.sort(found, function(a, b) return (a.f:GetTop() or 0) > (b.f:GetTop() or 0) end)
+    local out = {}
+    for _, e in ipairs(found) do out[#out + 1] = e.f; e.f.zvKey = e.key end
+    QG.charSideCache = out
+    return out
+end   -- v222: the whole window (the gear slots show only on its Character panel)
 function QG.charSlots()
     local list = {}
     if not QG.charOpen() then return list end
@@ -5366,18 +5424,49 @@ function QG.charSlots()
             local tx
             for _, f in ipairs({ function() return b.GetText and b:GetText() end, function() return b.Text and b.Text.GetText and b.Text:GetText() end,
                                  function() return b.tooltipText end, function() return b.tooltip end, function() return b.newbieText end,
+                                 function() return b.tip end, function() return b.tabName end, function() return b.name end,   -- v225
+                                 function() local k = b.zvKey; if k then k = k:gsub("Tab%d*$", ""):gsub("(%l)(%u)", "%1 %2"); return k ~= "" and k or nil end end,
                                  function() local n = b.GetName and b:GetName(); return n and _G[n .. "Text"] and _G[n .. "Text"]:GetText() end }) do
                 local ok, v = pcall(f)
                 if ok and type(v) == "string" and v:find("%a") then tx = v break end
             end
             return tx
         end
-        local function add(b)
+        local function add(b, byName)
             if not b or seen[b] or (b.IsForbidden and b:IsForbidden()) or not (b.IsVisible and b:IsVisible()) or not b:GetLeft() then return end
-            if b:GetLeft() < right - 4 then return end
+            if not byName and b:GetLeft() < right - 4 then return end   -- v224: the game's own tabs (by name) count wherever they sit
             seen[b] = true; found[#found + 1] = b
         end
-        for k = 1, 10 do add(_G["CharacterFrameTab" .. k]) end
+        for k = 1, 10 do add(_G["CharacterFrameTab" .. k], true) end
+        local okF, sideL = pcall(QG.charSideFind, cf)   -- v225 the professions way (its own guard)
+        if okF and type(sideL) == "table" then for _, f in ipairs(sideL) do add(f, true) end end
+        -- v224 once a session: every button of the character window, its name, place and words (READ ONLY), so the six tabs can be found by what they are
+        if not QG.charLooked and type(ZenVCExportDB) == "table" then pcall(function()   -- its own guard: the record never stops the tabs being found
+            QG.charLooked = true
+            local look = { at = date("%Y-%m-%d %H:%M:%S"), frame = string.format("left %d right %d top %d bottom %d", cf:GetLeft() or 0, right, cf:GetTop() or 0, cf:GetBottom() or 0), tabs = {}, buttons = {} }
+            for k = 1, 10 do
+                local t = _G["CharacterFrameTab" .. k]
+                if t then look.tabs[#look.tabs + 1] = string.format("CharacterFrameTab%d shown=%s left=%d top=%d text=%s", k, tostring(t.IsVisible and t:IsVisible()), t:GetLeft() or -1, t:GetTop() or -1, tostring(nameOf(t))) end
+            end
+            local n = 0
+            local function walk(f, depth)
+                if depth > 6 or n >= 90 then return end
+                for _, c in ipairs({ f:GetChildren() }) do
+                    if c.IsVisible and c:IsVisible() and not (c.IsForbidden and c:IsForbidden()) then
+                        local ty = c.GetObjectType and c:GetObjectType()
+                        if (ty == "Button" or ty == "CheckButton") and c:GetLeft() then
+                            n = n + 1
+                            local nm = c.GetName and c:GetName()
+                            if not nm and c.GetDebugName then local okD, d = pcall(c.GetDebugName, c); if okD then nm = d end end
+                            look.buttons[#look.buttons + 1] = string.format("%s left=%d top=%d w=%d text=%s", tostring(nm), c:GetLeft() or 0, c:GetTop() or 0, c:GetWidth() or 0, tostring(nameOf(c)))
+                        end
+                        walk(c, depth + 1)
+                    end
+                end
+            end
+            walk(cf, 0)
+            ZenVCExportDB._charLook = look
+        end) end
         local function scan(f, depth)
             if depth > 2 then return end
             for _, c in ipairs({ f:GetChildren() }) do
@@ -5394,6 +5483,14 @@ function QG.charSlots()
             rec[#rec + 1] = tostring(b.GetName and b:GetName() or "?") .. " = " .. tostring(nm)
         end
         if type(ZenVCExportDB) == "table" and #rec > 0 and not QG.charSideLooked then QG.charSideLooked = true; ZenVCExportDB._charSide = { at = date("%Y-%m-%d %H:%M:%S"), tabs = rec } end
+        if type(ZenVCExportDB) == "table" and not QG.charOutLooked then QG.charOutLooked = true; pcall(function()   -- v225 READ ONLY
+            local o = { at = date("%Y-%m-%d %H:%M:%S"), found = #found, list = {} }
+            for _, b in ipairs(found) do
+                local okD, dn = pcall(function() return (b.GetName and b:GetName()) or (b.GetDebugName and b:GetDebugName()) end)
+                o.list[#o.list + 1] = string.format("%s key=%s type=%s left=%d top=%d name=%s", tostring(okD and dn), tostring(b.zvKey), tostring(b.GetObjectType and b:GetObjectType()), b:GetLeft() or 0, b:GetTop() or 0, tostring(nameOf(b)))
+            end
+            ZenVCExportDB._charLookOut = o
+        end) end
     end)
     return list
 end
@@ -7090,6 +7187,18 @@ local function switchSideStep()
         lightUp(list)
         return
     end
+    -- v224 (user: "if the bags are open it goes to bags, if the bags are not it should go to the six tabs"): the character window
+    if mark.kind == "char" and QG.charOpen() then
+        local l = QG.charSlots()
+        local cur = l[mark.i]
+        if cur and cur.charSide then   -- from the six tabs back to the gear slots (when this panel has them)
+            for k, e in ipairs(l) do if e.invSlot then mark.i = k; lightUp(l) return end end
+            say1("these tabs are all there is on this panel: move up or down, say {Select:select} to open one") return
+        elseif not bagsOpen() then   -- bags closed: the six tabs
+            for k, e in ipairs(l) do if e.charSide then mark.i = k; lightUp(l) return end end
+            say1("the tabs at the right of the character window were not found; open your bags to go to them instead") return
+        end
+    end
     pcall(function()
         if mark.kind ~= "bags" then
             -- never opened from here: the game forbids an add-on opening bags in controller mode (v51)
@@ -7561,6 +7670,112 @@ local function selectStep()
     if mark.kind == "char" and QG.charOpen() then   -- v220 select on a side tab of the character pane opens it
         local e = QG.charSlots()[mark.i]
         if e and e.invSlot then QG.gearOff(e) return end   -- v221 a worn slot: take it off into the bags
+        if e and e.charSide then   -- v225 a tab beside the window: its own mouse press (the way the game's mouse does it)
+            if InCombatLockdown() then say1("not in combat") return end
+            local r2 = { at = date("%Y-%m-%d %H:%M:%S"), tab = tostring(e.name), how = {} }
+            local f = e.fr
+            local cf = _G.CharacterFrame
+            -- which panel shows now (the window's big visible parts)
+            local function shownPanel()
+                local out = {}
+                pcall(function()
+                    for _, c in ipairs({ cf:GetChildren() }) do
+                        if c.IsVisible and c:IsVisible() and (c.GetWidth and c:GetWidth() or 0) > 150 then
+                            local okN, nm = pcall(function() return (c.GetName and c:GetName()) or (c.GetDebugName and c:GetDebugName()) end)
+                            out[#out + 1] = tostring(okN and nm)
+                        end
+                    end
+                end)
+                table.sort(out); return table.concat(out, ",")
+            end
+            local before = shownPanel()
+            r2.before = before
+            local id = f.zvId or (f.GetID and f:GetID())
+            local plain = tostring(e.name):gsub(" tab$", "")
+            local PANEL = { ["Character"] = "PaperDollFrame", ["Reputation"] = "ReputationFrame", ["Skills"] = "SkillFrame", ["Player vs. Player"] = "PVPFrame",
+                            ["Currency"] = "TokenFrame", ["Statistics"] = "StatisticsFrame" }
+            local own = rawget(f, "frameName")   -- v228 each tab names its own panel (log 21:10: frameName=PaperDollFrame)
+            if type(own) == "string" and own ~= "" then PANEL[plain] = own end
+            local already = PANEL[plain] and _G[PANEL[plain]] and _G[PANEL[plain]].IsVisible and _G[PANEL[plain]]:IsVisible()
+            if already then say1(tostring(e.name) .. " is already open") r2.how = "already open"; ZenVCExportDB._charSidePress = r2 return end
+            local tries = {}
+            -- v228 first what the mouse click does (the window's OnModeTabClicked, log 21:10), then the tab's own panel by name
+            if cf and cf.OnModeTabClicked then tries[#tries + 1] = { "OnModeTabClicked(tab)", function() cf:OnModeTabClicked(f) end } end
+            if cf and cf.ShowSubFrame and PANEL[plain] then tries[#tries + 1] = { "ShowSubFrame(" .. PANEL[plain] .. ")", function() cf:ShowSubFrame(PANEL[plain]) end } end
+            -- the professions select's way: the window's own SetTab first, then the game's own panel function
+            if cf and cf.SetTab and id then tries[#tries + 1] = { "SetTab(" .. id .. ")", function() cf:SetTab(id) end } end
+            if ToggleCharacter and PANEL[plain] and _G[PANEL[plain]] then tries[#tries + 1] = { "ToggleCharacter(" .. PANEL[plain] .. ")", function() ToggleCharacter(PANEL[plain]) end } end
+            if cf and cf.SetMode and id then tries[#tries + 1] = { "SetMode(" .. id .. ")", function() cf:SetMode(id) end } end
+            -- v227 the window's own switching functions, found by name (Forever's window is built of mode tabs and pane hosts)
+            pcall(function()
+                local look = { at = date("%Y-%m-%d %H:%M:%S"), funcs = {}, tab = {} }
+                local names, seenN = {}, {}
+                local function collect(t)
+                    if type(t) ~= "table" then return end
+                    for k, v in pairs(t) do
+                        if type(k) == "string" and type(v) == "function" and not seenN[k] and (k:find("Mode") or k:find("Tab") or k:find("Pane") or k:find("Select") or k:find("Show") or k:find("Panel")) then
+                            seenN[k] = true; names[#names + 1] = k
+                        end
+                    end
+                end
+                collect(cf)
+                local mt = getmetatable(cf); if mt and type(mt.__index) == "table" then collect(mt.__index) end
+                table.sort(names)
+                look.funcs = names
+                for k, v in pairs(f) do
+                    if type(k) == "string" and (type(v) == "number" or type(v) == "string" or type(v) == "boolean") then look.tab[#look.tab + 1] = k .. "=" .. tostring(v) end
+                end
+                table.sort(look.tab)
+                ZenVCExportDB._charModeLook = look
+                local vals = {}
+                for _, key in ipairs({ "modeID", "mode", "tabID", "modeIndex", "index", "paneID" }) do local v = rawget(f, key); if v ~= nil then vals[#vals + 1] = { key, v } end end
+                if id then vals[#vals + 1] = { "id", id } end
+                -- only switching verbs, and never anything that hides, resizes or turns parts on or off
+                local VERB = { Set = true, Select = true, Change = true, Switch = true, Show = true, Open = true, Activate = true }
+                local BAD = { "Shown", "Enabled", "Visible", "Hidden", "Hide", "Width", "Height", "Size", "Text", "Title", "Point", "Color", "Alpha", "Scale", "Script", "Attribute" }
+                for _, fn in ipairs(names) do
+                    local verb = fn:match("^(%u%l+)")
+                    local bad = false
+                    for _, b in ipairs(BAD) do if fn:find(b) then bad = true end end
+                    if verb and VERB[verb] and not bad and (fn:find("Mode") or fn:find("Tab") or fn:find("Pane") or fn:find("Panel")) then
+                        for _, v in ipairs(vals) do
+                            tries[#tries + 1] = { fn .. "(" .. v[1] .. "=" .. tostring(v[2]) .. ")", function() cf[fn](cf, v[2]) end }
+                        end
+                        tries[#tries + 1] = { fn .. "(tab)", function() cf[fn](cf, f) end }
+                    end
+                end
+            end)
+            -- last: the tab's own mouse press, with the mouse treated as over it (a handler may check that)
+            tries[#tries + 1] = { "mouse press", function()
+                local had = rawget(f, "IsMouseOver")
+                f.IsMouseOver = function() return true end
+                local okP, errP = pcall(function()
+                    for _, sc in ipairs({ "OnMouseDown", "OnMouseUp", "OnClick" }) do local h2 = f:GetScript(sc); if h2 then h2(f, "LeftButton", false) end end
+                end)
+                f.IsMouseOver = had
+                if not okP then error(errP) end
+            end }
+            local opened = false
+            for _, t in ipairs(tries) do
+                local okT, errT = pcall(t[2])
+                local after = shownPanel()
+                r2.how[#r2.how + 1] = t[1] .. "=" .. (okT and "ran" or ("failed: " .. tostring(errT))) .. (after ~= before and " (panel changed)" or "")
+                if okT and after ~= before then opened = true; r2.after = after break end
+            end
+            r2.how = table.concat(r2.how, " | "); r2.opened = opened
+            ZenVCExportDB._charSidePress = r2
+            local hist = type(ZenVCExportDB._charSidePresses) == "table" and ZenVCExportDB._charSidePresses or {}   -- v228 the last 8 presses, every tab
+            table.insert(hist, r2.at .. " " .. tostring(r2.tab) .. ": " .. (opened and "OPENED" or "not opened") .. " | " .. r2.how)
+            while #hist > 8 do table.remove(hist, 1) end
+            ZenVCExportDB._charSidePresses = hist
+            say1(opened and (tostring(e.name) .. " open") or (tostring(e.name) .. ": it did not open; this is noted for the voice commander"))
+            if C_Timer and C_Timer.After then C_Timer.After(0.2, function() pcall(function()
+                if mark.kind ~= "char" or not QG.charOpen() then return end
+                local l2 = QG.charSlots()
+                for k, e2 in ipairs(l2) do if e2.fr == f then mark.i = k; lightUp(l2) return end end
+            end) end) end
+            return
+        end
         if e and e.charTab then
             local r2 = { at = date("%Y-%m-%d %H:%M:%S"), tab = tostring(e.name), id = e.tabID, how = "none" }
             pcall(function()

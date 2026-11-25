@@ -5,6 +5,31 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.314 and VCFI 0.10.301 (the character window's six tabs by voice)
+
+Published 2026-11-24 21:23 US Mountain Standard Time
+
+This release changes VCF only. VCFI stays at 0.10.301.
+
+**The character window's six tabs, by voice (VCF)**
+- MOVE now reaches the column of tabs at the right of the character window: Character, Reputation, Skills, Player vs. Player, Currency and Statistics.
+- "move right" from the right-hand gear slots reaches them. "move focus" goes there too when your bags are closed; with your bags open it goes to your bags. From the tabs, "move focus" goes back to your gear.
+- "select" opens a tab, the same way a mouse click does. Tested in the game on all six.
+- Moving inside those panels (the currency list and the others) is not built yet.
+
+**FAQ**
+- "Can I take gear off and put it on by voice?" now explains the six tabs and "move focus".
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `cabde8bac66baad8313d45f8a6e0b0f50fba6f5b9ccc5a04ab3988e1ad1968dd`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.309 and VCFI 0.10.301 (spending talent points by voice)
 
 Published 2026-11-24 18:48 US Mountain Standard Time
