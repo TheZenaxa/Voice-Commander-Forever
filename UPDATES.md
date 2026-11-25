@@ -5,6 +5,27 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.319 and VCFI 0.10.319 (VCFI catches up, numbers match again)
+
+Published 2026-11-25 01:04 US Mountain Standard Time
+
+VCFI catches up with VCF. Both are now 0.10.319. VCF itself has not changed since 0.10.319.
+
+- VCFI 0.10.302 to 0.10.318: NUMBER SKIPPED WITH INTENTION, so VCF and VCFI carry the same number again.
+- VCFI now has everything VCF gained from 0.10.302 to 0.10.319: the reorganised Control Panel, Auction House selling, taking gear off by select, the character window's six tabs, spending talent points, TOOLTIPS: BRIEF MODE with your words in tooltips, the facing line, the one-word Minimap, read tooltip, the vowel check learning from your repeats, and the tidier MIC IS box.
+- The new screen text and helper lines are in French, German, Spanish and Chinese, and the helper lines in Japanese.
+- VCFI's helper add-on is now version 216. After installing, /RELOAD twice.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `c400a6529ea14b1657b442c1780e25376e2b36bf62f085e2ade4aaa8ba8bdbcb`
+- VCFI.SETUP.exe: `3f18ee77ea12031bdfa15894c86ec417a992f9d0dd2251f1b5555409175c1699`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.319 and VCFI 0.10.301 (reload reminder for brief mode)
 
 Published 2026-11-24 22:28 US Mountain Standard Time

@@ -173,6 +173,7 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Sounds for ore, herbs and other things: game sounds (a murloc too), Windows sounds or your own, each with its own volume (built)
 - "minimap": one key, all the way in or all the way out (VCF, built, 0.10.302)
 - "read quest" stops SPOKEN at once; "read tooltip" (VCF); Shift+F4 allowed as a key
+- VCFI caught up with VCF: everything above is in VCFI too, with its screen text and helper lines translated; both are 0.10.319 (VCFI 0.10.302 to 0.10.318: number skipped with intention)
 
 ## Still to come
 
