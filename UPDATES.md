@@ -5,6 +5,29 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.318 and VCFI 0.10.301 (tidier MIC IS box, cleanup)
+
+Published 2026-11-24 22:08 US Mountain Standard Time
+
+This release changes VCF only. VCFI stays at 0.10.301.
+
+**The MIC IS box, tidier (VCF)**
+- KEY TEST, KEY CLEANUP and FIND COIN PURSE, the tools you need least often, now share one line of smaller buttons. RENAME AN ITEM, SCAN AND REPAIR and NEW SPELLS stay full size. The box is two lines shorter.
+
+**Cleanup (VCF)**
+- Parts nothing used any more are removed from the helper add-on and the program: the old "minimap in" and "minimap out" (the one-key "minimap" replaced them), the game-sound preview that never worked (PLAY stays greyed for game sounds), and fallbacks and notes used only while getting the character window's tabs to work. Old notes are cleared from the add-on's saved data at your next login.
+- Nothing you use changes.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `9a7995c2e66b34f62bbaaafddaacd31fac612dfce6c4c1e045cac60f66d85497`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.316 and VCFI 0.10.301 (tooltips brief mode, your words in tooltips)
 
 Published 2026-11-24 21:57 US Mountain Standard Time

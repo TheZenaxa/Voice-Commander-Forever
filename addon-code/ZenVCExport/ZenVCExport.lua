@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "229"
+local VERSION = "230"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -293,44 +293,7 @@ do
         AR.lvl, AR.lvlAt, AR.lvlOf = math.min(top, 9000), now, child
         return AR.lvl
     end
-    -- v218: what a map opening gave back, the last 6 (user: the quest log map showed no colour)
-    function AR.record(wm, child, pos)
-        if type(ZenVCExportDB) ~= "table" then return end
-        local list = type(ZenVCExportDB._arrowMapLook) == "table" and ZenVCExportDB._arrowMapLook or {}
-        local e = { at = date("%H:%M:%S") }
-        pcall(function()
-            e.mapShown = wm.GetMapID and wm:GetMapID() or 0
-            e.myMap = (C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")) or 0
-            e.position = pos and true or false
-            e.questLogOpen = (QuestMapFrame and QuestMapFrame:IsVisible()) and true or false
-            e.otherQuestLog = (QuestLogFrame and QuestLogFrame:IsVisible()) and true or false
-            e.scale = child and child.GetScale and child:GetScale() or 0
-            e.mapLevel = child and child.GetFrameLevel and child:GetFrameLevel() or 0
-            e.topMarker = child and AR.topLevel(child) or 0
-            e.glow = AR.color() and true or false
-            e.facingLine = (ZenVCFacing and ZenVCFacing.color and ZenVCFacing.color()) and true or false
-            e.facingKnown = (GetPlayerFacing and GetPlayerFacing()) and true or false
-        end)
-        table.insert(list, e); while #list > 6 do table.remove(list, 1) end
-        ZenVCExportDB._arrowMapLook = list
-    end
-    function AR.mapWatch()
-        local wm = WorldMapFrame
-        local open = wm and wm.IsVisible and wm:IsVisible() and true or false
-        if open and not AR.wasOpen then
-            AR.wasOpen = true; AR.recAt = GetTime()
-        elseif not open then AR.wasOpen = false; AR.recAt = nil end
-        if AR.recAt and GetTime() - AR.recAt > 0.5 then   -- half a second after it opens, when the map has settled
-            AR.recAt = nil
-            pcall(function()
-                local child = wm.ScrollContainer and wm.ScrollContainer.Child
-                local pos = C_Map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(wm:GetMapID(), "player")
-                AR.record(wm, child, pos)
-            end)
-        end
-    end
     function AR.tick()
-        pcall(AR.mapWatch)
         local r, g, b = AR.color()
         if not r then
             if AR.mini then AR.mini:Hide() end
@@ -521,25 +484,21 @@ do
         local tok = t:match("^(.-)|")
         if C_Timer and C_Timer.After then C_Timer.After(4, function() RC.play(tok) end) else RC.play(tok) end
     end)
-    -- v209 (2026-11-25, user: "a sound audio preview when assigning sounds"): VCF's PLAY types /zvsound TOKEN; the sound plays at once. Private, plays only.
-    SLASH_ZENVCSOUND1 = "/zvsound"
-    SlashCmdList["ZENVCSOUND"] = function(msg)
-        local t = (msg or ""):match("^%s*([%w_:%.%-]+)%s*$")
-        -- v213 (user: "you dont record that in the log??"): every preview that arrives is written down, so a test shows whether it got in
-        if type(ZenVCExportDB) == "table" then
-            local known = t and (t:find("^file:") or t:find("^fid:%d+$") or (SOUNDKIT and SOUNDKIT[t])) and true or false
-            local r = ZenVCExportDB._soundPreview or {}; ZenVCExportDB._soundPreview = r
-            r[#r + 1] = date("%H:%M:%S") .. " " .. tostring(t) .. (known and " played" or " no such sound in this game")
-            while #r > 30 do table.remove(r, 1) end
-        end
-        if t then RC.play(t) end
-    end
     local acc = 0
     local rf = CreateFrame("Frame")
     rf:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.25 then return end; acc = 0; pcall(RC.tick) end)
 end
 -- v187 (2026-11-23, user: "do the non risky changes"): camera up / lower camera use ONE key each way. One press tilts 1.2 seconds; each further press adds 1.2
 -- seconds to the time left (camera 2 = 2 presses = 2.4 s, camera 3 = 4 presses = 4.8 s, exactly as before), so the camera never stops early.
+-- v230 cleared: investigation records nothing writes any more (2026-11-24), removed from the saved data at login
+do
+    local cf = CreateFrame("Frame"); pcall(cf.RegisterEvent, cf, "PLAYER_LOGIN")
+    cf:SetScript("OnEvent", function()
+        if type(ZenVCExportDB) == "table" then
+            for _, k in ipairs({ "_charLook", "_charLookOut", "_charModeLook", "_arrowMapLook", "_soundPreview" }) do ZenVCExportDB[k] = nil end
+        end
+    end)
+end
 ZenVCCam = {}
 do
     local untilAt = { up = 0, down = 0 }
@@ -5461,33 +5420,6 @@ function QG.charSlots()
         for k = 1, 10 do add(_G["CharacterFrameTab" .. k], true) end
         local okF, sideL = pcall(QG.charSideFind, cf)   -- v225 the professions way (its own guard)
         if okF and type(sideL) == "table" then for _, f in ipairs(sideL) do add(f, true) end end
-        -- v224 once a session: every button of the character window, its name, place and words (READ ONLY), so the six tabs can be found by what they are
-        if not QG.charLooked and type(ZenVCExportDB) == "table" then pcall(function()   -- its own guard: the record never stops the tabs being found
-            QG.charLooked = true
-            local look = { at = date("%Y-%m-%d %H:%M:%S"), frame = string.format("left %d right %d top %d bottom %d", cf:GetLeft() or 0, right, cf:GetTop() or 0, cf:GetBottom() or 0), tabs = {}, buttons = {} }
-            for k = 1, 10 do
-                local t = _G["CharacterFrameTab" .. k]
-                if t then look.tabs[#look.tabs + 1] = string.format("CharacterFrameTab%d shown=%s left=%d top=%d text=%s", k, tostring(t.IsVisible and t:IsVisible()), t:GetLeft() or -1, t:GetTop() or -1, tostring(nameOf(t))) end
-            end
-            local n = 0
-            local function walk(f, depth)
-                if depth > 6 or n >= 90 then return end
-                for _, c in ipairs({ f:GetChildren() }) do
-                    if c.IsVisible and c:IsVisible() and not (c.IsForbidden and c:IsForbidden()) then
-                        local ty = c.GetObjectType and c:GetObjectType()
-                        if (ty == "Button" or ty == "CheckButton") and c:GetLeft() then
-                            n = n + 1
-                            local nm = c.GetName and c:GetName()
-                            if not nm and c.GetDebugName then local okD, d = pcall(c.GetDebugName, c); if okD then nm = d end end
-                            look.buttons[#look.buttons + 1] = string.format("%s left=%d top=%d w=%d text=%s", tostring(nm), c:GetLeft() or 0, c:GetTop() or 0, c:GetWidth() or 0, tostring(nameOf(c)))
-                        end
-                        walk(c, depth + 1)
-                    end
-                end
-            end
-            walk(cf, 0)
-            ZenVCExportDB._charLook = look
-        end) end
         local function scan(f, depth)
             if depth > 2 then return end
             for _, c in ipairs({ f:GetChildren() }) do
@@ -5504,14 +5436,7 @@ function QG.charSlots()
             rec[#rec + 1] = tostring(b.GetName and b:GetName() or "?") .. " = " .. tostring(nm)
         end
         if type(ZenVCExportDB) == "table" and #rec > 0 and not QG.charSideLooked then QG.charSideLooked = true; ZenVCExportDB._charSide = { at = date("%Y-%m-%d %H:%M:%S"), tabs = rec } end
-        if type(ZenVCExportDB) == "table" and not QG.charOutLooked then QG.charOutLooked = true; pcall(function()   -- v225 READ ONLY
-            local o = { at = date("%Y-%m-%d %H:%M:%S"), found = #found, list = {} }
-            for _, b in ipairs(found) do
-                local okD, dn = pcall(function() return (b.GetName and b:GetName()) or (b.GetDebugName and b:GetDebugName()) end)
-                o.list[#o.list + 1] = string.format("%s key=%s type=%s left=%d top=%d name=%s", tostring(okD and dn), tostring(b.zvKey), tostring(b.GetObjectType and b:GetObjectType()), b:GetLeft() or 0, b:GetTop() or 0, tostring(nameOf(b)))
-            end
-            ZenVCExportDB._charLookOut = o
-        end) end
+
     end)
     return list
 end
@@ -7691,7 +7616,7 @@ local function selectStep()
     if mark.kind == "char" and QG.charOpen() then   -- v220 select on a side tab of the character pane opens it
         local e = QG.charSlots()[mark.i]
         if e and e.invSlot then QG.gearOff(e) return end   -- v221 a worn slot: take it off into the bags
-        if e and e.charSide then   -- v225 a tab beside the window: its own mouse press (the way the game's mouse does it)
+        if e and e.charSide then   -- v225 a tab beside the window (v228: the window's own OnModeTabClicked, as a mouse click; v230 no guesses)
             if InCombatLockdown() then say1("not in combat") return end
             local r2 = { at = date("%Y-%m-%d %H:%M:%S"), tab = tostring(e.name), how = {} }
             local f = e.fr
@@ -7713,8 +7638,7 @@ local function selectStep()
             r2.before = before
             local id = f.zvId or (f.GetID and f:GetID())
             local plain = tostring(e.name):gsub(" tab$", "")
-            local PANEL = { ["Character"] = "PaperDollFrame", ["Reputation"] = "ReputationFrame", ["Skills"] = "SkillFrame", ["Player vs. Player"] = "PVPFrame",
-                            ["Currency"] = "TokenFrame", ["Statistics"] = "StatisticsFrame" }
+            local PANEL = {}   -- v230 only the tab's own panel name (no guesses)
             local own = rawget(f, "frameName")   -- v228 each tab names its own panel (log 21:10: frameName=PaperDollFrame)
             if type(own) == "string" and own ~= "" then PANEL[plain] = own end
             local already = PANEL[plain] and _G[PANEL[plain]] and _G[PANEL[plain]].IsVisible and _G[PANEL[plain]]:IsVisible()
@@ -7723,59 +7647,7 @@ local function selectStep()
             -- v228 first what the mouse click does (the window's OnModeTabClicked, log 21:10), then the tab's own panel by name
             if cf and cf.OnModeTabClicked then tries[#tries + 1] = { "OnModeTabClicked(tab)", function() cf:OnModeTabClicked(f) end } end
             if cf and cf.ShowSubFrame and PANEL[plain] then tries[#tries + 1] = { "ShowSubFrame(" .. PANEL[plain] .. ")", function() cf:ShowSubFrame(PANEL[plain]) end } end
-            -- the professions select's way: the window's own SetTab first, then the game's own panel function
-            if cf and cf.SetTab and id then tries[#tries + 1] = { "SetTab(" .. id .. ")", function() cf:SetTab(id) end } end
             if ToggleCharacter and PANEL[plain] and _G[PANEL[plain]] then tries[#tries + 1] = { "ToggleCharacter(" .. PANEL[plain] .. ")", function() ToggleCharacter(PANEL[plain]) end } end
-            if cf and cf.SetMode and id then tries[#tries + 1] = { "SetMode(" .. id .. ")", function() cf:SetMode(id) end } end
-            -- v227 the window's own switching functions, found by name (Forever's window is built of mode tabs and pane hosts)
-            pcall(function()
-                local look = { at = date("%Y-%m-%d %H:%M:%S"), funcs = {}, tab = {} }
-                local names, seenN = {}, {}
-                local function collect(t)
-                    if type(t) ~= "table" then return end
-                    for k, v in pairs(t) do
-                        if type(k) == "string" and type(v) == "function" and not seenN[k] and (k:find("Mode") or k:find("Tab") or k:find("Pane") or k:find("Select") or k:find("Show") or k:find("Panel")) then
-                            seenN[k] = true; names[#names + 1] = k
-                        end
-                    end
-                end
-                collect(cf)
-                local mt = getmetatable(cf); if mt and type(mt.__index) == "table" then collect(mt.__index) end
-                table.sort(names)
-                look.funcs = names
-                for k, v in pairs(f) do
-                    if type(k) == "string" and (type(v) == "number" or type(v) == "string" or type(v) == "boolean") then look.tab[#look.tab + 1] = k .. "=" .. tostring(v) end
-                end
-                table.sort(look.tab)
-                ZenVCExportDB._charModeLook = look
-                local vals = {}
-                for _, key in ipairs({ "modeID", "mode", "tabID", "modeIndex", "index", "paneID" }) do local v = rawget(f, key); if v ~= nil then vals[#vals + 1] = { key, v } end end
-                if id then vals[#vals + 1] = { "id", id } end
-                -- only switching verbs, and never anything that hides, resizes or turns parts on or off
-                local VERB = { Set = true, Select = true, Change = true, Switch = true, Show = true, Open = true, Activate = true }
-                local BAD = { "Shown", "Enabled", "Visible", "Hidden", "Hide", "Width", "Height", "Size", "Text", "Title", "Point", "Color", "Alpha", "Scale", "Script", "Attribute" }
-                for _, fn in ipairs(names) do
-                    local verb = fn:match("^(%u%l+)")
-                    local bad = false
-                    for _, b in ipairs(BAD) do if fn:find(b) then bad = true end end
-                    if verb and VERB[verb] and not bad and (fn:find("Mode") or fn:find("Tab") or fn:find("Pane") or fn:find("Panel")) then
-                        for _, v in ipairs(vals) do
-                            tries[#tries + 1] = { fn .. "(" .. v[1] .. "=" .. tostring(v[2]) .. ")", function() cf[fn](cf, v[2]) end }
-                        end
-                        tries[#tries + 1] = { fn .. "(tab)", function() cf[fn](cf, f) end }
-                    end
-                end
-            end)
-            -- last: the tab's own mouse press, with the mouse treated as over it (a handler may check that)
-            tries[#tries + 1] = { "mouse press", function()
-                local had = rawget(f, "IsMouseOver")
-                f.IsMouseOver = function() return true end
-                local okP, errP = pcall(function()
-                    for _, sc in ipairs({ "OnMouseDown", "OnMouseUp", "OnClick" }) do local h2 = f:GetScript(sc); if h2 then h2(f, "LeftButton", false) end end
-                end)
-                f.IsMouseOver = had
-                if not okP then error(errP) end
-            end }
             local opened = false
             for _, t in ipairs(tries) do
                 local okT, errT = pcall(t[2])
@@ -8055,9 +7927,7 @@ local function ensureButton(b)
         ["/click zenvcmsgtextbig"] = function() ZenVCMsg.text(1) end,   -- v185
         ["/click zenvcmsgtextsmall"] = function() ZenVCMsg.text(-1) end,   -- v185
         -- v210 (2026-11-25, user: "and minimap zoom?"): one zoom step on the minimap, the same as its own + and - buttons
-        ["/click zenvcminimapin"] = function() pcall(function() local z, n = Minimap:GetZoom(), Minimap:GetZoomLevels(); if z < n - 1 then Minimap:SetZoom(z + 1) end; if Minimap_UpdateZoomButtons then pcall(Minimap_UpdateZoomButtons) end end) end,
         ["/click zenvcminimapzoom"] = function() pcall(function() local z, n = Minimap:GetZoom(), Minimap:GetZoomLevels(); Minimap:SetZoom(z > 0 and 0 or n - 1); if Minimap_UpdateZoomButtons then pcall(Minimap_UpdateZoomButtons) end end) end,   -- v217 one key: zoomed in at all = all the way out, else all the way in
-        ["/click zenvcminimapout"] = function() pcall(function() local z = Minimap:GetZoom(); if z > 0 then Minimap:SetZoom(z - 1) end; if Minimap_UpdateZoomButtons then pcall(Minimap_UpdateZoomButtons) end end) end,
         ["/click zenvcprogress"] = function() ZenVCExportDB._progressRead = (not ZenVCExportDB._progressRead) or nil; ZenVCMsg.progressSync(); say1(ZenVCExportDB._progressRead and "quest progress will be read aloud. Say {Progress Read:progress read} again to stop." or "quest progress will not be read aloud.") end,   -- v186 one word switches it
 
         ["/click zenvccoinfind"] = function() QG.coinFind(); say1("coin purse is in the middle of the screen: drag it where you want it") end,   -- v172
