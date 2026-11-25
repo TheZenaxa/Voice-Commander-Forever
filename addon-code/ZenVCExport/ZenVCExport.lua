@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "216"
+local VERSION = "218"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -277,7 +277,60 @@ do
         local hz = math.max(0.2, math.min(3, tonumber(a.hz) or 1.5))   -- never more than 3 a second
         return 0.2 + 0.4 * (0.5 + 0.5 * math.sin(now * 2 * math.pi * hz))   -- a soft fade between 20% and 60%
     end
+    -- v218: the highest layer of any marker on the map (the player's arrow is one), looked up at most twice a second
+    function AR.topLevel(child)
+        local now = GetTime()
+        if AR.lvlAt and now - AR.lvlAt < 0.5 and AR.lvlOf == child then return AR.lvl end
+        local top = (child.GetFrameLevel and child:GetFrameLevel()) or 1
+        pcall(function()
+            for _, k in ipairs({ child:GetChildren() }) do
+                if k ~= AR.map and not (ZenVCFacing and k == ZenVCFacing.map) and k.GetFrameLevel then
+                    local l = k:GetFrameLevel() or 0
+                    if l > top then top = l end
+                end
+            end
+        end)
+        AR.lvl, AR.lvlAt, AR.lvlOf = math.min(top, 9000), now, child
+        return AR.lvl
+    end
+    -- v218: what a map opening gave back, the last 6 (user: the quest log map showed no colour)
+    function AR.record(wm, child, pos)
+        if type(ZenVCExportDB) ~= "table" then return end
+        local list = type(ZenVCExportDB._arrowMapLook) == "table" and ZenVCExportDB._arrowMapLook or {}
+        local e = { at = date("%H:%M:%S") }
+        pcall(function()
+            e.mapShown = wm.GetMapID and wm:GetMapID() or 0
+            e.myMap = (C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")) or 0
+            e.position = pos and true or false
+            e.questLogOpen = (QuestMapFrame and QuestMapFrame:IsVisible()) and true or false
+            e.otherQuestLog = (QuestLogFrame and QuestLogFrame:IsVisible()) and true or false
+            e.scale = child and child.GetScale and child:GetScale() or 0
+            e.mapLevel = child and child.GetFrameLevel and child:GetFrameLevel() or 0
+            e.topMarker = child and AR.topLevel(child) or 0
+            e.glow = AR.color() and true or false
+            e.facingLine = (ZenVCFacing and ZenVCFacing.color and ZenVCFacing.color()) and true or false
+            e.facingKnown = (GetPlayerFacing and GetPlayerFacing()) and true or false
+        end)
+        table.insert(list, e); while #list > 6 do table.remove(list, 1) end
+        ZenVCExportDB._arrowMapLook = list
+    end
+    function AR.mapWatch()
+        local wm = WorldMapFrame
+        local open = wm and wm.IsVisible and wm:IsVisible() and true or false
+        if open and not AR.wasOpen then
+            AR.wasOpen = true; AR.recAt = GetTime()
+        elseif not open then AR.wasOpen = false; AR.recAt = nil end
+        if AR.recAt and GetTime() - AR.recAt > 0.5 then   -- half a second after it opens, when the map has settled
+            AR.recAt = nil
+            pcall(function()
+                local child = wm.ScrollContainer and wm.ScrollContainer.Child
+                local pos = C_Map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(wm:GetMapID(), "player")
+                AR.record(wm, child, pos)
+            end)
+        end
+    end
     function AR.tick()
+        pcall(AR.mapWatch)
         local r, g, b = AR.color()
         if not r then
             if AR.mini then AR.mini:Hide() end
@@ -307,7 +360,7 @@ do
             local sc = (child.GetScale and child:GetScale()) or 1
             AR.map:SetSize(40 / sc, 40 / sc)
             AR.map:ClearAllPoints(); AR.map:SetPoint("CENTER", child, "TOPLEFT", x * child:GetWidth(), -y * child:GetHeight())
-            AR.map:SetFrameLevel((child:GetFrameLevel() or 1) + 50)
+            AR.map:SetFrameLevel(AR.topLevel(child) + 1)   -- v218 above every marker, the player's arrow included
             AR.map.tex:SetVertexColor(r, g, b, al); AR.map:Show(); shown = true
         end)
         if not shown and AR.map then AR.map:Hide() end
@@ -319,6 +372,96 @@ do
     local acc = 0
     local af = CreateFrame("Frame")
     af:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.03 then return end; acc = 0; pcall(AR.tick) end)
+end
+-- v217 (2026-11-25, user: "what I lack is being able to tell which direction I am facing ... animated lines in the direction I am facing"; "make the facing
+-- line the color picked thing, and disallow white or yellow"; "can the facing line pulse?"): THE FACING LINE. Short dashes that move outward from the player's
+-- arrow the way the player faces, on the minimap (straight up when the minimap turns with the player) and on the world map. Colour only from VCF's fixed list,
+-- optional soft pulse (a fade, never more than 3 a second). Hidden where the game gives no facing (dungeons, raids). Drawing only. DB._facingLook records it.
+do
+    local FL = {}
+    ZenVCFacing = FL
+    local LEN = { [0] = 24, [1] = 40, [2] = 58 }
+    function FL.color()
+        local c = type(ZENVC_FACING) == "table" and type(ZENVC_FACING.color) == "string" and ZENVC_FACING.color:match("^%x%x%x%x%x%x$")
+        if not c then return nil end
+        return tonumber(c:sub(1, 2), 16) / 255, tonumber(c:sub(3, 4), 16) / 255, tonumber(c:sub(5, 6), 16) / 255
+    end
+    function FL.alpha(now)
+        local a = ZENVC_FACING
+        if not (a and a.pulse) then return 1 end
+        local hz = math.max(0.2, math.min(3, tonumber(a.hz) or 1.5))   -- never more than 3 a second
+        return 0.45 + 0.55 * (0.5 + 0.5 * math.sin(now * 2 * math.pi * hz))   -- a soft fade, never off
+    end
+    -- the dashes between start and start + len (u = one minimap pixel), moving outward
+    function FL.dashes(now, start, len, u)
+        local out, dash, period = {}, 6 * u, 12 * u
+        local d = start - period + (now * 20 * u) % period
+        while d < start + len do
+            local a, b = math.max(d, start), math.min(d + dash, start + len)
+            if b > a then out[#out + 1] = { a, b } end
+            d = d + period
+        end
+        return out
+    end
+    local function holder(parent)
+        local f = CreateFrame("Frame", nil, parent); f:SetSize(1, 1); f:EnableMouse(false); f.l = {}
+        return f
+    end
+    local function draw(f, ang, start, len, u, r, g, b, al, now)
+        local dx, dy = -math.sin(ang), math.cos(ang)   -- the game's facing: 0 = north, turning left adds
+        local ds = FL.dashes(now, start, len, u)
+        for k = #f.l + 1, #ds do local ln = f:CreateLine(nil, "OVERLAY"); ln:SetColorTexture(1, 1, 1, 1); f.l[k] = ln end
+        for k, ln in ipairs(f.l) do
+            local s = ds[k]
+            if s then
+                ln:SetStartPoint("CENTER", f, dx * s[1], dy * s[1]); ln:SetEndPoint("CENTER", f, dx * s[2], dy * s[2])
+                ln:SetThickness(3 * u); ln:SetVertexColor(r, g, b, al); ln:Show()
+            else ln:Hide() end
+        end
+        f:Show()
+    end
+    function FL.tick()
+        local r, g, b = FL.color()
+        local face = r and GetPlayerFacing and GetPlayerFacing()
+        if not face then
+            if FL.mini then FL.mini:Hide() end
+            if FL.map then FL.map:Hide() end
+            return
+        end
+        local now = GetTime(); local al = FL.alpha(now)
+        local len = LEN[tonumber(ZENVC_FACING.len) or 1] or LEN[1]
+        if Minimap and Minimap:IsVisible() then
+            if not FL.mini then FL.mini = holder(Minimap); FL.mini:SetPoint("CENTER", Minimap, "CENTER", 0, 0); FL.mini:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 6) end
+            local ang = face
+            if GetCVar and GetCVar("rotateMinimap") == "1" then ang = 0 end
+            draw(FL.mini, ang, 11, len, 1, r, g, b, al, now)
+        elseif FL.mini then FL.mini:Hide() end
+        local shown = false
+        pcall(function()
+            local wm = WorldMapFrame
+            if not (wm and wm:IsVisible() and wm.GetMapID and C_Map and C_Map.GetPlayerMapPosition) then return end
+            local child = wm.ScrollContainer and wm.ScrollContainer.Child
+            if not child then return end
+            local pos = C_Map.GetPlayerMapPosition(wm:GetMapID(), "player")
+            if not pos then return end
+            local x, y = pos:GetXY()
+            if not x or x <= 0 or y <= 0 then return end
+            if not FL.map then FL.map = holder(child) end
+            if FL.map:GetParent() ~= child then FL.map:SetParent(child) end
+            local u = 1 / ((child.GetScale and child:GetScale()) or 1)
+            FL.map:ClearAllPoints(); FL.map:SetPoint("CENTER", child, "TOPLEFT", x * child:GetWidth(), -y * child:GetHeight())
+            FL.map:SetFrameLevel(((ZenVCArrow and ZenVCArrow.topLevel) and ZenVCArrow.topLevel(child) or ((child:GetFrameLevel() or 1) + 50)) + 2)   -- v218 above every marker
+            draw(FL.map, face, 16 * u, len * 1.4 * u, u, r, g, b, al, now); shown = true
+        end)
+        if not shown and FL.map then FL.map:Hide() end
+        if not FL.looked and type(ZenVCExportDB) == "table" then
+            FL.looked = true
+            ZenVCExportDB._facingLook = { at = date("%H:%M:%S"), minimap = FL.mini and true or false, rotate = (GetCVar and GetCVar("rotateMinimap")) or "?", pulse = ZENVC_FACING.pulse and true or false }
+        end
+    end
+    local acc = 0
+    local ff = CreateFrame("Frame")
+    ff:SetScript("OnUpdate", function(_, el) acc = acc + (el or 0); if acc < 0.03 then return end; acc = 0; pcall(FL.tick) end)
 end
 -- v204 (2026-11-25, user: "any cue is better than none inre minimap resource"): RESOURCE CUES. The game's soft interact target (the same one that finds the
 -- fishing bobber) picks up things you can use in front of you; each new one (an ore vein, a herb, a chest ...) goes into the messages box as "<name> ahead",
@@ -7339,6 +7482,7 @@ local function ensureButton(b)
         ["/click zenvcmsgtextsmall"] = function() ZenVCMsg.text(-1) end,   -- v185
         -- v210 (2026-11-25, user: "and minimap zoom?"): one zoom step on the minimap, the same as its own + and - buttons
         ["/click zenvcminimapin"] = function() pcall(function() local z, n = Minimap:GetZoom(), Minimap:GetZoomLevels(); if z < n - 1 then Minimap:SetZoom(z + 1) end; if Minimap_UpdateZoomButtons then pcall(Minimap_UpdateZoomButtons) end end) end,
+        ["/click zenvcminimapzoom"] = function() pcall(function() local z, n = Minimap:GetZoom(), Minimap:GetZoomLevels(); Minimap:SetZoom(z > 0 and 0 or n - 1); if Minimap_UpdateZoomButtons then pcall(Minimap_UpdateZoomButtons) end end) end,   -- v217 one key: zoomed in at all = all the way out, else all the way in
         ["/click zenvcminimapout"] = function() pcall(function() local z = Minimap:GetZoom(); if z > 0 then Minimap:SetZoom(z - 1) end; if Minimap_UpdateZoomButtons then pcall(Minimap_UpdateZoomButtons) end end) end,
         ["/click zenvcprogress"] = function() ZenVCExportDB._progressRead = (not ZenVCExportDB._progressRead) or nil; ZenVCMsg.progressSync(); say1(ZenVCExportDB._progressRead and "quest progress will be read aloud. Say {Progress Read:progress read} again to stop." or "quest progress will not be read aloud.") end,   -- v186 one word switches it
 

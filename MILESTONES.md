@@ -163,9 +163,11 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 ## Milestone 12: Arrow glow, a reorganised Control Panel, sounds for ore and herbs (25 November 2026)
 
 - A glow on your arrow on the minimap and the map, in a colour you pick, with an optional soft pulse (off to start; seizure warning in the installer, the panel and the FAQ) (built, 0.10.301)
+- The facing line: dashes that move out from your arrow the way you face, on the minimap and the map, in a colour from a set list, with an optional soft pulse (VCF, built, 0.10.302)
+- The glow on your arrow now shows on the map and the quest log map (VCF, fixed, 0.10.303)
 - The Control Panel reorganised: main groups with smaller tabs, ARRANGE, a path line, settings in tabs (VCF, built, 0.10.290 to 0.10.301)
 - Sounds for ore, herbs and other things: game sounds (a murloc too), Windows sounds or your own, each with its own volume (built)
-- "minimap in" and "minimap out", one to three steps (VCF, built)
+- "minimap": one key, all the way in or all the way out (VCF, built, 0.10.302)
 - "read quest" stops SPOKEN at once; "read tooltip" (VCF); Shift+F4 allowed as a key
 
 ## Still to come

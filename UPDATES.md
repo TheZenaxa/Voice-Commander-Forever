@@ -5,6 +5,34 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.303 and VCFI 0.10.301 (facing line, one-key minimap, arrow glow on the maps fixed)
+
+Published 2026-11-24 17:43 US Mountain Standard Time
+
+This release changes VCF only. VCFI stays at 0.10.301.
+
+**The facing line (new, VCF)**
+- Short dashes move out from your arrow the way you are facing, on the minimap and on the map (the quest log map too), whether or not your minimap turns with you.
+- Pick its colour from a set list (lime green, pink, neon blue, teal, orange, black), its length (short, medium, long), and an optional soft pulse: slow, medium or fast (about 3 times a second at most, a fade, never a hard flash). Off until you pick a colour.
+- In dungeons and raids the game does not tell add-ons which way you face, so the line hides there. The glow on your arrow on the minimap still shows.
+- The photosensitive seizure warning in the installer agreement, the panel and the FAQ now covers the line's pulse too.
+
+**The glow on your arrow (fixed, VCF)**
+- The glow now shows on the map and the quest log map. It was drawn underneath the map's own layers before.
+
+**Minimap (changed, VCF)**
+- One command, "minimap", on one key: if the minimap is zoomed in at all it goes all the way out, otherwise all the way in. It replaces "minimap in", "minimap out" and their steps.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `aa44bd46ccbe2d4dc07dc5e1da4d5a4d0d1b93c29177fe819ae869ed223aa542`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.301 and VCFI 0.10.301 (arrow glow, reorganised Control Panel, sounds for ore and herbs)
 
 Published 2026-11-24 16:07 US Mountain Standard Time
@@ -52,6 +80,11 @@ To check a download is exactly the file published here: in Windows PowerShell, t
 - VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
 - READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
 - READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+**Virus scans (VirusTotal)**
+No security vendor flagged either installer.
+- VCF: https://www.virustotal.com/gui/file/b10fc906370ab9a36b47c449948ffa3336cef63d2644c7084812aa451b841891
+- VCFI: https://www.virustotal.com/gui/file/54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c
 
 ---
 
