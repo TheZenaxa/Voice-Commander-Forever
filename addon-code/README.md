@@ -9,4 +9,4 @@ You do not need to download these: VCF and VCFI put the add-on into the game for
 
 Copyright (c) TheZenaxa. All rights reserved. The code is here to be read; that is not permission to copy, change or share it. Parts of the limited editing code follow Improved Forever by markgravity (MIT); its license notice is in the code.
 
-GO TO and the lighted path: with thanks to MapWise by MaeX78, whose lighted routes on the minimap inspired VCF to make its own version with a twist: it learns the places, people and walkways as you play. No MapWise code or data is used.
+GO TO and the lighted path: with thanks to MapWise (version 3.0.11) by MaeX78, whose lighted routes on the minimap inspired VCF to make its own version with a twist: it learns the places, people and walkways as you play. No MapWise code or data is used.
