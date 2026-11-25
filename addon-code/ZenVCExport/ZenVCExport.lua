@@ -49,7 +49,7 @@ ZenVCExportDB = ZenVCExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvc bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "222"
+local VERSION = "223"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCF's Control Panel (ZENVC_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -5018,6 +5018,25 @@ local function lightUp(list)
         end) end
         if mark.kind == "tal" or mark.kind == "taltab" then pcall(function()   -- v179 a talents tab: select is the game's own click on it; a talent is read only
             if e.talTab then mailSelTarget = e.fr; aimKey("/click zenvcselect", "ZenVCMailSelect", e.fr)
+            elseif e.talNode or e.talApply then   -- v223 a talent (marks a point) or Apply Changes (learns them): the game's own click
+                mailSelTarget = e.fr; QG.talSelFr = e.fr; aimKey("/click zenvcselect", "ZenVCTalSelect", e.fr)
+                local sc = _G.ZenVCTalSelect
+                if sc and not sc.zvTalHook then sc.zvTalHook = true; sc:HookScript("OnClick", function()
+                    if C_Timer and C_Timer.After then C_Timer.After(0.2, function() pcall(function()
+                        if mark.kind ~= "tal" or not QG.talOpen() then return end
+                        local l2 = QG.talSlots()
+                        for k, e2 in ipairs(l2) do
+                            if e2.fr == QG.talSelFr then
+                                mark.i = k; lightUp(l2)
+                                local u = QG.talUnspent()
+                                if e2.talApply then say1("applied" .. (u and (": " .. u .. " unspent talents left") or ""))
+                                else say1(tostring(e2.name) .. ", not applied yet" .. (u and (", " .. u .. " unspent") or "") .. ". Move to Apply Changes and say {Select:select} to learn it") end
+                                ZenVCExportDB._talSpend = { at = date("%Y-%m-%d %H:%M:%S"), what = tostring(e2.name), unspent = u }
+                                return
+                            end
+                        end
+                    end) end) end
+                end) end
             elseif mailSelTarget then aimKey("/click zenvcselect"); mailSelTarget = nil end
         end) end
         if mark.kind == "sbook" or mark.kind == "sbooktab" then pcall(function()   -- v178 a spellbook tab or page button: select is the game's own click on it
@@ -5079,7 +5098,10 @@ local function lightUp(list)
                 -- (name first, then what it does) is shown, with the rank under it
                 if e.talSpell and t.SetSpellByID then t:SetSpellByID(e.talSpell) else t:SetText(tostring(e.name), 1, 1, 1) end
                 if e.talCur and e.talMax then t:AddLine(QG.tr("Rank") .. " " .. e.talCur .. "/" .. e.talMax, 1, 1, 1) end
-                t:AddLine("Say {Move My Box:move my box} for the tabs", 1, 0.74, 0.85)
+                t:AddLine("Say {Select:select} to add a point, then Apply Changes to learn it. {Move My Box:move my box} for the tabs", 1, 0.74, 0.85, true)   -- v223
+            elseif e.talApply then   -- v223
+                t:SetText(tostring(e.name), 1, 1, 1)
+                t:AddLine("Say {Select:select} to learn the points you added", 1, 0.74, 0.85, true)
             elseif e.talTab then   -- v179
                 t:SetText(tostring(e.name), 1, 1, 1)
                 t:AddLine("Say {Select:select} to open this tab. {Move My Box:move my box} goes back to the talents", 1, 0.74, 0.85, true)
@@ -5225,7 +5247,7 @@ local function lightUp(list)
             -- v72: our own "Equipped" boxes, then everything placed clear of the bags, the vendor and the screen edge
             local shown = {}
             local okCmp, errCmp = pcall(function()
-                if e.spellID or e.charTab or e.charSide or e.invSlot or e.sbSlot or e.sbTab or e.sbPage or e.talNode or e.talTab or e.name == "empty" or e.empty or (e.tradeLine and not (e.tradeP or e.tradeT)) or (e.mailLine and not (e.mailItem or e.inAtt)) then return end   -- v95
+                if e.spellID or e.talApply or e.charTab or e.charSide or e.invSlot or e.sbSlot or e.sbTab or e.sbPage or e.talNode or e.talTab or e.name == "empty" or e.empty or (e.tradeLine and not (e.tradeP or e.tradeT)) or (e.mailLine and not (e.mailItem or e.inAtt)) then return end   -- v95
                 for k, slot in ipairs(equippedFor(outlinedLink(e))) do
                     local f = zvCmp and zvCmp[k]
                     if f then
@@ -5537,8 +5559,64 @@ function QG.talSlots(tabsOnly)
         end
         -- reading order: the trees left to right, each top to bottom
         table.sort(list, function(a, b) if math.abs(a.x - b.x) > 200 then return a.x < b.x end if math.abs(a.y - b.y) > 6 then return a.y > b.y end return a.x < b.x end)
+        -- v223 Apply Changes, last: the button that learns the points marked (move down past the bottom of a tree reaches it, by position)
+        local ab = rawget(tf, "ApplyButton")
+        if not ok(ab) then
+            local function scan(f, depth)
+                if ab or depth > 5 then return end
+                for _, c in ipairs({ f:GetChildren() }) do
+                    if ok(c) and c.GetObjectType and c:GetObjectType() == "Button" and c.GetText then
+                        local okT, tx = pcall(c.GetText, c)
+                        if okT and type(tx) == "string" and tx:lower():find("apply") then ab = c return end
+                    end
+                    if ok(c) then scan(c, depth + 1) end
+                end
+            end
+            scan(tf, 0)
+        end
+        if ok(ab) and ab:GetLeft() then
+            local off = ab.IsEnabled and not ab:IsEnabled()
+            list[#list + 1] = { fr = ab, talApply = true, name = "Apply Changes" .. (off and " (nothing to apply)" or ""), x = ab:GetLeft() or 0, y = ab:GetTop() or 0 }
+        end
     end)
     return list
+end
+-- v223 how many talent points are unspent: the game's own number (from its talent functions, else the number shown beside "Unspent")
+function QG.talUnspent()
+    local n
+    pcall(function()
+        local tf = QG.talFrame(); if not tf then return end
+        local cfg = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID()
+        local tree = tf.GetTalentTreeID and tf:GetTalentTreeID()
+        if cfg and tree and C_Traits and C_Traits.GetTreeCurrencyInfo then
+            local info = C_Traits.GetTreeCurrencyInfo(cfg, tree, false)
+            if info and info[1] and info[1].quantity then n = info[1].quantity end
+        end
+        if n then return end
+        local texts = {}
+        local function walk(f, depth)
+            if depth > 6 then return end
+            for _, r in ipairs({ f:GetRegions() }) do
+                local tx = r.GetText and r:GetText()
+                if type(tx) == "string" and tx ~= "" and r.IsVisible and r:IsVisible() and r:GetLeft() then texts[#texts + 1] = { t = tx, x = r:GetLeft(), y = r:GetTop() or 0 } end
+            end
+            for _, c in ipairs({ f:GetChildren() }) do if c.IsVisible and c:IsVisible() then walk(c, depth + 1) end end
+        end
+        walk(tf, 0)
+        for _, l in ipairs(texts) do
+            if l.t:lower():find("unspent") then
+                local best, bd
+                for _, v in ipairs(texts) do
+                    if v.t:match("^%s*%d+%s*$") and v.x > l.x and math.abs(v.y - l.y) < 25 then
+                        local d = v.x - l.x
+                        if not best or d < bd then best, bd = v, d end
+                    end
+                end
+                if best then n = tonumber(best.t) end
+            end
+        end
+    end)
+    return n
 end
 function QG.sbookFirst(list) for k, e in ipairs(list) do if e.sbSlot then return k end end return 1 end
 -- v177 talents and spellbook: their layout, noted once per start move (read only, forbidden parts skipped), so the MOVE lists can be built from it
@@ -6326,7 +6404,9 @@ local function startMoveStep()
             if t[1] == "mail" then mark.i = TM.mailFirst(list) end   -- v95
             if t[1] == "sbook" then mark.i = QG.sbookFirst(list) end   -- v178 begin on the first spell
             if t[1] == "ah" then for k, e in ipairs(list) do if e.group >= 1 then mark.i = k break end end end   -- v84: begin on the categories, not the search row
-            lightUp(list); return
+            lightUp(list)
+            if t[1] == "tal" then local u = QG.talUnspent(); if u then say1(u .. " unspent talents") end end   -- v223
+            return
         end
     end
     if QG.talOpen() and #QG.talSlots() == 0 then QG.spellsLook() end   -- v179 noted only when no talent could be read

@@ -5,6 +5,31 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.309 and VCFI 0.10.301 (spending talent points by voice)
+
+Published 2026-11-24 18:48 US Mountain Standard Time
+
+This release changes VCF only. VCFI stays at 0.10.301.
+
+**Spending talent points by voice (VCF)**
+- With the talents open, "start move" says how many unspent talents you have.
+- "select" on a talent adds a point: it is marked, not learned yet, and VCF says the new rank.
+- Apply Changes is now reached by MOVE: "move down" past the bottom of a tree, then "select" learns the points. Nothing is learned before that, so a wrong pick costs nothing.
+- Not yet tested in the game (it needs a free talent point).
+
+**FAQ**
+- "Can MOVE go into the talents?" now explains spending a point.
+
+
+**File fingerprints (SHA256)**
+To check a download is exactly the file published here: in Windows PowerShell, type `Get-FileHash` and a space, drag the downloaded file onto the window, press Enter, and compare the Hash with the line below.
+- VCF.NET.SETUP.exe: `1c19ae4042e704d6866f5fb32053f249ababbd42d8023dcbb0acc948067a19aa`
+- VCFI.SETUP.exe: `54f260e8d8d7c3ca5c1fe3f0736f1c5f26a695d6963c1897e6cc4b18a36e3a5c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+---
+
 ## VCF 0.10.308 and VCFI 0.10.301 (Auction House selling, character window tabs, gear off by select, vowel check learns)
 
 Published 2026-11-24 18:42 US Mountain Standard Time

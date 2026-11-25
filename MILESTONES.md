@@ -182,6 +182,6 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Trade tested with another player
 - The guild bank by voice (built, pending testing)
 - Fewer of your own words stopped by the vowel check
-- Talents: spending a point by voice
+- Talents: spending a point by voice (built, pending testing, 0.10.309)
 - Gear sets (the Equipment Manager) by voice
 - The Legacy panel by voice
