@@ -5,6 +5,24 @@ Download the newest setup from the front page.
 
 ---
 
+## VCF 0.10.328 and VCFI 0.10.328 (VCFI catches up, numbers match again)
+
+Published 2026-11-25 14:35 US Mountain Standard Time
+
+- VCFI 0.10.320 to 0.10.327: NUMBER SKIPPED WITH INTENTION, so VCF and VCFI carry the same number again.
+- VCFI now has everything VCF gained today: dictation into mail and Auction House boxes with the words shown in the tooltip box, spelling, erase and clear, the dictation key, numbers on the letter pads, the "Say ..." lines kept in Brief Mode (not read aloud unless ticked), mail items taken by select, the Auction House buy that shortcut and the outline back after no, quiet places for names read aloud, and the clearer names choices.
+- The new screen text and helper lines are translated. VCFI's helper add-on is now version 217. After installing, /RELOAD twice.
+
+**File fingerprints (SHA256)**
+- VCF.NET.SETUP.exe: `692d299b51bc095c14ff0936054fa08713a724ed89a57e2ed8b104cddeec12cb`
+- VCFI.SETUP.exe: `dc9fe61b0a21a6c82f7a7881678285be376983a30c33d57dc54ef7c19d5ddd7c`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCF.NET.txt: `fe2d56344334f55c584e54bbf71858a185ecb0198783d23971ac9dc276855e8a`
+- READ.ME.FIRST.-.HOW.TO.INSTALL.VCFI.txt: `f43ea404d6270a504fdc3f99ad4e7db2f1fcc5bb41d8e8fbeebc2e6e7293c2d3`
+
+Check a download in PowerShell: `Get-FileHash <file>`
+
+---
+
 ## VCF 0.10.328 and VCFI 0.10.319 (clearer names choices)
 
 Published 2026-11-25 14:10 US Mountain Standard Time

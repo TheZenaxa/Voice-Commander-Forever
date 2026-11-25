@@ -49,7 +49,7 @@ ZenVCIExportDB = ZenVCIExportDB or {}
 -- v55 (2026-11-05, ALPHA TESTING) cast profession abilities (Fishing, Cooking, Basic Campfire, First Aid, Smelting, crafting windows) are found by spell number
 -- and offered by /zenvci bars like spells; READ ONLY db.professionSpells, db.professions, db.skillLines (to learn how camp abilities are offered).
 -- v56 (2026-11-05) READ ONLY db.bagItems: every usable or wearable item the character carries (bags + equipped), for RENAME AN ITEM in VCF.
-local VERSION = "216"
+local VERSION = "217"
 
 -- v140 (2026-11-16, user: "can we also color pick the highlight box color?"): the outline's normal colour from VCFI's Control Panel (ZENVCI_MARK_COLOR, "rrggbb"),
 -- as { r, g, b } from 0 to 1; nil = the original colour. The warning colours (use, destroy, unlearn waiting for a yes) are not changed.
@@ -2198,6 +2198,7 @@ local function judgeHiddenPress(frame)
 end
 local function noteClick(id, frame)
     lastClickAt = GetTime and GetTime() or 0
+    if id == "click_staticpopup1button1" then ZenVCIPopYesAt = lastClickAt elseif id == "click_zenvciselect" then ZenVCIPopSelectAt = lastClickAt end   -- v236
     judgeHiddenPress(frame)
     castNote("PRESS of hidden button " .. tostring(id))
     pcall(function()
@@ -2526,6 +2527,19 @@ function QG.tr(text)
         end
     end
     return text
+end
+-- VCFI: true for a "Say ..." line in English or in the language the helper shows (Dites, Sag, Di, the Chinese say, the Japanese to iu)
+function QG.isSay(line)
+    if type(line) ~= "string" then return false end
+    if line:find("^%s*[Ss]ay ") then return true end
+    local l = QG.lang()
+    if l == "fr" then return line:find("^%s*Dites ") ~= nil end
+    if l == "de" then return line:find("^%s*Sage? ") ~= nil end
+    if l == "es" then return line:find("^%s*Di ") ~= nil end
+    if l == "zh-CN" then return line:find("^%s*\232\175\180") ~= nil end
+    if l == "zh-TW" then return line:find("^%s*\232\170\170") ~= nil end
+    if l == "ja" then return line:find("\227\129\168\232\168\128", 1, true) ~= nil end
+    return false
 end
 function QG.say(text)
     if type(text) ~= "string" or not text:find("{", 1, true) then return text end
@@ -3826,7 +3840,10 @@ function RQ.tipLines(tt, titleOnly)
         local rt = r and r:IsShown() and r:GetText() or ""
         local line = rqClean(lt); local rl = rqClean(rt)
         if rl ~= "" then line = (line ~= "" and (line .. ", ") or "") .. rl end
-        if line ~= "" and not line:find('^Say "') and not (tt.zvSayText and line == rqClean(tt.zvSayText)) then out[#out + 1] = line end   -- v229 the player's own words are shown, never read
+        -- v229 the player's own words are shown, not read; v235 (user: "typically not read out loud ... a toggle option") every "Say ..." line
+        -- is skipped unless the Control Panel's "Also read the Say lines aloud" is ticked
+        local readSay = type(ZENVCI_TIPREAD) == "table" and ZENVCI_TIPREAD.say
+        if line ~= "" and (readSay or not (QG.isSay(line) or (tt.zvSayText and line == rqClean(tt.zvSayText)))) then out[#out + 1] = line end   -- VCFI: Say lines in any language
     end
     return table.concat(out, ". ")
 end
@@ -3883,12 +3900,22 @@ function RQ.inCity()
     local id; pcall(function() id = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player") end)
     return id and RQ_CITIES[id] or false
 end
+-- v237 (user: "a list of cities where you see character names being read ... select that on or off"; "Still read NPCs"): in a quiet place (a city or a hub
+-- such as the Crossroads, ticked in the Control Panel) other players' names are not read; everywhere else they are. Matched on the zone and the sub-zone.
+function RQ.inQuiet(n)
+    local q = n and n.quiet
+    if type(q) ~= "table" then return false end
+    local function key(s) s = (s or ""):gsub("[A-Z]", string.lower):gsub("^%s+", ""):gsub("%s+$", ""); return (s:gsub("^the ", "")) end   -- VCFI: only A to Z made small, so accented and Chinese names are never changed
+    local z, s = "", ""
+    pcall(function() z = GetZoneText and GetZoneText() or ""; s = GetSubZoneText and GetSubZoneText() or "" end)
+    return (q[key(z)] or q[key(s)]) and true or false
+end
 function RQ.nameOk(unit)
     local n = ZENVCI_TIPNAMES
     if type(n) ~= "table" then return true end
-    if n.notcity and not RQ.inCity() then return true end
     local isPlayer = false; pcall(function() isPlayer = UnitIsPlayer(unit) end)
     if not isPlayer then return n.npc and true or false end
+    if not RQ.inQuiet(n) then return true end   -- v237 outside the quiet places every player is named
     local me = false; pcall(function() me = UnitIsUnit(unit, "player") end)
     if me then return true end
     if n.guild then
@@ -4201,6 +4228,8 @@ local function keepClear()
     local function add(f) local r = uiRect(f); if r then list[#list + 1] = r end end
     add(_G.MerchantFrame); add(_G.ContainerFrameCombinedBags); add(_G.AuctionHouseFrame); add(_G.TaxiFrame); add(_G.FlightMapFrame)   -- v77, v88
     for f = 1, 13 do add(_G["ContainerFrame" .. f]) end
+    local kp = _G.ZenVCIKeypad   -- v231 (user: the tooltip and the letter pad shared the same place): the tooltip moves aside, never up
+    if kp and kp:IsShown() then add(kp) end
     return list
 end
 local function covers(x, y, w, h, list)
@@ -4830,7 +4859,7 @@ function TM.mailTip(t, e)
         else t:AddLine("Say {Select:select} to open it", 1, 0.74, 0.85) end
         return true
     end
-    if e.inMoney then t:SetText(tostring(e.name), 1, 0.82, 0); t:AddLine("Say {Get That:get that} to take it", 1, 0.74, 0.85) return true end
+    if e.inMoney then t:SetText(tostring(e.name), 1, 0.82, 0); t:AddLine("Say {Select:select} or {Get That:get that} to take it", 1, 0.74, 0.85) return true end
     if e.mailClose then t:SetText("Close this mail", 1, 1, 1); t:AddLine("Say {Select:select} to close it", 1, 0.74, 0.85) return true end
     if e.mailPage then t:SetText(tostring(e.name), 1, 1, 1); t:AddLine("Say {Select:select} to turn the page", 1, 0.74, 0.85) return true end   -- v174
     if e.mailOpenAll then t:SetText(tostring(e.name), 1, 1, 1); t:AddLine("Say {Select:select} to take the money and items from all your letters", 1, 0.74, 0.85, true) return true end   -- v174
@@ -4924,6 +4953,52 @@ function QG.qlogShow(e)
 end
 end
 
+-- v231 (user: "I'd like to see the text being listed in the tooltip ... good contrast and bigger text so I could see it before sending"):
+-- while dictating into a mail or Auction House box, the tooltip box shows what is in that box, and follows it as words are typed
+function TM.dictFill(t)
+    local txt = pad.dictBox and pad.dictBox.GetText and pad.dictBox:GetText() or ""
+    t:SetText(QG.tr("Dictating"), 1, 0.82, 0)
+    t:AddLine(txt ~= "" and txt or QG.tr("(nothing yet)"), 1, 1, 1, true)
+    t:AddLine(QG.say(QG.tr("Say {Stop Dictation:stop dictation} when it is right")), 1, 0.74, 0.85, true)
+    -- v231 (user: "if dictation, then it is fine to have it in front"): in front of the game's own boxes while dictating, back afterwards
+    if not t.zvLevel0 then t.zvLevel0, t.zvStrata0 = t:GetFrameLevel(), t:GetFrameStrata() end
+    t:SetFrameStrata("TOOLTIP")
+    t:SetFrameLevel(math.max(t.zvLevel0, ((GameTooltip and GameTooltip:GetFrameLevel()) or 0)) + 50)
+    t.zvDict = true
+    pad.dictLast = txt
+end
+function TM.dictRefresh()
+    pcall(function()
+        local t = tip()
+        if not (pad.dictBox and t.zvDict and t:IsShown()) then return end
+        t:ClearLines(); TM.dictFill(t); t:Show()
+    end)
+end
+-- v233 (user: "saying select doesn't collect it"): taking the outlined mail item or money, for "get that" and for "select"
+function TM.takeOutlined()
+            local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing" }
+            pcall(function()
+                local e = mark.kind == "mail" and TM.mailOpen() and TM.mailSlots()[mark.i]
+                if not (e and e.mailTake) then
+                    say1("open a mail first: say {Start Move:start move} at the mailbox, move to a mail and say {Select:select}, move to an item or the money, then say {Get That:get that}")
+                    rec.acted = "nothing outlined" return
+                end
+                local cod = tonumber((select(6, GetInboxHeaderInfo(e.inIdx)))) or 0
+                if cod > 0 then
+                    say1("this mail is cash on delivery (" .. tostring(cod) .. " copper" .. "): not taken by voice")
+                    rec.acted = "cash on delivery: not taken" return
+                end
+                if e.inAtt then
+                    TakeInboxItem(e.inIdx, e.inAtt)
+                    say1("taking " .. (tostring(e.name):gsub("^attached: ", "")))
+                    rec.acted = "TakeInboxItem " .. e.inIdx .. " " .. e.inAtt .. " " .. tostring(e.name)
+                elseif e.inMoney then
+                    TakeInboxMoney(e.inIdx)
+                    say1("taking the money")
+                    rec.acted = "TakeInboxMoney " .. e.inIdx
+                end
+            end)
+end
 local function lightUp(list)
     disarm()   -- moving to another item cancels a waiting use or destroy
     local e = list[mark.i]
@@ -5051,6 +5126,8 @@ local function lightUp(list)
         local okTip, errTip = pcall(function()
             if not e.fr and not e.taxi then return end   -- v88
             local t = tip()
+            t.zvDict = nil   -- v231
+            if t.zvLevel0 then t:SetFrameStrata(t.zvStrata0 or "TOOLTIP"); t:SetFrameLevel(t.zvLevel0); t.zvLevel0 = nil end
             t.zvBag, t.zvSlot = e.bag, e.slot   -- v190 for the stack size read with the tooltip
             for _, f in ipairs(zvCmp or {}) do f:Hide() end
             -- v71 (2026-11-07, user): one place for every window, the LOWER MIDDLE of the screen, clear of the game's own controller cursor and tooltip.
@@ -5063,7 +5140,9 @@ local function lightUp(list)
             t:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 140 / scale)
             t:SetClampedToScreen(true)
             -- v72: placed for real at the end, once every box knows its size (see placeTips)
-            if e.tradeLine then   -- v95
+            if pad.dictBox and (e.mailBox == pad.dictBox or e.edit == pad.dictBox) then   -- v231 the box being dictated into
+                TM.dictFill(t)
+            elseif e.tradeLine then   -- v95
                 if not TM.tradeTip(t, e) then return end
             elseif e.mailLine then   -- v95
                 if not TM.mailTip(t, e) then return end
@@ -5220,8 +5299,20 @@ local function lightUp(list)
                     t:AddLine("Lowest auction price: " .. money(low), 1, 1, 1)
                 end
                 if e.qty then t:AddLine("Available: " .. e.qty, 1, 1, 1) end
+                -- v233 (user: the helper text should say what to do): on the buying screen, how to buy
+                local ahf = _G.AuctionHouseFrame
+                local buying = ahf and ((ahf.ItemBuyFrame and ahf.ItemBuyFrame:IsVisible()) or (ahf.CommoditiesBuyFrame and ahf.CommoditiesBuyFrame:IsVisible()))
+                -- v236 (user: "once it's highlighted ... if you do, say buy that ... that will skip you having to use the move function"): the shortcut, advertised
+                if own or buying then t:AddLine("Say {Select:select} to highlight it, then {Buy:buy that} to buy it. No need to move to Buyout", 1, 0.74, 0.85, true) end
             else
                 t:SetText(tostring(e.name))
+                if e.isBuy then t:AddLine("Say {Buy:buy that} on an auction row to buy it", 1, 0.74, 0.85, true) end   -- v234
+                if e.ahRow then   -- v236 an auction row with no item number (the item's own auctions): the same shortcut
+                    local ahf = _G.AuctionHouseFrame
+                    if ahf and ((ahf.ItemBuyFrame and ahf.ItemBuyFrame:IsVisible()) or (ahf.CommoditiesBuyFrame and ahf.CommoditiesBuyFrame:IsVisible())) then
+                        t:AddLine("Say {Select:select} to highlight it, then {Buy:buy that} to buy it. No need to move to Buyout", 1, 0.74, 0.85, true)
+                    end
+                end
             end
             -- v229 (user: "since they share the same tooltip box, they should match"): Brief Mode shows the outline's box as its title only, too
             if type(ZENVCI_TIP) == "table" and ZENVCI_TIP.brief then pcall(function()
@@ -5229,7 +5320,19 @@ local function lightUp(list)
                 local title = l1 and l1:GetText()
                 if type(title) == "string" and title ~= "" then
                     local r, g, b = l1:GetTextColor()
+                    -- v234 (user: "I want the 'say that' available wherever we can have it ... These are crucial"): the lines that say what to say stay
+                    local keep = {}
+                    for n = 2, t:NumLines() do
+                        local fs = _G[t:GetName() .. "TextLeft" .. n]
+                        local tx = fs and fs:GetText()
+                        if type(tx) == "string" and tx ~= "" then
+                            local lr, lg, lb = fs:GetTextColor()
+                            local plain = tx:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+                            if QG.isSay(plain) or (math.abs(lr - 1) < 0.03 and math.abs(lg - 0.74) < 0.03 and math.abs(lb - 0.85) < 0.03) then keep[#keep + 1] = { tx, lr, lg, lb } end
+                        end
+                    end
                     t:ClearLines(); t:SetText(title, r, g, b)
+                    for _, k in ipairs(keep) do t:AddLine(k[1], k[2], k[3], k[4], true) end
                 end
             end) end
             QG.sayLine(t)   -- v229 the player's words for this spell or item, under its title
@@ -5855,7 +5958,7 @@ local function ahSlots()
                         end
                     end)
                     if itemID and minPrice then ahLowest[itemID] = minPrice end
-                    list[#list + 1] = { fr = row, group = g + off, itemID = itemID, name = name or "a row", x = row:GetLeft() or 0, y = row:GetTop() or 0,
+                    list[#list + 1] = { fr = row, group = g + off, itemID = itemID, name = name or "a row", x = row:GetLeft() or 0, y = row:GetTop() or 0, ahRow = true,
                         minPrice = minPrice, qty = qty,   -- v81
                         buyout = buyout, bid = bid, unit = unit, aqty = aqty,   -- v82
                         dataKeys = table.concat(keys, ","):sub(1, 300) }   -- v79 note only
@@ -5893,7 +5996,8 @@ local function ahSlots()
                                 local tx = c.GetObjectType and c:GetObjectType() == "Button" and c.GetText and c:GetText()
                                 if type(tx) == "string" and tx:find("%a") and c:GetLeft() then
                                     local off = c.IsEnabled and not c:IsEnabled()
-                                    list[#list + 1] = { fr = c, group = g, name = tx .. (off and " (not available now)" or ""), noClick = true, x = c:GetLeft(), y = c:GetTop() or 0 }
+                                    list[#list + 1] = { fr = c, group = g, name = tx .. (off and (" " .. QG.tr("(not available now)")) or ""), noClick = true, x = c:GetLeft(), y = c:GetTop() or 0,
+                                        buyBtn = true, off = off and true or nil, isBuy = (tx:lower():find("buyout") or tx:lower():find("buy now") or c == (f.BuyoutFrame and f.BuyoutFrame.BuyoutButton) or c == (f.BuyDisplay and f.BuyDisplay.BuyButton) or (type(BUYOUT) == "string" and BUYOUT ~= "" and tx:lower() == BUYOUT:lower())) and true or nil }   -- v233; VCFI: also the game's own Buyout button in any language
                                 else scan(c, depth + 1) end
                             end
                         end
@@ -6015,6 +6119,9 @@ local function ahNeighbour(list, i, dir)
     end
     if dir == "up" or dir == "down" then
         local k = i + (dir == "down" and 1 or -1)
+        if cur.buyBtn then   -- v233 the buying screen's buttons: greyed-out ones are passed over
+            while list[k] and list[k].group == cur.group and list[k].off do k = k + (dir == "down" and 1 or -1) end
+        end
         if list[k] and list[k].group == cur.group then return k end
         if dir == "down" then   -- v219: past the end of a list, the tabs line
             local best, bd
@@ -6030,6 +6137,19 @@ local function ahNeighbour(list, i, dir)
         return i
     end
     local want = cur.group + (dir == "right" and 1 or -1)
+    -- v233 (user: "i wanted to go right but needed to direct it to move down to go that right space to the buyout key"): the buying screen's buttons
+    -- are the next line to the right; move right goes to Buyout (or Buy Now), else the first button that can be pressed now (the Back button and a
+    -- greyed-out Bid were nearer in height and took the outline before)
+    do
+        local buy, first
+        for k, e in ipairs(list) do
+            if e.group == want and e.buyBtn then
+                if e.isBuy and not buy then buy = k end   -- v234 Buyout even while greyed (it waits for a row to be chosen)
+                if not first and not e.off then first = k end
+            end
+        end
+        if buy or first then return buy or first end
+    end
     local best, bestDy
     for k, e in ipairs(list) do
         if e.group == want then
@@ -6090,9 +6210,11 @@ local PAD_NUM = { { "1", "2", "3" }, { "4", "5", "6" }, { "7", "8", "9" }, { "Ba
 -- v92 (2026-11-09, user: "shouldnt letters keys be qwerty" ... "maybe make a choice"): two letter layouts, QWERTY first; the last key of the bottom row
 -- switches to the other one and the choice is remembered (saved as _padLayout)
 local PAD_ABC = { { "A", "B", "C", "D", "E", "F", "G" }, { "H", "I", "J", "K", "L", "M", "N" }, { "O", "P", "Q", "R", "S", "T", "U" },
-    { "V", "W", "X", "Y", "Z" }, { "Space", "Backspace", "Done", "QWERTY" } }
+    { "V", "W", "X", "Y", "Z" }, { "Space", "Backspace", "Done", "123", "QWERTY" } }
 local PAD_QWERTY = { { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" }, { "A", "S", "D", "F", "G", "H", "J", "K", "L" },
-    { "Z", "X", "C", "V", "B", "N", "M" }, { "Space", "Backspace", "Done", "ABC" } }
+    { "Z", "X", "C", "V", "B", "N", "M" }, { "Space", "Backspace", "Done", "123", "ABC" } }
+-- v231 (user: "a way to get to the numbers and then back to letters"): 123 on a letter pad opens these numbers; Letters goes back to the letter layout
+local PAD_NUM_L = { { "1", "2", "3" }, { "4", "5", "6" }, { "7", "8", "9" }, { "Space", "0", "Backspace" }, { "Done", "Letters" } }
 local function padLetters() return (ZenVCIExportDB._padLayout == "abc") and PAD_ABC or PAD_QWERTY end
 local function padBuild(rows)
     if not pad.frame then
@@ -6106,6 +6228,7 @@ local function padBuild(rows)
     local cols = 0
     for _, r in ipairs(rows) do cols = math.max(cols, #r) end
     local y = -gap
+    local widest = 0   -- v231 the frame is as wide as its widest row (the letter pads' bottom row grew)
     for ri, r in ipairs(rows) do
         local x = gap
         for _, label in ipairs(r) do
@@ -6118,9 +6241,19 @@ local function padBuild(rows)
             pad.keys[#pad.keys + 1] = k
             x = x + w + gap
         end
+        widest = math.max(widest, x)
         y = y - size - gap
     end
-    pad.frame:SetSize(pad.names and (300 + gap * 2) or (cols * (size + gap) + gap + size), #rows * (size + gap) + gap)
+    -- v231 (user: "maybe put dictation as a key on the pads? and stop dictation too"): the add-on cannot start VCFI's listening, so the pad shows the words
+    if not pad.foot then pad.foot = pad.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight"); pad.foot:SetJustifyH("LEFT") end
+    local footOn = not pad.names and not pad.numeric and pad.from ~= "whisper"
+    local footH = 0
+    if footOn then
+        pad.foot:ClearAllPoints(); pad.foot:SetPoint("TOPLEFT", pad.frame, "TOPLEFT", gap, y - 2); pad.foot:SetWidth(math.max(widest, cols * (size + gap) + gap + size) - gap * 2)
+        pad.foot:SetText(QG.say(QG.tr("Say {Dictation:dictation} to speak into this box, then {Stop Dictation:stop dictation}")))
+        pad.foot:Show(); footH = (pad.foot:GetStringHeight() or 16) + 8
+    else pad.foot:Hide() end
+    pad.frame:SetSize(pad.names and (300 + gap * 2) or math.max(widest, cols * (size + gap) + gap + size), #rows * (size + gap) + gap + footH)
     pad.frame:ClearAllPoints(); pad.frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 300)
     pad.frame:SetClampedToScreen(true)
     pad.frame:Show()
@@ -6144,7 +6277,7 @@ local function padOpen(box, backI, from, names)
         padBuild(pad.numeric and PAD_NUM or padLetters())
     end
     mark.kind, mark.i = "pad", 1
-    say1((pad.names and "To: choose Type a name, Your characters or Saved names: {Move Down:move down}, then {Select:select}") or (pad.numeric and "number pad: move to a number, say {Keypad Enter:enter}. Done when finished") or "letter pad: move to a letter, say {Keypad Enter:enter}. Done when finished")
+    say1((pad.names and "To: choose Type a name, Your characters or Saved names: {Move Down:move down}, then {Select:select}") or (pad.numeric and "number pad: move to a number, say {Keypad Enter:enter}. Done when finished") or "letter pad: move to a letter, say {Keypad Enter:enter}. Done when finished. 123 for numbers. Say {Dictation:dictation} to speak into the box")
 end
 local function padClose(toBox)
     if pad.frame then pad.frame:Hide() end
@@ -6280,6 +6413,14 @@ local function padPress()
                     say1("save " .. typed .. " in Saved names? Say {Select:select} on Save and select to save it and send to it, {Move Down:move down} for Save only, or Back to skip")
                 end
             end
+            return
+        end
+        if k == "123" or k == "Letters" then   -- v231 numbers on a letter pad, and back
+            padBuild((k == "123") and PAD_NUM_L or padLetters())
+            local list = padSlots()
+            for i, x in ipairs(list) do if x.padKey == ((k == "123") and "Letters" or "123") then mark.i = i end end
+            say1((k == "123") and "numbers: Letters goes back to the letters" or "letters: 123 goes to the numbers")
+            lightUp(list)
             return
         end
         if k == "ABC" or k == "QWERTY" then   -- v92 switch the letter layout, keep the outline on the switch key
@@ -6530,7 +6671,7 @@ function QG.popupLines()
                         local t = btn.GetText and btn:GetText()
                         -- v145 (user: "the hint text needs to say the full phrase that needed to be heard not JUST yes"): each button's line names the words that press it
                         local say = (b == 1 and ": say {Select:select} or {Accept invite:yes select}") or (b == 2 and ": say {Select:select} or {Decline invite:no don't}") or ": say {Select:select}"
-                        list[#list + 1] = { fr = btn, name = ((type(t) == "string" and t ~= "") and t or ("button " .. b)) .. say, box = f }
+                        list[#list + 1] = { fr = btn, name = ((type(t) == "string" and t ~= "") and t or ("button " .. b)) .. say, box = f, popB = b }
                     end
                 end
                 if #list > 0 then return end
@@ -6676,6 +6817,9 @@ C_Timer.NewTicker(0.5, function()
         local key = tostring(l[1].box) .. tostring(QG.popupText())
         if QG.popSeen == key or mark.kind == "popup" or InCombatLockdown() then return end
         QG.popSeen = key
+        -- v236 (user: "if you decide no and you go back, your move box has left the building"): where the outline was, so "no" can put it back
+        QG.popPrev = (mark.kind and mark.kind ~= "popup") and { kind = mark.kind, i = mark.i } or nil
+        QG.popOpenedAt = GetTime and GetTime() or 0
         mark.kind, mark.i = "popup", 1
         lightUp(l)
         say1("the game asks: " .. tostring(QG.popupText() or "") .. " Say {Select:select} on the outlined button, {Move Right:move right} for the other one, or {Accept invite:yes select} / {Decline invite:no don't}")
@@ -6752,11 +6896,25 @@ C_Timer.NewTicker(0.5, function()
         if QG.mapSel and not ((mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen())) then aimKey("/click zenvciselect"); QG.mapSel = nil end   -- v124
         if QG.charSideAim and not (mark.kind == "char" and QG.charOpen()) then aimKey("/click zenvciselect"); QG.charSideAim = nil end   -- v222
         if mailSelTarget and not ((mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or ((mark.kind == "sbook" or mark.kind == "sbooktab") and QG.sbookOpen()) or (mark.kind == "taltab" and QG.talOpen())) then aimKey("/click zenvciselect"); mailSelTarget = nil end
+        -- v231 the dictation box is forgotten once it no longer has the keyboard (stop dictation, send mail, Escape, a click elsewhere)
+        if pad.dictBox and GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= pad.dictBox then
+            pad.dictBox = nil
+            -- v231 (user: "still says it's dictating"): the tooltip box shows the outlined thing again as soon as dictation ends
+            pcall(function()
+                local tt = tip()
+                if not tt.zvDict then return end
+                if mark.kind == "mail" and TM.mailOpen() then lightUp(TM.mailSlots())
+                elseif mark.kind == "ah" and ahOpen() then lightUp(ahSlots())
+                else tt.zvDict = nil; if tt.zvLevel0 then tt:SetFrameStrata(tt.zvStrata0 or "TOOLTIP"); tt:SetFrameLevel(tt.zvLevel0); tt.zvLevel0 = nil end; tt:Hide() end
+            end)
+        end
+        if pad.dictBox and (pad.dictBox:GetText() or "") ~= pad.dictLast then TM.dictRefresh() end   -- v231 the tooltip follows the typed words
         -- v98 (user: "it should only do that once MOVE START or START MOVE is initiated")
         if (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "pad" and (pad.from == "mail" or pad.from == "trade")) then
             local fb = GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus()
             local n = fb and fb.GetName and fb:GetName() or ""
-            if fb and fb.ClearFocus and (n:find("^SendMail") or n:find("^TradePlayerInputMoneyFrame")) then
+            if fb and fb == pad.dictBox then   -- v231 (user: dictation into a mail never showed): the box "dictation" gave the keyboard keeps it
+            elseif fb and fb.ClearFocus and (n:find("^SendMail") or n:find("^TradePlayerInputMoneyFrame")) then
                 fb:ClearFocus()
             end
         end
@@ -6775,9 +6933,40 @@ C_Timer.NewTicker(0.5, function()
             local sv = (TM.mailSendOpen() and "send") or (isUp("OpenMailFrame") and ("open " .. tostring(InboxFrame and InboxFrame.openMailID))) or ("inbox " .. tostring(InboxFrame and InboxFrame.pageNum))
             -- v146 (user): switching between the Inbox and Send Mail pages hides the item cards (the add-on's own, from the last item outlined)
             if mailLastSend ~= nil and (sv == "send") ~= (mailLastSend == "send") then pcall(function() for _, f in ipairs(zvCmp or {}) do f:Hide() end end) end
-            if mailLastSend ~= nil and sv ~= mailLastSend and armed.kind ~= "mail" then local l = TM.mailSlots(); mark.i = TM.mailFirst(l); lightUp(l) end
+            if mailLastSend ~= nil and sv ~= mailLastSend and armed.kind ~= "mail" then
+                local l = TM.mailSlots(); mark.i = TM.mailFirst(l)
+                -- v233 (user: "the helper tip should be telling me what I need to do here", "I needed to move right on the item"): an opened mail with
+                -- items or money: the outline starts on the first of them, and the helper says what to say
+                if sv:find("^open ") then
+                    local n, first = 0, nil
+                    for k, x in ipairs(l) do if x.mailTake then n = n + 1; first = first or k end end
+                    if first then
+                        mark.i = first
+                        say1((n == 1 and "this mail has 1 thing to take" or ("this mail has " .. n .. " things to take")) .. ": the outline is on it. Say {Select:select} or {Get That:get that} to take it")
+                    end
+                end
+                lightUp(l)
+            end
             mailLastSend = sv
         else mailLastSend = nil end
+        if mark.kind == "popup" and QG.popupOpen() then
+            local l = QG.popupLines(); QG.popOnB = l[mark.i] and l[mark.i].popB
+        elseif mark.kind == "popup" then   -- v236 the game's box closed
+            local p, since = QG.popPrev, QG.popOpenedAt or 0
+            local yes = ((ZenVCIPopYesAt or 0) > since) or (((ZenVCIPopSelectAt or 0) > since) and QG.popOnB == 1)
+            QG.popPrev, QG.popOnB = nil, nil
+            if p and not yes then   -- "no", Escape or the box went away: back where it was (after "yes" the outline stops, the user's fail-safe)
+                local list = (p.kind == "ah" and ahOpen() and ahSlots()) or (p.kind == "mail" and TM.mailOpen() and TM.mailSlots())
+                    or (p.kind == "merchant" and merchantOpen() and merchantSlots()) or (p.kind == "bags" and bagsOpen() and bagSlots())
+                    or (p.kind == "trade" and TM.tradeOpen() and TM.tradeSlots()) or nil
+                if list and #list > 0 then
+                    mark.kind, mark.i = p.kind, math.min(math.max(p.i or 1, 1), #list)
+                    lightUp(list)
+                    say1("the outline is back where it was")
+                    return
+                end
+            end
+        end
         if not mark.kind then lastPage = nil return end
         local open = (mark.kind == "merchant" and merchantOpen()) or (mark.kind == "bags" and bagsOpen()) or (mark.kind == "char" and QG.charOpen()) or ((mark.kind == "sbook" or mark.kind == "sbooktab") and QG.sbookOpen()) or ((mark.kind == "tal" or mark.kind == "taltab") and QG.talOpen()) or (mark.kind == "gossip" and isUp("GossipFrame")) or (mark.kind == "qgreet" and isUp("QuestFrameGreetingPanel")) or (mark.kind == "trainer" and QG.trainerOpen()) or ((mark.kind == "prof" or mark.kind == "proftab" or mark.kind == "profbook") and QG.profAny()) or (mark.kind == "qmenu" and QG.qmenuOpen()) or (mark.kind == "popup" and QG.popupOpen()) or (mark.kind == "roll" and QG.rollOpen()) or (mark.kind == "qlog" and QG.qlogOpen()) or (mark.kind == "qmap" and QG.mapOpen()) or (mark.kind == "ah" and ahOpen()) or (mark.kind == "taxi" and taxiOpen()) or (mark.kind == "trade" and TM.tradeOpen()) or (mark.kind == "mail" and TM.mailOpen()) or (mark.kind == "bank" and TM.bankOpen()) or (mark.kind == "gbank" and TM.gbankOpen()) or (mark.kind == "qreward" and TM.qrewardOpen()) or (mark.kind == "pad" and pad.frame and pad.frame:IsShown() and pad.box and pad.box:IsVisible())   -- v93: the keypad counts as open
         if not open then mark.kind, mark.i = nil, 0; markerOff(); lastPage = nil return end
@@ -7609,7 +7798,7 @@ local function selectStep()
         local e = TM.mailSlots()[mark.i]
         if e and e.mailBox then padOpen(e.mailBox, mark.i, "mail", (e.mailBox == _G.SendMailNameEditBox) and TM.mailNames() or nil); lightUp(padSlots())
         elseif e and (e.mailTab or e.inRow or e.mailClose or e.mailOpenAll or e.mailPage) then say1("that could not be pressed by voice")
-        elseif e and e.mailTake then say1("say {Get That:get that} to take it")
+        elseif e and e.mailTake then TM.takeOutlined()   -- v233 select takes it, the same as get that
         else say1("say {Select:select} on the to, subject, letter or money boxes for the keypad. To put an item in the letter: say {Move My Box:move my box}, move to the item in your bags, then say {Move That:move that} twice. {Send Mail:send mail} twice sends it") end
         return
     end
@@ -7812,10 +8001,18 @@ local function ensureButton(b)
         ["/click zenvcidictation"] = function()
             pcall(function()
                 if mark.kind == "pad" and pad.box and pad.from ~= "whisper" and pad.box.SetFocus then
-                    local box = pad.box
+                    local box, from0 = pad.box, pad.from
                     padClose(true)
+                    pad.dictBox = box   -- v231 the mail check leaves this box its keyboard
                     box:SetFocus()
+                    pcall(function() local tt = tip(); if tt:IsShown() then tt:ClearLines(); TM.dictFill(tt); tt:Show() end end)   -- v231 the tooltip shows the box's text
                     say1("dictating into the box: speak, then say {Stop Dictation:stop dictation}")
+                    -- v231 record for the Auction House check: which box has the keyboard a second later
+                    C_Timer.After(1, function() pcall(function()
+                        local f = GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus()
+                        ZenVCIExportDB._dict = { at = date("%Y-%m-%d %H:%M:%S"), from = from0, kind = mark.kind or "none",
+                            box = (box.GetName and box:GetName()) or "unnamed", focus = f and ((f.GetName and f:GetName()) or "unnamed") or "none", same = (f == box) }
+                    end) end)
                 else
                     ChatFrame_OpenChat("")
                 end
@@ -7892,30 +8089,7 @@ local function ensureButton(b)
         end,
         -- v97 (2026-11-09, user: "I could not get GET THAT to take it"): v96 pointed the key at the attachment button (the game's own click) and nothing was
         -- taken. Now the add-on takes the outlined item or money itself (TakeInboxItem / TakeInboxMoney). Cash on delivery is NOT taken by voice.
-        ["/click zenvcigetthat"] = function()
-            local rec = { at = date("%Y-%m-%d %H:%M:%S"), acted = "nothing" }
-            pcall(function()
-                local e = mark.kind == "mail" and TM.mailOpen() and TM.mailSlots()[mark.i]
-                if not (e and e.mailTake) then
-                    say1("open a mail first: say {Start Move:start move} at the mailbox, move to a mail and say {Select:select}, move to an item or the money, then say {Get That:get that}")
-                    rec.acted = "nothing outlined" return
-                end
-                local cod = tonumber((select(6, GetInboxHeaderInfo(e.inIdx)))) or 0
-                if cod > 0 then
-                    say1("this mail is cash on delivery (" .. tostring(cod) .. " copper" .. "): not taken by voice")
-                    rec.acted = "cash on delivery: not taken" return
-                end
-                if e.inAtt then
-                    TakeInboxItem(e.inIdx, e.inAtt)
-                    say1("taking " .. (tostring(e.name):gsub("^attached: ", "")))
-                    rec.acted = "TakeInboxItem " .. e.inIdx .. " " .. e.inAtt .. " " .. tostring(e.name)
-                elseif e.inMoney then
-                    TakeInboxMoney(e.inIdx)
-                    say1("taking the money")
-                    rec.acted = "TakeInboxMoney " .. e.inIdx
-                end
-            end)
-        end,
+        ["/click zenvcigetthat"] = function() TM.takeOutlined() end,
         ["/click zenvcitakeoff"] = function() say1("talk to a flight master, say {Start Move:start move}, choose a flight point, then say {Take Off:take off}") end,   -- v90
         ["/click zenvcisearchnow"] = function() say1("open the auction house first, then say {Search Now:search now}") end,   -- v85
         ["/click zenvcinewspells"] = function() buttonOwner.zvNewSpells() end,   -- v136 NEW SPELLS

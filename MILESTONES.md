@@ -178,6 +178,8 @@ What has been done, and what is still to come, for VCF and VCFI. For every chang
 - Dictation into mail and Auction House boxes, spelling, erase and clear, a dictation key, numbers on the letter pads (VCF, built, 0.10.320 to 0.10.322)
 - Say lines kept in Brief Mode; mail items taken by select; Auction House buy that shortcut and the outline back after no; quiet places for names read aloud (VCF, built, 0.10.323 to 0.10.327)
 
+- VCFI caught up with VCF again: both are 0.10.328 (VCFI 0.10.320 to 0.10.327: number skipped with intention)
+
 ## Still to come
 
 - VCFI: RENAME AN ITEM and the preset keys tested in the game
